@@ -1,0 +1,59 @@
+import axios from "axios";
+import type { Producto, Categoria, ClaseIngrediente} from "../types/menu";
+
+
+const BASE_URL = 'http://127.0.0.1:8000/api/v1/catalogo/';
+
+export const fetchProductos = async(): Promise<Producto[]> => {
+    try{
+        const response = await axios.get<Producto[]>(`${BASE_URL}productos/`);
+        return response.data;
+    } catch(error){
+        console.error('error al obtener los productos', error);
+        return[];
+    }
+};
+
+
+
+export const fetchCategorias = async(): Promise<Categoria[]> =>{
+
+    try{
+        const response = await axios.get<Categoria[]>(`${BASE_URL}categorias/`);
+        return response.data;
+    } catch(error){
+        console.error("Error al obtener categorias:", error);
+        return [];
+    }
+};
+
+
+export const fetchClasesIngredientes = async(): Promise<ClaseIngrediente[]> =>{
+
+    try{
+        const response = await axios.get<ClaseIngrediente[]>(`${BASE_URL}personalizacion/`);
+        return response.data;
+    } catch(error){
+        console.error("Error al obtener personalización:", error);
+        return [];
+    }
+};
+
+
+
+
+
+
+// Funcion para obtener un producto en especifico
+
+export const fetchProductoById = async (id: number): Promise< Producto | null> => {
+    try{
+        const response = await axios.get<Producto> (`${BASE_URL}productos/${id}/`);
+        return response.data;
+    } catch(error){
+        console.error(`Error al obtener el producto ${id}:`, error);
+
+        return null;
+    }
+};
+
