@@ -1,5 +1,5 @@
 from django.shortcuts import render
-
+from rest_framework.permissions import AllowAny
 
 from rest_framework import viewsets
 from .models import Category, Producto, Ingrediente, ClaseIngrediente
@@ -28,4 +28,22 @@ class ClaseIngredienteViewSet(viewsets.ModelViewSet):
 class IngredienteViewSet(viewsets.ModelViewSet):
     queryset = Ingrediente.objects.select_related('_class')
     serializer_class = ClaseIngredienteSerializer
+    
+    
+    
+class ProductoGestionViewSet(viewsets.ModelViewSet):
+    queryset = Producto.objects.all().select_related('category')
+    serializer_class = ProductoSerializer
+    permission_classes = [AllowAny]
+    
+class CategoriaGestionViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategoriaSerializer
+    permission_classes = [AllowAny]
+    
+class IngredienteGestionViewSet(viewsets.ModelViewSet):
+    queryset = Ingrediente.objects.all().select_related('_class')
+    serializer_class = IngredienteSerializer
+    permission_classes = [AllowAny]
+    
     

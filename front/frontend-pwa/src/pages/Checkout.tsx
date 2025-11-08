@@ -60,7 +60,7 @@ const Checkout : React.FC = () => {
           phone_number: telefono,
           type_delivery: tipoEntrega,
           delivery_address: tipoEntrega === 'DOMICILIO' ? direccion : null,
-          total_monto: totalPrecio.toFixed(2),
+          amount: totalPrecio.toFixed(2),
           items_carrito: itemsParaDjango,
       };
 
@@ -73,13 +73,19 @@ const Checkout : React.FC = () => {
         navigate(`/pedido/estado/${numeroPedidoUnico}`);
 
 
-      } catch(err){
-        console.error("Error en la confirmacion de pedido:", err);
-        setError("Hubo un error al procesar tu pedido. Vuelva a intentarlo.");
-        
-      } finally{
-        setCargando(false);
+      } catch (err: any) { // Usamos 'any' para acceder a la estructura de AxiosError
+      console.error("Error al confirmar el pedido:", err);
+      
+      // *** ESTO ES CLAVE: Imprimir la respuesta de error del servidor ***
+      if (err.response && err.response.data) {
+          console.log("Detalle de la respuesta de Django:", err.response.data);
+          setError("Error en el pedido. Revise la consola para detalles del formato.");
+      } else {
+          setError("Hubo un error de red o servidor. Inténtalo de nuevo.");
       }
+    } finally {
+      setCargando(false);
+    }
 
     };
 
@@ -88,7 +94,7 @@ const Checkout : React.FC = () => {
 
         <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8">
 
-          <h1 className="text-3xl font-extrabold text-yellow-600 mb-6 borde-b pb-2">
+          <h1 className="text-3xl font-extrabold text-gray-600 mb-6 borde-b pb-2">
             Confirmar Pedido
           </h1>
 
@@ -164,7 +170,6 @@ const Checkout : React.FC = () => {
                 <div key={item.idUnico} className="flex justify-between text-sm py-1">
                   <span className="text-gray-600">{item.cantidad}x {item.productoBase.name}</span>
                   <span className="font-medium">${(item.precioUnitario * item.cantidad).toFixed(2)}</span>
-
                 </div>
               ))}
 

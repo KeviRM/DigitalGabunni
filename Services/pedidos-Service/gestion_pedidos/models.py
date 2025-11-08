@@ -55,7 +55,7 @@ class Pedido(models.Model):
 class DetallePedido(models.Model):
     
     
-    order = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='detalles')
+    order = models.ForeignKey(Pedido, on_delete=models.CASCADE, related_name='details')
     
     
     product_name = models.CharField(max_length=200)

@@ -8,7 +8,8 @@ from .models import Category, Producto, ClaseIngrediente, Ingrediente
 class IngredienteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingrediente
-        fields = ['id', 'name', 'additonal_price', 'created_at']
+        fields = ['id', 'name', 'additonal_price', 'class', 'created_at']
+        read_only_fields = ['id']
  
  
 #########Serializer para clase de ingredientes##########  

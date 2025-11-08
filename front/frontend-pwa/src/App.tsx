@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import MenuDigital from "./pages/MenuDigital";
 import DetalleProducto from "./pages/DetalleProducto";
+import PanelAdmin from "./pages/PanelAdmin";
+import GestionCatalogo from "./pages/GestionCatalogo";
 
 
 //carrito
@@ -10,6 +12,8 @@ import { CarritoProvider } from "./context/CarritoContext";
 
 //Checkout
 import Checkout from "./pages/Checkout";
+
+import EstadoPedido from "./pages/EstadoPedido";
 
 
 function App() {
@@ -28,7 +32,10 @@ function App() {
             <Route path="/carrito" element={<Carrito/>}/>
 
             <Route path="/checkout" element={<Checkout/>}/>
+            <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido/>} />
 
+            <Route path="/admin/catalogo" element={<GestionCatalogo />} />
+            <Route path="/admin/pedidos" element={<PanelAdmin />} /> {/* Nueva ruta de administración */}
             {/* TODO: Más tarde agregaremos rutas para /carrito, /contacto, /about, etc. */}
             <Route path="*" element={<h1 className="text-center p-10 text-xl">404 - Página no encontrada</h1>} />
           </Routes>
