@@ -23,7 +23,7 @@ const FiltrosMenu: React.FC<FiltrosMenuProp> = ({ categorias, filtroActivo, onSe
             className={`px-5 py-2 rounded-full font-semibold transitions-color duration-200
                                 ${
                                     filtroActivo === null
-                                    ? 'bg-amber-600 text-white hover:bg-amber-400'
+                                    ? 'bg-orange-600 text-white hover:bg-amber-300'
                                     : 'bg-gray-200 text-gray-800 hover:bg-amber-300'
                                 }
             `}
@@ -40,8 +40,8 @@ const FiltrosMenu: React.FC<FiltrosMenuProp> = ({ categorias, filtroActivo, onSe
                     onClick={() => onSelectFiltro(categoria.id)}
                     className={`px-5 py-2 rounded-full font-semibold transition-colors duration-200
                                 ${filtroActivo === categoria.id
-                                    ? 'bg-green-600 text-white shadow-md'
-                                    : 'bg-gray-200 text-gray-700 hover:bg-green-100'
+                                    ? 'bg-orange-600 text-white shadow-md'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-amber-300'
                                 }`
                     }
             

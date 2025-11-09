@@ -14,6 +14,7 @@ export interface Producto {
     category: number; // numerico por que es el id de la categoria
     category_name: string;
     is_active: boolean;
+     
 }
 
 
@@ -21,7 +22,9 @@ export interface Producto {
 export interface Ingrediente {
     id: number;
     name: string;
-    aditional_price: string;
+    additional_price: string;
+    unidad_abreviatura?: string;
+
 }
 
 export interface ClaseIngrediente {
@@ -74,3 +77,14 @@ export interface CarritoContextType {
 }
 
 
+
+export interface RecetaItem {
+    id?: number; // Opcional para nuevos ítems
+    product: number; // ID del producto
+    ingredient: number; // ID del ingrediente
+    quantity: string;
+    
+    // Campos de solo lectura para la vista:
+    producto_nombre?: string;
+    ingrediente_nombre?: string;
+}

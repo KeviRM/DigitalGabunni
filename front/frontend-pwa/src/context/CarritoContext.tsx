@@ -36,7 +36,7 @@ export const CarritoProvider: React.FC< {children: React.ReactNode}> = ({ childr
         if(personalizacion){
             Object.values(personalizacion).forEach(ingredientes => {
                 ingredientes.forEach(ing =>{
-                    precio += parseFloat(ing.aditional_price);
+                    precio += parseFloat(ing.additional_price);
                 });
             });
         }

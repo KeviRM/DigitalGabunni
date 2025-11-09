@@ -88,6 +88,10 @@ const MenuDigital : React.FC = () => {
 
     }, []);
 
+    const handleNavigateToPersonalizador = () => {
+        // Navega a una ruta específica para la creación de chapata desde cero
+        navigate('/personalizar/nueva'); 
+    };
 
     // Función para manejar la navegación al detalle
     const handleNavigateToDetail = (productoId: number) => {
@@ -114,7 +118,7 @@ const MenuDigital : React.FC = () => {
     return (
 
         <div className="min-h-screen bg-gray-50 p-6">
-            <h1 className="text-6xl font-extrabold text-gray-950 text-center mb-8 border-b-5 border-yellow-500 pb-3 mx-auto max-w">
+            <h1 className="text-6xl font-extrabold text-gray-950 text-center mb-8 border-b-5 border-gray-200 pb-3 mx-auto max-w">
                 Menú
             </h1>
         
@@ -127,6 +131,24 @@ const MenuDigital : React.FC = () => {
             />
 
             <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto max-w-6xl">
+
+
+            {/* --- Tarjeta Estática de Personalización (Criterio de Aceptación) --- */}
+             
+                
+              
+                <div 
+                    className="bg-orange-100 rounded-xl shadow-lg border-2 border-amber-500 p-6 transform hover:scale-[1.02] transition duration-300 cursor-pointer flex flex-col justify-center items-center text-center"
+                    onClick={handleNavigateToPersonalizador}
+                >
+                    <h3 className="text-2xl font-bold text-gray-700 mb-2"> Arma tu Propia Chapata</h3>
+                    <p className="text-gray-700">Elige tus ingredientes desde cero y calcula tu precio.</p>
+                    <button className="mt-4 bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold">
+                        Comenzar
+                    </button>
+                </div>
+
+
 
                 {productosFiltrados.length > 0 ? (
                     productosFiltrados.map(producto => (

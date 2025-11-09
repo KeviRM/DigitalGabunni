@@ -122,8 +122,8 @@ const DetalleProducto: React.FC = () => {
         // Lógica de cálculo 
         let costoAdicional = 0;
         Object.values(selecciones).forEach(ingredientes => {
-            ingredientes.forEach((ing: { aditional_price: string; }) => {
-                costoAdicional += parseFloat(ing.aditional_price);
+            ingredientes.forEach((ing: { additional_price: string; }) => {
+                costoAdicional += parseFloat(ing.additional_price);
             });
         });
         return precioBase + costoAdicional;
@@ -192,6 +192,7 @@ const DetalleProducto: React.FC = () => {
             </button>
             
             <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+
                 <div className="md:flex">
                     {/* Sección de Imagen y Descripción del Producto Base */}
                     <div className="md:w-1/2 p-6">
@@ -236,9 +237,9 @@ const DetalleProducto: React.FC = () => {
                                                             }`}
                                             >
                                                 {ingrediente.name} 
-                                                {parseFloat(ingrediente.aditional_price) > 0 && 
+                                                {Number(ingrediente.additional_price) > 0 && 
                                                     <span className="ml-1 text-xs font-medium"> 
-                                                      (+${parseFloat(ingrediente.aditional_price).toFixed(2)}) 
+                                                      (+${Number(ingrediente.additional_price).toFixed(2)}) 
                                                     </span>
                                                 }
                                             </button>
@@ -254,7 +255,7 @@ const DetalleProducto: React.FC = () => {
                 {/* Footer del Precio y Botón de Confirmación */}
                 <div className="bg-white p-6 border-t flex justify-between items-center sticky bottom-0">
                     <div className="text-3xl font-extrabold text-gray-900">
-                        Total Final: <span className="text-yellow-600">${precioTotal.toFixed(2)}</span>
+                        Total : <span className="text-yellow-600">${precioTotal.toFixed(2)}</span>
                     </div>
 
                     <button

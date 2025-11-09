@@ -4,7 +4,7 @@ import axios from "axios";
 import type{ Producto } from "../types/menu";
 
 
-const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/';
+const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
 
 
 const AUTH_HEADERS = {headers: {}};
@@ -27,7 +27,7 @@ const GestionCatalogo: React.FC = () => {
 const fetchProductos = async () => {
     setCargando(true);
     try{
-        const response = await axios.get<Producto[]>(`${CATALOGO_API_URL}productos/`, AUTH_HEADERS);
+        const response = await axios.get<Producto[]>(`${CATALOGO_API_URL}productos`, AUTH_HEADERS);
         setProductos(response.data);
     } catch(err) {
             console.error("Error al cargar productos de administración:", err);
@@ -84,15 +84,15 @@ useEffect(() => {
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
-            <h1 className="text-4xl font-extrabold text-gray-800 mb-8 border-b-4 border-yellow-500 pb-2 max-w-7xl mx-auto">
-                Administración de Catálogo 
+            <h1 className="text-4xl font-extrabold text-gray-800 mb-8 border-b-4 border-gray-200 pb-2 max-w-7xl mx-auto">
+                Administración de Productos
             </h1>
 
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* Columna 1: Formulario de Creación/Edición */}
                 <div className="lg:col-span-1 bg-white p-6 rounded-xl shadow-lg h-fit">
-                    <h2 className="text-2xl font-bold text-green-700 mb-4">
+                    <h2 className="text-2xl font-bold text-orange-700 mb-4">
                         {productoEditando ? `Editar: ${productoEditando.name}` : 'Crear Nuevo Producto'}
                     </h2>
                     
@@ -137,7 +137,7 @@ useEffect(() => {
                         <div className='flex gap-2'>
                             <button
                                 type="submit"
-                                className="flex-1 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
+                                className="flex-1 py-3 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 transition-colors"
                             >
                                 {productoEditando ? 'Guardar Cambios' : 'Crear Producto'}
                             </button>
