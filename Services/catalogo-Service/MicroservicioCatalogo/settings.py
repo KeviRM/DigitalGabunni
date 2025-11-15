@@ -20,7 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-4ci1u((#e+&!cz8fiohs!sm2140ae%-*)gkojre1!0z-ywm^*y'
+
+####Nota: La clave secreta debe ser la misma que la del microservicio de Auth
+SECRET_KEY = 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -54,6 +56,16 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+
+REST_FRAMEWORK = {
+    # para que Django intente autenticar con el token JWT
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
 
 
 

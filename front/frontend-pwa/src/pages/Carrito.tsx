@@ -18,9 +18,15 @@ const Carrito : React.FC = () => {
 
         const detalles: string[] = [];
         Object.values(personalizacion).forEach((ingredientes: any) =>{
-            ingredientes.foreach((ingredientes: any) =>{
-                detalles.push(ingredientes.name);
+            if (Array.isArray(ingredientes)) {
+            // Si es un array, podemos recorrerlo
+            ingredientes.forEach((ingrediente: any) => {
+                // Aquí extraemos el nombre de la forma correcta
+                if (ingrediente && ingrediente.name) {
+                    detalles.push(ingrediente.name);
+                }
             });
+          }
         });
         
 

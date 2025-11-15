@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 
 interface TarjetaProductoProps {
     producto: Producto;
-    // La función 'onPersonalizar' ahora será una función de navegación
     onNavigateToDetail: (productoId: number) => void; 
 }
 // Componente para mostrar un producto del menu
@@ -89,13 +88,10 @@ const MenuDigital : React.FC = () => {
     }, []);
 
     const handleNavigateToPersonalizador = () => {
-        // Navega a una ruta específica para la creación de chapata desde cero
         navigate('/personalizar/nueva'); 
     };
 
-    // Función para manejar la navegación al detalle
     const handleNavigateToDetail = (productoId: number) => {
-        // Navega a la ruta /producto/ID
         navigate(`/producto/${productoId}`);
     };
 
@@ -133,7 +129,7 @@ const MenuDigital : React.FC = () => {
             <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mx-auto max-w-6xl">
 
 
-            {/* --- Tarjeta Estática de Personalización (Criterio de Aceptación) --- */}
+            {/* --- Tarjeta Estática de Personalización  --- */}
              
                 
               
@@ -159,7 +155,7 @@ const MenuDigital : React.FC = () => {
                         />
                     ))
                 ) : (
-                    // ... (mensaje de no productos)
+                   
                     <p className="text-center text-gray-500 col-span-full">
                          No hay productos disponibles en esta categoría.
                     </p>

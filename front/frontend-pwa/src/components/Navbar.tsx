@@ -1,8 +1,10 @@
-import React, { use, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCarrito } from "../context/CarritoContext";
 import { FaShoppingCart,  FaUserCircle, FaTruck, FaTimes, FaBars } from "react-icons/fa";
-
+import LoginModal from "./LoginModal";
+import useAuth from "../hooks/useAuth";
+import gabunniImage from "../assets/gabunniLogo.jpg"
 
 
 
@@ -14,15 +16,16 @@ const Navbar : React.FC = () => {
     const [pedidoUUID, setPedidoUUID] = React.useState('');
     const [isOpen, setIsOpen] = useState(false);
 
+    const {isAuthenticated, logout} = useAuth();
+    const [ isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
 
-    const handleAdminLogin = () => {
-        navigate('/admin/pedidos');
-    };
+
+    
 
 
     const navItems = [
-    { name: 'MENÚ', path: '/' },
+    { name: 'MENÚ', path: '/menu' },
     { name: 'CONTACTOS', path: '/contacto' },   
     { name: 'SEGUIMIENTO', path: '/pedido/seguimiento', icon: <FaTruck className="mr-1" /> } 
     ];
@@ -37,6 +40,16 @@ const Navbar : React.FC = () => {
         }
     
     };
+
+
+    const handlePanelAccess = () => {
+    navigate('/admin'); 
+  }
+  
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false); 
+    handlePanelAccess(); 
+  };
 
 return (
     <header className="bg-white shadow-md border-b-4 border-orange-500 sticky top-0 z-40">
@@ -60,8 +73,7 @@ return (
 
           {/* Logo */}
           <Link to="/" className="shrink-0">
-            {/* Aquí iría el componente de la imagen del logo */}
-            <img src="/logo-gabunni.png" alt="Gabunni Logo" className="h-12 w-auto" /> 
+            <img src={gabunniImage} alt="Gabunni Logo" className="h-12 w-auto" /> 
           </Link>
 
           {/* Enlaces de Navegación Central */}
@@ -110,17 +122,37 @@ return (
             </Link>
 
             {/* Inicio de Sesión (Cliente/Admin) */}
-            <button 
-                onClick={handleAdminLogin}
-                className={ isOpen ?'hidden' : ' px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100'}
-            >
-              <FaUserCircle className="inline mr-1" /> Iniciar Sesión
-            </button>
-            
+            {isAuthenticated ? (
+              <button 
+                  onClick={handlePanelAccess}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <FaUserCircle className="inline mr-1" /> Panel Admin
+              </button>
+            ) : (
+              <button 
+                  onClick={() => setIsLoginModalOpen(true)} // Abrir modal
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <FaUserCircle className="inline mr-1" /> Iniciar Sesión
+              </button>
+            )}
+
+            {isAuthenticated && (
+              <button 
+                  onClick={logout}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600"
+              >
+                Cerrar Sesión
+              </button>
+            )}
+
             {/* Botón de Registro */}
-            <button className={ isOpen ? 'hidden' : '  px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600'}>
-              Registrate
-            </button>
+            {!isAuthenticated && (
+              <button className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600">
+                Registrate
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -170,7 +202,7 @@ return (
           {/* Login/Registro en Sidebar (Si fueron ocultados en la vista móvil) */}
           <div className='pt-4 space-y-2'>
             <button 
-                onClick={() => { handleAdminLogin(); setIsOpen(false); }}
+                onClick={() => { handlePanelAccess(); setIsOpen(false); }}
                 className="w-full py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100 flex justify-center items-center"
             >
               <FaUserCircle className="inline mr-2" /> Iniciar Sesión
@@ -178,6 +210,14 @@ return (
             <button className="w-full py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600">
               Registrate
             </button>
+
+
+
+            
+
+
+
+
           </div>
         </nav>
     </aside>
@@ -185,7 +225,12 @@ return (
 
 
 
-
+      {isLoginModalOpen && (
+        <LoginModal 
+          onClose={() => setIsLoginModalOpen(false)}
+          onSuccess={handleLoginSuccess}
+        />
+      )}
 
 
 

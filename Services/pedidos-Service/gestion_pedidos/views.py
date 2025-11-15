@@ -36,6 +36,6 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
     queryset = Pedido.objects.all().order_by('-created_at').prefetch_related('details')
     serializer_class = PedidoAdminSerializer
     lookup_field = 'order_number'
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     
     

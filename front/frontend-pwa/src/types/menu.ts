@@ -14,6 +14,7 @@ export interface Producto {
     category: number; // numerico por que es el id de la categoria
     category_name: string;
     is_active: boolean;
+    receta: RecetaItem[];
      
 }
 
@@ -87,4 +88,5 @@ export interface RecetaItem {
     // Campos de solo lectura para la vista:
     producto_nombre?: string;
     ingrediente_nombre?: string;
+    
 }

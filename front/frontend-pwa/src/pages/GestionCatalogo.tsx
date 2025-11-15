@@ -1,20 +1,33 @@
 
 import React, {useEffect, useState} from "react";
 import axios from "axios";
-import type{ Producto } from "../types/menu";
+import type{ Producto, Ingrediente } from "../types/menu";
+import useAuth from "../hooks/useAuth";
 
 
 const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
 
+interface Unidad {
+    id: number;
+    nombre: string;
+    abbreviation: string;
+}
 
-const AUTH_HEADERS = {headers: {}};
+interface IngredienteGestion extends Ingrediente {
+    unidad_medida: number | null; 
+}
 
 const GestionCatalogo: React.FC = () => {
+    const [unidades, setUnidades] = useState<Unidad[]>([]);
     const [productos, setProductos] = useState<Producto[]>([]);
     const [cargando, setCargando] = useState(true);
     const[productoEditando, setProductoEditando] =useState<Producto | null>(null);
 
+    const [ingredientesBase, setIngredientesBase] = useState<IngredienteGestion[]>([]);
 
+
+    const { getAuthHeaders, isAuthenticated } = useAuth();
+    const AUTH_HEADERS = {headers: getAuthHeaders()};
 
 
     const [nuevoProducto, setNuevoProducto] = useState({
@@ -24,11 +37,26 @@ const GestionCatalogo: React.FC = () => {
         category: 1,
     });
 
+
 const fetchProductos = async () => {
     setCargando(true);
+    if (!isAuthenticated) { 
+             alert("Acceso denegado. Debes iniciar sesión.");
+             setCargando(false);
+             return;
+    }
     try{
-        const response = await axios.get<Producto[]>(`${CATALOGO_API_URL}productos`, AUTH_HEADERS);
-        setProductos(response.data);
+
+        const [prodRes, unidadRes, ingRes] = await Promise.all([
+                axios.get<Producto[]>(`${CATALOGO_API_URL}productos/`, AUTH_HEADERS),
+                axios.get<Unidad[]>(`${CATALOGO_API_URL}unidades/`, AUTH_HEADERS), // Nuevo fetch de unidades
+                axios.get<IngredienteGestion[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS), 
+            ]);
+        setProductos(prodRes.data);
+        setUnidades(unidadRes.data);
+        setIngredientesBase(ingRes.data);
+
+
     } catch(err) {
             console.error("Error al cargar productos de administración:", err);
             alert("Error al cargar productos. ¿Estás logueado como administrador?");
@@ -41,6 +69,7 @@ const fetchProductos = async () => {
 
 useEffect(() => {
     fetchProductos();
+    
 }, []);
 
 
@@ -66,7 +95,7 @@ useEffect(() => {
         }
     };
 
-    // 3. Manejar la eliminación (CRUD: DELETE)
+    //  Manejar la eliminación (CRUD: DELETE)
     const handleDelete = async (id: number, nombre: string) => {
         if (!window.confirm(`¿Estás seguro de eliminar ${nombre}?`)) return;
 
@@ -80,7 +109,59 @@ useEffect(() => {
         }
     };
 
+
+
+
+
+    const handleUpdateIngrediente = async (ingredienteId: number, data: { unidad_medida: number | null }) => {
+        try {
+            await axios.patch(`${CATALOGO_API_URL}ingredientes/${ingredienteId}/`, data, AUTH_HEADERS);
+            
+            // --- ACTUALIZACIÓN LOCAL DEL ESTADO ---
+            // Encontramos la abreviatura de la unidad
+            const nuevaAbreviatura = unidades.find(u => u.id === data.unidad_medida)?.abbreviation || 'No asignada';
+
+            // Actualizamos el estado de ingredientesBase localmente
+            setIngredientesBase(prev => prev.map(i => 
+                i.id === ingredienteId 
+                    ? { 
+                        ...i, 
+                        ...data, 
+                        unidad_abreviatura: nuevaAbreviatura,
+                        unidad_medida: data.unidad_medida // Actualizar el ID para que el select se muestre correctamente
+                      } 
+                    : i
+            ));
+            alert("Unidad de medida asignada correctamente.");
+
+        } catch (err: any) {
+            console.error("Error al actualizar ingrediente:", err.response?.data || err);
+            alert("Fallo al actualizar el ingrediente.");
+        }
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     if (cargando) return <div className="text-center p-20">Cargando gestión de catálogo...</div>;
+
+
+    if (!isAuthenticated && !cargando) {
+        return <div className="text-center p-20 text-red-500">Acceso no autorizado. Por favor, inicia sesión.</div>;
+    }
+
+
 
     return (
         <div className="min-h-screen bg-gray-100 p-6">
@@ -195,8 +276,90 @@ useEffect(() => {
                 </div>
 
             </div>
+
+
+
+
+
+
+
+{/* Ingredientes y unidades */}
+
+
+
+
+
+
+
+            <div className="max-w-7xl mx-auto mt-10">
+                <h2 className="text-3xl font-bold text-gray-800 mb-6 border-b-2 pb-2">
+                    Gestión de Ingredientes
+                </h2>
+                
+                <div className="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
+                    {/* Usamos el mismo patrón de tabla para listar y editar ingredientes */}
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Add.</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad Actual</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignar Unidad</th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            {/* NOTA: Debes cargar los ingredientes para que 'ingredientesBase' exista. 
+                            Asumo que tienes la lista de ingredientes cargada desde una función similar a fetchIngredientes. */}
+                            {/* PENDIENTE: Reemplaza 'ingredientesBase' con tu estado actual de ingredientes cargados para gestión */}
+                            {ingredientesBase.map(ing => ( 
+                                <tr key={ing.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ing.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${Number(ing.additional_price).toFixed(2)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ing.unidad_abreviatura || 'No asignada'}</td>
+                                    
+                                    {/* Selector de Unidad */}
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <select
+                                            value={ing.unidad_medida || ''} // Si el campo de la API se llama unidad_medida
+                                            onChange={(e) => handleUpdateIngrediente(ing.id, { unidad_medida: Number(e.target.value) || null })}
+                                            className="p-2 border rounded-lg text-sm"
+                                        >
+                                            <option value="">---</option>
+                                            {unidades.map(unidad => (
+                                                <option key={unidad.id} value={unidad.id}>{unidad.abbreviation}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        {/* Puedes añadir un botón para editar otros campos (nombre, precio) en un modal */}
+                                        <button className="text-indigo-600 hover:text-indigo-900">Editar</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+
+
+                            
+
+
+
+    
+
+
+
+        
     );
+
+   
+
+
+
 };
 
 export default GestionCatalogo;

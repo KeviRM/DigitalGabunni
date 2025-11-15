@@ -31,16 +31,16 @@ export const CarritoProvider: React.FC< {children: React.ReactNode}> = ({ childr
     //Calcular el precio de un item
 
     const calcularPrecioUnitario = (productoBase: Producto, personalizacion?: {[claseId: number]: Ingrediente[] }): number => {
-        let precio = parseFloat(productoBase.price);
+        let price = parseFloat(productoBase.price);
 
         if(personalizacion){
             Object.values(personalizacion).forEach(ingredientes => {
                 ingredientes.forEach(ing =>{
-                    precio += parseFloat(ing.additional_price);
+                    price += parseFloat(ing.additional_price);
                 });
             });
         }
-        return precio;
+        return price;
     };
 
 

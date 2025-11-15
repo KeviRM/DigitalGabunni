@@ -10,7 +10,8 @@ from .views import (
     CategoriaGestionViewSet,
     IngredienteGestionViewSet,
     UnidadMedidaGestionViewSet,
-    ProductoIngredienteGestionViewSet
+    ProductoIngredienteGestionViewSet,
+    ClaseIngredienteGestionViewSet
 )
 
 
@@ -28,6 +29,7 @@ router_admin = DefaultRouter()
 router_admin.register(r'gestion/productos', ProductoGestionViewSet, basename='admin-productos')
 router_admin.register(r'gestion/categorias', CategoriaGestionViewSet, basename='admin-categorias')
 router_admin.register(r'gestion/ingredientes', IngredienteGestionViewSet, basename='admin-ingredientes')
+router_admin.register(r'gestion/personalizacion', ClaseIngredienteGestionViewSet, basename='admin-personalizacion')
 router_admin.register(r'gestion/unidades', UnidadMedidaGestionViewSet, basename='admin-unidades')
 router_admin.register(r'gestion/recetas', ProductoIngredienteGestionViewSet, basename='admin-recetas')
 

@@ -2,11 +2,18 @@ import React, {useState, useEffect} from "react";
 import axios from "axios";
 import  type { PedidoStatus } from '../types/pedido';
 
+import useAuth from "../hooks/useAuth";
 
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
 
+
+
+
+
 interface PedidoAdmin extends PedidoStatus{
+    phone_number: number;
+    client_name: string;
     estado_display: string;
 }
 
@@ -16,8 +23,8 @@ const ESTADOS = [
     { value: 'LISTO', label: 'Listo' },
     { value: 'ENTREGADO', label: 'Entregado' },
     { value: 'CANCELADO', label: 'Cancelado' },
-
 ];
+
 
 
 
@@ -26,21 +33,27 @@ const PanelAdmin: React.FC = () => {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // SIMULACIÓN DE HEADERS DE AUTENTICACIÓN
-    // Reemplaza 'YOUR_AUTH_TOKEN' con un token real si usas autenticación
-    const AUTH_HEADERS = { 
-        headers: {
-            // Simulación de un token de acceso. ¡Esto debe ser implementado!
-            // Authorization: `Bearer YOUR_AUTH_TOKEN`, 
-        }
-    };
     
-    // 1. Obtener la lista de pedidos al cargar
+   
+    const { getAuthHeaders, isAuthenticated } = useAuth();
+    
+
+    // Obtener la lista de pedidos al cargar
     const fetchPedidos = async () => {
         setCargando(true);
+
+        if(!isAuthenticated){
+            return;
+        }
+
+       
+
         try {
+
+             const AUTH_HEADERS = { headers: getAuthHeaders() };
+    
             // Llama al nuevo endpoint de gestión
-            const response = await axios.get<PedidoAdmin[]>(`${PEDIDOS_API_URL}gestion/`,AUTH_HEADERS);
+            const response = await axios.get<PedidoAdmin[]>(`${PEDIDOS_API_URL}gestion/`, AUTH_HEADERS);
             setPedidos(response.data);
             setError(null);
         } catch (err) {
@@ -61,6 +74,8 @@ const PanelAdmin: React.FC = () => {
     // Lógica para cambiar el estado
     const handleEstadoChange = async (pedidoId: string, nuevoEstado: string) => {
         try {
+            const AUTH_HEADERS = { headers: getAuthHeaders() };
+
             // PATCH al endpoint de detalle para actualizar solo el campo 'estado'
             await axios.patch(`${PEDIDOS_API_URL}gestion/${pedidoId}/`, 
                 { status: nuevoEstado }, 
@@ -116,7 +131,7 @@ const PanelAdmin: React.FC = () => {
                                     ))}
                                 </div>
 
-                                {/* Control de Estado (Criterio de Aceptación: Cambiar estado) */}
+                                {/* Control de Estado */}
                                 <div className="mt-4 flex items-center space-x-3">
                                     <label className="text-sm font-medium">Cambiar Estado:</label>
                                     <select
