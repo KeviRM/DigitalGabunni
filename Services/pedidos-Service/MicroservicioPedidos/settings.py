@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'gestion_pedidos'
 ]
 
@@ -58,13 +59,16 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 
 REST_FRAMEWORK = {
-    # **ESTO ES CLAVE** para que Django intente autenticar con el token JWT
+    # Django intente autenticar con el token JWT
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
 }
 
 

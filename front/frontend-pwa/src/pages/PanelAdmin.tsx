@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useCallback} from "react";
 import axios from "axios";
 import  type { PedidoStatus } from '../types/pedido';
 
@@ -26,12 +26,70 @@ const ESTADOS = [
 ];
 
 
+const ESTADOS_FILTRO = [
+    { value: 'CONFIRMADO', label: 'Confirmado' },
+    { value: 'PREPARACION', label: 'En Preparación' },
+    { value: 'LISTO', label: 'Listo' },
+    { value: 'ENTREGADO', label: 'Entregado' },
+    { value: 'CANCELADO', label: 'Cancelado' },
+];
+
+
 
 
 const PanelAdmin: React.FC = () => {
     const [pedidos, setPedidos] = useState<PedidoAdmin[]>([]);
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+
+// Filtros
+
+    const [filtros, setFiltros] = useState({
+        estados: [] as string[], // Almacena múltiples estados seleccionados
+        fecha_inicio: '',
+        fecha_fin: '',
+        busqueda: '',
+    })
+
+
+
+
+    const buildQueryUrl = useCallback(() => {
+        const params = new URLSearchParams();
+        
+        // Filtro por Estado (Multiple)
+        filtros.estados.forEach(estado => {
+            params.append('status', estado);
+        });
+        
+        // Filtro por Rango de Fechas
+        if (filtros.fecha_inicio) params.append('fecha_rango_after', filtros.fecha_inicio);
+        if (filtros.fecha_fin) params.append('fecha_rango_before', filtros.fecha_fin);
+
+        // Filtro de Búsqueda (UUID o Cliente)
+        if (filtros.busqueda) params.append('busqueda', filtros.busqueda);
+        
+        return `${PEDIDOS_API_URL}gestion/?${params.toString()}`;
+    }, [filtros]);
+
+
+//////
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
 
     
    
@@ -50,10 +108,13 @@ const PanelAdmin: React.FC = () => {
 
         try {
 
+
              const AUTH_HEADERS = { headers: getAuthHeaders() };
+
+             const url = buildQueryUrl();
     
             // Llama al nuevo endpoint de gestión
-            const response = await axios.get<PedidoAdmin[]>(`${PEDIDOS_API_URL}gestion/`, AUTH_HEADERS);
+            const response = await axios.get<PedidoAdmin[]>(url, AUTH_HEADERS);
             setPedidos(response.data);
             setError(null);
         } catch (err) {
@@ -65,11 +126,48 @@ const PanelAdmin: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchPedidos();
+        if(isAuthenticated){
+            fetchPedidos();
+            
+            // const interval = setInterval(fetchPedidos, 30000);
+            // return () => clearInterval(interval);
+        }
 
-        const interval = setInterval(fetchPedidos, 30000);
-        return () => clearInterval(interval);
-    }, []);
+    }, [isAuthenticated, filtros]);
+
+
+
+
+
+
+    ///CHECKBOXS DE ESTADO
+
+
+    const handleEstadoToggle = (estado: string) => {
+        setFiltros(prev => {
+            const nuevosEstados = prev.estados.includes(estado)
+                ? prev.estados.filter(e => e !== estado)
+                : [...prev.estados, estado];
+            return { ...prev, estados: nuevosEstados };
+        });
+    };
+    
+
+
+    // Resetear todos los filtros 
+    const handleResetFiltros = () => {
+        setFiltros({
+            estados: [],
+            fecha_inicio: '',
+            fecha_fin: '',
+            busqueda: '',
+        });
+    };
+
+
+
+
+
 
     // Lógica para cambiar el estado
     const handleEstadoChange = async (pedidoId: string, nuevoEstado: string) => {
@@ -100,6 +198,105 @@ const PanelAdmin: React.FC = () => {
             <h1 className="text-4xl font-extrabold text-gray-800 mb-8 border-b-4 border-orange-600 pb-2 max-w-7xl mx-auto">
                 Panel de Control de Pedidos 
             </h1>
+
+
+
+
+
+
+
+                {/* --- Interfaz de Filtros Combinados --- */}
+            <div className="max-w-7xl mx-auto bg-white p-6 rounded-xl shadow-lg mb-8">
+                <h2 className="text-xl font-bold text-gray-700 mb-4">Filtros Avanzados</h2>
+                
+                {/* Fila de Búsqueda y Fechas */}
+                <div className="flex flex-wrap gap-4 mb-4 items-end">
+                    
+                    {/* Búsqueda por Texto */}
+                    <div className='flex-1 min-w-[200px]'>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Buscar por Cliente/UUID</label>
+                        <input
+                            type="text"
+                            placeholder="Nombre o #UUID"
+                            value={filtros.busqueda}
+                            onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
+                            className="w-full p-2 border rounded-lg"
+                        />
+                    </div>
+                    
+                    {/* Filtro Fecha Inicio */}
+                    <div className='min-w-[150px]'>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+                        <input
+                            type="date"
+                            value={filtros.fecha_inicio}
+                            onChange={(e) => setFiltros({ ...filtros, fecha_inicio: e.target.value })}
+                            className="p-2 border rounded-lg"
+                        />
+                    </div>
+                    
+                    {/* Filtro Fecha Fin */}
+                    <div className='min-w-[150px]'>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
+                        <input
+                            type="date"
+                            value={filtros.fecha_fin}
+                            onChange={(e) => setFiltros({ ...filtros, fecha_fin: e.target.value })}
+                            className="p-2 border rounded-lg"
+                        />
+                    </div>
+                    
+                    {/* Botón de Reset */}
+                    <button 
+                        onClick={handleResetFiltros} 
+                        className="p-2 h-fit bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                        Resetear Filtros
+                    </button>
+                </div>
+
+                {/* Fila de Filtro por Estado */}
+                <div className="mt-4 border-t pt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por Estado:</label>
+                    <div className="flex flex-wrap gap-3">
+                        {ESTADOS_FILTRO.map(status => (
+                            <button
+                                key={status.value}
+                                onClick={() => handleEstadoToggle(status.value)}
+                                className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-colors ${
+                                    filtros.estados.includes(status.value) 
+                                        ? 'bg-blue-600 text-white shadow-md' 
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                {status.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+            </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             <div className="max-w-7xl mx-auto">
                 {pedidos.length === 0 ? (

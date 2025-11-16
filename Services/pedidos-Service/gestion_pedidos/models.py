@@ -4,18 +4,18 @@ import uuid
 # Create your models here.
 
 
-STATUS_CHOISE =[
-    ('CONFIRMADO', 'confirmado'),
-    ('PREPARACION', 'En Preparación'),    
-    ('LISTO', 'Listo para Recoger/Enviar'),
-    ('ENTREGADO', 'Entregado'),
-    ('CANCELADO', 'Cancelado'),
-]
 
 
 class Pedido(models.Model):
     order_number = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     
+    STATUS_CHOISE =[
+        ('CONFIRMADO', 'confirmado'),
+        ('PREPARACION', 'En Preparación'),    
+        ('LISTO', 'Listo para Recoger/Enviar'),
+        ('ENTREGADO', 'Entregado'),
+        ('CANCELADO', 'Cancelado'),
+    ]
     
     client_name = models.CharField(max_length=100)
     email = models.EmailField(blank=True, null=True)

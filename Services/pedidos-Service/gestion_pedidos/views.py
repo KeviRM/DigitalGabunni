@@ -7,7 +7,7 @@ from .serializers import (
     PedidoEstadoSerializer,
     PedidoAdminSerializer
 )
-
+from .filters import PedidoFilter
 
 # Create your views here.
 
@@ -37,5 +37,6 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
     serializer_class = PedidoAdminSerializer
     lookup_field = 'order_number'
     permission_classes = [IsAuthenticated]
+    filterset_class = PedidoFilter
     
     
