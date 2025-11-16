@@ -17,21 +17,27 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from usuarios.views import RegistroView
+
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from usuarios.serializers import CustomTokenObtainPairSerializer
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     
     #Endpoint principal para obtener el Access y Refresh Token
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/', TokenObtainPairView.as_view(serializer_class=CustomTokenObtainPairSerializer), name='token_obtain_pair'),
     
     #### Enpoint Renovar el Access Token
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
+    
+    
+    path('api/registro/', RegistroView.as_view(), name='registro_usuario'),
     
     ####urls de Django Auth => para la gestion de usus
     

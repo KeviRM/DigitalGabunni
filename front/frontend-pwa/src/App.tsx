@@ -10,9 +10,13 @@ import MenuDigital from "./pages/MenuDigital";
 import DetalleProducto from "./pages/DetalleProducto";
 import Personalizador from "./pages/Personalizador";
 
+import Login from "./pages/Login";
+import Registro from "./pages/Registro";
 
-import PanelAdmin from "./pages/PanelAdmin";
+import AdminLayout from "./layouts/AdminLayout";
+
 import AdminDashboard from "./pages/AdminDashboard";
+import PanelAdmin from "./pages/PanelAdmin";
 import GestionCatalogo from "./pages/GestionCatalogo";
 import GestionRecetas from "./pages/GestionRecetas";
 import GestionUnidades from "./pages/GestionUnidades";
@@ -38,45 +42,58 @@ function App() {
       <div className="App">
         <Navbar/>
         <Routes>
-             <Route path="/" element={<Welcome/>} />
+
+          {/* Rutas Publicas */}
+
+            <Route path="/" element={<Welcome/>} /> 
+
+            <Route path="/registro" element={<Registro />} />
+            <Route path="/login" element={<Login />} />
 
             <Route path="/contacto" element={<Contactos />} />
-            {/* Ruta para el menú principal */}
             <Route path="/menu" element={<MenuDigital/>} />
-            
-            {/* Producto establecido */}
             <Route path="/producto/:productoId" element={<DetalleProducto />} />
-            
             {/* Personalizacion de chapata */}
-
-
             <Route path="/personalizar/nueva" element={<Personalizador />} />
-
-
             <Route path="/carrito" element={<Carrito/>}/>
 
             <Route path="/checkout" element={<Checkout/>}/>
             <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido/>} />
 
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/recetas" element={<GestionRecetas />} />
-            <Route path="/admin/catalogo" element={<GestionCatalogo />} />
-            <Route path="/admin/pedidos" element={<PanelAdmin />} /> 
-            <Route path="/admin/unidades" element={<GestionUnidades />} />
 
-            <Route path="/admin/cocina" element= {<ModuloCocina/>}/>
 
-            <Route path="/admin/ingredientes" element={<GestionIngredientes />} />
 
+            <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+
+                <Route path="dashboard" element={<AdminDashboard />} /> {/* Si queremos una ruta explícita */}
+                <Route path="pedidos" element={<PanelAdmin />} /> 
+                <Route path="cocina" element={<ModuloCocina />} />
+                <Route path="catalogo" element={<GestionCatalogo />} />
+                <Route path="ingredientes" element={<GestionIngredientes />} />
+                <Route path="unidades" element={<GestionUnidades />} />
+                <Route path="recetas" element={<GestionRecetas />} />
+                {/* La ruta 'usuarios' queda para la futura implementación */}
+                <Route path="usuarios" element={<div>Gestión de Usuarios (Pendiente)</div>} />
+            
+            </Route>
+
+
+            
+
+
+
+           
 
             <Route path="*" element={<h1 className="text-center p-10 text-xl">404 - Página no encontrada</h1>} />
-          </Routes>
+        </Routes>
 
           <Footer />
       </div> 
     </CarritoProvider>
     
   </Router>
+
   );
   
   

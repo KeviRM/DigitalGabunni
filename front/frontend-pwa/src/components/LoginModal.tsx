@@ -21,14 +21,16 @@ const LoginModal: React.FC<LoginModalProps> = ({ onClose, onSuccess }) => {
     setCargando(true);
 
     // Llamar a la lógica de Login con los credenciales
-    const success = await login(username, password);
+    const result = await login(username, password);
 
-    if (success) {
-      onSuccess(); // Función de éxito (ej: redirigir o cerrar modal)
-    } else {
-      setError('Credenciales inválidas. Por favor, verifica tu usuario y contraseña.');
-    }
-    setCargando(false);
+    if (result.success) {
+            // Pasamos el rol para la redirección 
+            onSuccess(result.role); 
+        } else {
+            setError('Credenciales inválidas. Por favor, verifica tu usuario y contraseña.'); 
+        }
+        setCargando(false);
+    
   };
 
   return (

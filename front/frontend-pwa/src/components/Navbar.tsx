@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCarrito } from "../context/CarritoContext";
 import { FaShoppingCart,  FaUserCircle, FaTruck, FaTimes, FaBars } from "react-icons/fa";
-import LoginModal from "./LoginModal";
 import useAuth from "../hooks/useAuth";
 import gabunniImage from "../assets/gabunniLogo.jpg"
 
@@ -17,7 +16,6 @@ const Navbar : React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
 
     const {isAuthenticated, logout} = useAuth();
-    const [ isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
 
 
@@ -46,10 +44,7 @@ const Navbar : React.FC = () => {
     navigate('/admin'); 
   }
   
-  const handleLoginSuccess = () => {
-    setIsLoginModalOpen(false); 
-    handlePanelAccess(); 
-  };
+  
 
 return (
     <header className="bg-white shadow-md border-b-4 border-orange-500 sticky top-0 z-40">
@@ -130,13 +125,16 @@ return (
                 <FaUserCircle className="inline mr-1" /> Panel Admin
               </button>
             ) : (
+              <Link to="/login" className="hidden sm:block">
               <button 
-                  onClick={() => setIsLoginModalOpen(true)} // Abrir modal
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+
               >
                 <FaUserCircle className="inline mr-1" /> Iniciar Sesión
               </button>
+            </Link>
             )}
+
 
             {isAuthenticated && (
               <button 
@@ -147,11 +145,13 @@ return (
               </button>
             )}
 
-            {/* Botón de Registro */}
             {!isAuthenticated && (
-              <button className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600">
-                Registrate
-              </button>
+              <Link to="/registro" className="hidden sm:block">
+                <button className="px-4 py-2 bg-orange-500 text-white rounded-lg text-sm font-medium hover:bg-orange-600">
+                  Regístrate
+                </button>
+              </Link>
+            
             )}
           </div>
         </div>
@@ -201,16 +201,31 @@ return (
           
           {/* Login/Registro en Sidebar (Si fueron ocultados en la vista móvil) */}
           <div className='pt-4 space-y-2'>
-            <button 
-                onClick={() => { handlePanelAccess(); setIsOpen(false); }}
-                className="w-full py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-100 flex justify-center items-center"
-            >
-              <FaUserCircle className="inline mr-2" /> Iniciar Sesión
-            </button>
-            <button className="w-full py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600">
-              Registrate
-            </button>
+            {isAuthenticated ? (
+              <button 
+                  onClick={handlePanelAccess}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+              >
+                <FaUserCircle className="inline mr-1" /> Panel Admin
+              </button>
+            ) : (
+              <Link to="/login" onClick={() => setIsOpen(false)} className="hidden sm:block">
+              <button 
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
 
+              >
+                <FaUserCircle className="inline mr-1" /> Iniciar Sesión
+              </button>
+            </Link>
+            )}
+              
+            {!isAuthenticated && (
+                <Link to="/registro" onClick={() => setIsOpen(false)}>
+                    <button className="w-full py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600">
+                      Registrate
+                    </button>
+                </Link>
+            )}
 
 
             
@@ -225,12 +240,7 @@ return (
 
 
 
-      {isLoginModalOpen && (
-        <LoginModal 
-          onClose={() => setIsLoginModalOpen(false)}
-          onSuccess={handleLoginSuccess}
-        />
-      )}
+      
 
 
 
