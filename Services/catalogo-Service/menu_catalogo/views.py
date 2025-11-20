@@ -8,7 +8,9 @@ from .models import (
     Ingrediente, 
     ClaseIngrediente,
     UnidadMedida,
-    ProductoIngrediente
+    ProductoIngrediente,
+    PaqueteProducto,
+    Paquete
     )
 from .serializers import (
     CategoriaSerializer,
@@ -17,11 +19,14 @@ from .serializers import (
     IngredienteSerializer,
     UnidadMedidaSerializer,
     UnidadMedidaAdminSerializer,
-    ProductoIngredienteAdminSerializer
+    ProductoIngredienteAdminSerializer,
+    PaqueteAdminSerializer,
+    PaqueteProductoSerializer,
+    PaquetePublicoSerializer
 )
 # Create your views here.
 
-class ProductoViewSet(viewsets.ModelViewSet):
+class ProductoViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Producto.objects.filter(is_active=True).select_related('category')
     serializer_class = ProductoSerializer
     permission_classes = [AllowAny]
@@ -97,4 +102,35 @@ class ProductoIngredienteGestionViewSet(viewsets.ModelViewSet):
         if product_id:
             queryset = queryset.filter(product_id=product_id)
         return queryset
+    
+    
+    
+    
+    
+### --- ViewSet Público  ---
+class PaquetePublicoViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Paquete.objects.filter(is_active=True).prefetch_related('items', 'items__product')
+    serializer_class = PaquetePublicoSerializer
+    permission_classes = [AllowAny]
+    
+    
+
+
+##### ViewSet de Gestión (CRUD para Admin) ---
+class PaqueteGestionViewSet(viewsets.ModelViewSet):
+    queryset = Paquete.objects.all().prefetch_related('items', 'items__product')
+    serializer_class = PaqueteAdminSerializer
+    permission_classes = [IsAuthenticated]
+
+
+# --- ViewSet de Gestión de Items  ---
+class PaqueteProductoGestionViewSet(viewsets.ModelViewSet):
+    queryset = PaqueteProducto.objects.all().select_related('package', 'product')
+    serializer_class = PaqueteProductoSerializer
+    permission_classes = [IsAuthenticated]
+
+
+
+
+
     

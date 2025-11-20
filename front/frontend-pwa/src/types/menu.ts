@@ -45,6 +45,7 @@ export interface ClaseIngrediente {
 export interface ItemCarrito
 {
 
+   
     idUnico: string;
     productoBase: Producto;
     cantidad: number;
@@ -55,6 +56,12 @@ export interface ItemCarrito
     personalizacion?: {
         [claseId: number]: Ingrediente[];
     };
+
+
+    contenidoPaquete?: {
+        product_name: string;
+        quantity: number;
+    }[];
 
 
 }
@@ -89,4 +96,24 @@ export interface RecetaItem {
     producto_nombre?: string;
     ingrediente_nombre?: string;
     
+}
+
+
+
+
+export interface PaqueteItemPublico {
+    id: number;
+    product: number;
+    product_name: string;
+    quantity: number;
+}
+
+export interface Paquete {
+    id: number;
+    name: string;
+    description: string;
+    price: string;
+    image: string | null;
+    discount: string;
+    items: PaqueteItemPublico[];
 }

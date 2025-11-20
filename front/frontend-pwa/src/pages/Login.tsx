@@ -2,7 +2,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUserCircle, FaLock, FaTimes, FaGoogle } from 'react-icons/fa';
-import useAuth from '../hooks/useAuth'; 
+import useAuth from '../hooks/useAuth';
+import gabunniImage from "../assets/gabunniLogo.jpg";
+
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -61,7 +63,7 @@ const Login: React.FC = () => {
             <div className="w-full max-w-sm bg-white p-8 rounded-xl shadow-2xl border-t-8 border-orange-500">
                 
                 <div className="flex justify-between items-center mb-6">
-                    <img src="/logo-gabunni.png" alt="Gabunni Logo" className="h-10 w-auto" />
+                    <img src={gabunniImage} alt="Gabunni Logo" className="h-10 w-auto" />
                     <button onClick={() => navigate(-1)} className="px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600">
                         Volver
                     </button>

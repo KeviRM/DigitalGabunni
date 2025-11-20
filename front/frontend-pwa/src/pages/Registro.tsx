@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaGoogle, FaUserPlus } from 'react-icons/fa';
 import axios from 'axios';
-import gabunniImage from "../assets/gabunniLogo.jpg"
+import gabunniImage from "../assets/gabunniLogo.jpg";
 
 
 const REGISTRO_API_URL = 'http://127.0.0.1:8002/api/registro/'; 
@@ -137,7 +137,7 @@ const Registro: React.FC = () => {
                         onChange={handleChange}
                         className="w-full p-3 border rounded-lg"
                     />
-                    {errores.numero_telefono && <p className="text-red-500 text-xs mt-1">{errores.numero_telefono}</p>}
+                    {errores.phone_number && <p className="text-red-500 text-xs mt-1">{errores.phone_number}</p>}
 
                     {/* Fila: Contraseñas */}
                     <div className="flex gap-4">

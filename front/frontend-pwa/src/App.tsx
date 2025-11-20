@@ -21,6 +21,7 @@ import GestionCatalogo from "./pages/GestionCatalogo";
 import GestionRecetas from "./pages/GestionRecetas";
 import GestionUnidades from "./pages/GestionUnidades";
 import GestionIngredientes from "./pages/GestionIngrediente";
+import GestionPaquetes from "./pages/GestionPaquetes";
 
 import ModuloCocina from "./pages/ModuloCocina";
 
@@ -73,6 +74,7 @@ function App() {
                 <Route path="ingredientes" element={<GestionIngredientes />} />
                 <Route path="unidades" element={<GestionUnidades />} />
                 <Route path="recetas" element={<GestionRecetas />} />
+                <Route path="/admin/paquetes" element={<GestionPaquetes />} />
                 {/* La ruta 'usuarios' queda para la futura implementación */}
                 <Route path="usuarios" element={<div>Gestión de Usuarios (Pendiente)</div>} />
             

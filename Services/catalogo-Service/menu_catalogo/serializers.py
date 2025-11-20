@@ -1,7 +1,16 @@
 
 
 from rest_framework import serializers
-from .models import Category, Producto, ClaseIngrediente, Ingrediente, UnidadMedida, ProductoIngrediente
+from .models import (
+    Category, 
+    Producto, 
+    ClaseIngrediente, 
+    Ingrediente, 
+    UnidadMedida, 
+    ProductoIngrediente,
+    Paquete,
+    PaqueteProducto
+    )
 
 
 #######Serializer para los Ingredientes #########
@@ -76,6 +85,7 @@ class ProductoSerializer(serializers.ModelSerializer):
             'name',
             'description',
             'price',
+            'image',
             'category',
             'category_name',
             'is_active',
@@ -115,3 +125,58 @@ class ProductoIngredienteAdminSerializer(serializers.ModelSerializer):
     
         fields = ['id', 'product', 'ingredient', 'quantity', 'producto_nombre', 'ingrediente_nombre']
         read_only_fields = ['id', 'producto_nombre', 'ingrediente_nombre']
+        
+        
+        
+        
+        
+        
+        
+        ####################3Paquetesss######33333
+        
+        
+        
+        
+        
+class PaqueteProductoSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
+    
+    class Meta:
+        model = PaqueteProducto
+        fields = ['id', 'product', 'package', 'product_name', 'quantity']
+        
+        
+        
+        
+####Crud para admin
+        
+class PaqueteAdminSerializer(serializers.ModelSerializer):
+    items = PaqueteProductoSerializer(many=True, read_only=True) 
+    
+    class Meta:
+        model = Paquete
+        fields = '__all__'
+        
+        
+####Serializer para datos activos para menu del cliente
+
+class PaquetePublicoSerializer(serializers.ModelSerializer):
+    items = PaqueteProductoSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Paquete
+        fields = ['id', 'name', 'description', 'price', 'image', 'discount', 'items']
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

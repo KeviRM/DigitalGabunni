@@ -3,6 +3,7 @@ import React, {useEffect, useState} from "react";
 import axios from "axios";
 import type{ Producto, Ingrediente } from "../types/menu";
 import useAuth from "../hooks/useAuth";
+import ImageUploader from "../components/ImageUploader";
 
 
 const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
@@ -20,6 +21,10 @@ interface IngredienteGestion extends Ingrediente {
 const GestionCatalogo: React.FC = () => {
     const [unidades, setUnidades] = useState<Unidad[]>([]);
     const [productos, setProductos] = useState<Producto[]>([]);
+
+    const [fileToUpload, setFileToUpload] = useState<File | null>(null);
+
+
     const [cargando, setCargando] = useState(true);
     const[productoEditando, setProductoEditando] =useState<Producto | null>(null);
 
@@ -73,22 +78,52 @@ useEffect(() => {
 }, []);
 
 
-// 2. Manejar la creación/actualización (CRUD: POST/PUT)
+//  Manejar la creación/actualización (CRUD: POST/PUT)
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Crea FormData para enviar texto y el archivo binario
+        const formData = new FormData();
+
+        // Añadir campos de texto
+        const data = productoEditando || nuevoProducto;
+        for (const key in data) {
+            // Excluir claves que no son necesarias o no existen en el modelo (como id)
+            if (key !== 'id') {
+                 // Añadimos solo los campos de texto
+                formData.append(key, data[key] === null ? '' : String(data[key]));
+            }
+        }
+
+        //  Añadir el archivo 
+        if (fileToUpload) {
+            formData.append('image', fileToUpload, fileToUpload.name);
+        } else if (productoEditando && !productoEditando.image) {
+             // Si no hay archivo y estamos editando, puedes añadir una señal para que Django borre la imagen si el usuario la quitó.
+             // Esto requiere lógica extra en Django, pero es buena práctica.
+        }
+
+        
+       
+        //  Configurar headers para la subida de archivos
+        const headers = { 
+            ...AUTH_HEADERS.headers, 
+            'Content-Type': 'multipart/form-data' 
+        };
         try {
             if (productoEditando) {
                 // PUT/PATCH para actualizar el producto existente (Criterio de Aceptación: Modificar)
-                await axios.put(`${CATALOGO_API_URL}productos/${productoEditando.id}/`, productoEditando, AUTH_HEADERS);
+                await axios.put(`${CATALOGO_API_URL}productos/${productoEditando.id}/`, formData, { headers });
                 alert(`Producto ${productoEditando.name} actualizado.`);
                 setProductoEditando(null);
             } else {
                 // POST para crear un nuevo producto (Criterio de Aceptación: Agregar)
-                await axios.post(`${CATALOGO_API_URL}productos/`, nuevoProducto, AUTH_HEADERS);
+                await axios.post(`${CATALOGO_API_URL}productos/`,  formData, { headers } );
                 alert(`Producto ${nuevoProducto.name} creado.`);
                 setNuevoProducto({ name: '', description: '', price: '0.00', category: 1 });
             }
             fetchProductos(); // Recargar la lista
+            setFileToUpload(null);
         } catch (err: any) {
             console.error("Error en la operación CRUD:", err.response?.data || err);
             alert("Fallo en la operación. Revisa la consola.");
@@ -108,6 +143,41 @@ useEffect(() => {
             alert("Fallo al eliminar el producto.");
         }
     };
+
+
+
+
+
+
+
+
+    const handleToggleDisponible = async (productoId: number, estadoActual: boolean) => {
+        const nuevoEstado = !estadoActual;
+        
+        try {
+            // PATCH a la API de gestión de productos con el nuevo estado
+            await axios.patch(`${CATALOGO_API_URL}productos/${productoId}/`, 
+                { is_active: nuevoEstado }, 
+                AUTH_HEADERS
+            );
+            
+            // Actualizar el estado local para reflejar el cambio en la tabla
+            setProductos(productos.map(p => 
+                p.id === productoId ? { ...p, is_active: nuevoEstado } : p
+            ));
+            
+            alert(`Producto ${nuevoEstado ? 'activado' : 'desactivado'} correctamente.`);
+            
+        } catch (err: any) {
+            console.error("Error al cambiar disponibilidad:", err.response?.data || err);
+            alert("Fallo al actualizar la disponibilidad del producto.");
+        }
+    };
+
+
+
+
+
 
 
 
@@ -214,6 +284,30 @@ useEffect(() => {
                             className="w-full p-3 border rounded-lg mb-4"
                             required
                         />
+
+
+
+
+
+                        {/* Componente de Subida de Imagen Drag & Drop */}
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Foto del Producto</label>
+                            <ImageUploader 
+                                // Si estamos editando, pasamos la URL actual para la previsualización 
+                                currentImageUrl={productoEditando?.image || null} 
+                                onFileSelect={setFileToUpload} // Guardamos el archivo seleccionado en el estado
+                                disabled={cargando}
+                            />
+                        </div>
+
+
+
+
+
+
+
+
+
                         {/* Botones */}
                         <div className='flex gap-2'>
                             <button
@@ -235,7 +329,7 @@ useEffect(() => {
                     </form>
                 </div>
 
-                {/* Columna 2: Tabla de Productos */}
+                {/* Columna : Tabla de Productos */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
                     <h2 className="text-2xl font-bold text-gray-800 mb-4">Productos Actuales</h2>
                     <table className="min-w-full divide-y divide-gray-200">
@@ -245,6 +339,7 @@ useEffect(() => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Disponibilidad</th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                             </tr>
                         </thead>
@@ -255,6 +350,23 @@ useEffect(() => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{producto.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${Number(producto.price).toFixed(2)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{producto.category_name || producto.category}</td>
+
+                                    {/* Columna de Control de Disponibilidad */}
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={producto.is_active}
+                                                onChange={() => handleToggleDisponible(producto.id!, producto.is_active)}
+                                                className="sr-only peer"
+                                                disabled={cargando}
+                                            />
+                                            <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-2px after:left-2px after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all ${producto.is_active ? 'peer-checked:bg-green-600' : ''}`}></div>
+                                            <span className={`ml-3 text-sm font-medium ${producto.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                                                {producto.is_active ? 'ACTIVO' : 'OCULTO'}
+                                            </span>
+                                        </label>
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button 
                                             onClick={() => setProductoEditando(producto)}
@@ -278,70 +390,6 @@ useEffect(() => {
             </div>
 
 
-
-
-
-
-
-{/* Ingredientes y unidades */}
-
-
-
-
-
-
-
-            <div className="max-w-7xl mx-auto mt-10">
-                <h2 className="text-3xl font-bold text-gray-800 mb-6 border-b-2 pb-2">
-                    Gestión de Ingredientes
-                </h2>
-                
-                <div className="bg-white p-6 rounded-xl shadow-lg overflow-x-auto">
-                    {/* Usamos el mismo patrón de tabla para listar y editar ingredientes */}
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio Add.</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unidad Actual</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignar Unidad</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {/* NOTA: Debes cargar los ingredientes para que 'ingredientesBase' exista. 
-                            Asumo que tienes la lista de ingredientes cargada desde una función similar a fetchIngredientes. */}
-                            {/* PENDIENTE: Reemplaza 'ingredientesBase' con tu estado actual de ingredientes cargados para gestión */}
-                            {ingredientesBase.map(ing => ( 
-                                <tr key={ing.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ing.name}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${Number(ing.additional_price).toFixed(2)}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ing.unidad_abreviatura || 'No asignada'}</td>
-                                    
-                                    {/* Selector de Unidad */}
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <select
-                                            value={ing.unidad_medida || ''} // Si el campo de la API se llama unidad_medida
-                                            onChange={(e) => handleUpdateIngrediente(ing.id, { unidad_medida: Number(e.target.value) || null })}
-                                            className="p-2 border rounded-lg text-sm"
-                                        >
-                                            <option value="">---</option>
-                                            {unidades.map(unidad => (
-                                                <option key={unidad.id} value={unidad.id}>{unidad.abbreviation}</option>
-                                            ))}
-                                        </select>
-                                    </td>
-                                    
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        {/* Puedes añadir un botón para editar otros campos (nombre, precio) en un modal */}
-                                        <button className="text-indigo-600 hover:text-indigo-900">Editar</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
 

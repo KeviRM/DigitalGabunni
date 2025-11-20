@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,6 +28,14 @@ SECRET_KEY = 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
+
+# Definición de la carpeta base (si usas Pathlib)
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Rutas para archivos subidos por el usuario (tus imágenes)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 # Application definition

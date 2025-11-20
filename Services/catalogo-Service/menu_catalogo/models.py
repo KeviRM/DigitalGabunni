@@ -84,4 +84,36 @@ class ProductoIngrediente(models.Model):
     def __str__(self):
         return f"{self.product.name} usa {self.ingredient.name}"
     
+
+
+
+class Paquete(models.Model):
+    name = models.CharField(max_length=150)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=8, decimal_places=2)
+    image = models.ImageField(upload_to='paquetes/', blank=True, null=True)
+    discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    is_active = models.BooleanField(default=True)
     
+    
+    def __str__(self):
+        return f"Paquete: {self.name} ({self.discount}% OFF)"
+
+
+
+
+
+
+class PaqueteProducto(models.Model):
+ 
+    package = models.ForeignKey(Paquete, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1) # Cantidad de este producto en el paquete
+    
+    class Meta:
+        unique_together = ('package', 'product')
+        verbose_name = "Item de Paquete"
+        
+    def __str__(self):
+        return f"{self.quantity}x {self.product.name} en {self.package.name}"
+

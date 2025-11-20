@@ -16,8 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from gestion_pedidos.views import AnalyticsView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/pedidos/', include('gestion_pedidos.urls')),
+    
+    path('api/v1/analytics/', AnalyticsView.as_view(), name='analytics-data')
 ]

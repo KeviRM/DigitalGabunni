@@ -11,7 +11,10 @@ from .views import (
     IngredienteGestionViewSet,
     UnidadMedidaGestionViewSet,
     ProductoIngredienteGestionViewSet,
-    ClaseIngredienteGestionViewSet
+    ClaseIngredienteGestionViewSet,
+    PaquetePublicoViewSet,
+    PaqueteGestionViewSet,
+    PaqueteProductoGestionViewSet
 )
 
 
@@ -23,6 +26,7 @@ router.register("categorias", CategoriaViewSet)
 router.register("personalizacion", ClaseIngredienteViewSet)
 router.register("ingredientes", IngredienteViewSet)
 router.register("unidades", UnidadMedidaViewSet)
+router.register(r'paquetes', PaquetePublicoViewSet)
 
 
 router_admin = DefaultRouter()
@@ -32,7 +36,8 @@ router_admin.register(r'gestion/ingredientes', IngredienteGestionViewSet, basena
 router_admin.register(r'gestion/personalizacion', ClaseIngredienteGestionViewSet, basename='admin-personalizacion')
 router_admin.register(r'gestion/unidades', UnidadMedidaGestionViewSet, basename='admin-unidades')
 router_admin.register(r'gestion/recetas', ProductoIngredienteGestionViewSet, basename='admin-recetas')
-
+router_admin.register(r'gestion/paquetes', PaqueteGestionViewSet, basename='admin-paquetes')
+router_admin.register(r'gestion/paquete-items', PaqueteProductoGestionViewSet, basename='admin-paquete-items')
 
 
 urlpatterns = [

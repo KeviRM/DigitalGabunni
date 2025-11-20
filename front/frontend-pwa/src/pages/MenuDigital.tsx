@@ -1,8 +1,11 @@
 import React, {useState, useEffect, useMemo} from "react";
-import type { Producto, Categoria } from "../types/menu";
-import { fetchCategorias, fetchProductos } from "../api/menuApi";
+import type { Producto, Categoria, Paquete, ItemCarrito } from "../types/menu";
+import { fetchCategorias, fetchProductos, fetchPaquetes } from "../api/menuApi";
 import FiltrosMenu from "../components/FiltroMenu";
+import { useCarrito } from "../context/CarritoContext";
 import { useNavigate } from "react-router-dom";
+
+import TarjetaPaquete from "../components/TarjetaPaquete";
 
 
 interface TarjetaProductoProps {
@@ -11,6 +14,8 @@ interface TarjetaProductoProps {
 }
 // Componente para mostrar un producto del menu
 
+
+const ID_CATEGORIA_PAQUETES = -999;
 
 const TarjetaProducto : React.FC<TarjetaProductoProps> = ({ producto, onNavigateToDetail }) => {
 
@@ -68,9 +73,11 @@ const MenuDigital : React.FC = () => {
     const [categorias, setCategorias] = useState<Categoria[]>([]);
     const [filtroActivo, setFiltroActivo] = useState<number | null>(null);
     const [cargando, setCargando] = useState(true);
+    const [paquetes, setPaquetes] = useState<Paquete[]>([]);
+
 
     const navigate = useNavigate(); // Inicializar useNavigate
-
+    const { agregarItem } = useCarrito();
 
 
     // Carga de datos del back
@@ -78,18 +85,83 @@ const MenuDigital : React.FC = () => {
 
     useEffect(() => {
         const cargarDatos = async () => {
-            const [prods, cats] = await Promise.all([fetchProductos(), fetchCategorias()]);
+            const [prods, cats, paqs] = await Promise.all([fetchProductos(), fetchCategorias(), fetchPaquetes()]);
             setProductos(prods);
-            setCategorias(cats);
+            setPaquetes(paqs);
             setCargando(false);
+
+
+
+            if (paqs.length > 0){
+                const catPaquetes: Categoria = {id: ID_CATEGORIA_PAQUETES, name: 'Paquetes'};
+                setCategorias([catPaquetes, ...cats]);
+
+            } else {
+                setCategorias(cats);
+            }
+
+            setCargando(false);
+
         };
         cargarDatos();
 
     }, []);
 
-    const handleNavigateToPersonalizador = () => {
-        navigate('/personalizar/nueva'); 
-    };
+
+
+
+
+
+
+
+    const handleAddPaqueteToCart = (paquete: Paquete) => {
+      
+      const productoAdaptado: Producto = {
+          id: -paquete.id, // ID negativo para evitar colisión con productos reales
+          name: ` ${paquete.name}`,
+          description: paquete.description,
+          price: paquete.price,
+          image: paquete.image,
+          category: ID_CATEGORIA_PAQUETES,
+          category_name: "Paquetes",
+          is_active: true,
+          receta: [] 
+      };
+
+      const item: Omit<ItemCarrito, 'idUnico' | 'cantidad'> = {
+          productoBase: productoAdaptado,
+          precioUnitario: parseFloat(paquete.price),
+          // Podríamos guardar los items del paquete en la personalización si quisiéramos mostrarlos
+
+          contenidoPaquete: paquete.items.map(i => ({
+              product_name: i.product_name,
+              quantity: i.quantity
+          }))
+
+
+      };
+
+      agregarItem(item);
+      alert(`Paquete "${paquete.name}" añadido al carrito.`);
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
 
     const handleNavigateToDetail = (productoId: number) => {
         navigate(`/producto/${productoId}`);
@@ -98,6 +170,7 @@ const MenuDigital : React.FC = () => {
     // filtrado en tiempo real
 
     const productosFiltrados = useMemo(() =>{
+        if (filtroActivo === ID_CATEGORIA_PAQUETES) return [];
         if (filtroActivo === null){
             return productos;
         }
@@ -105,6 +178,15 @@ const MenuDigital : React.FC = () => {
         return productos.filter(p => p.category == filtroActivo);
     }, [productos, filtroActivo]
     ); 
+
+
+    const paquetesFiltrados = useMemo(() => {
+      // Mostrar paquetes si el filtro es "Todos" (null) o "Paquetes"
+      if (filtroActivo === null || filtroActivo === ID_CATEGORIA_PAQUETES) {
+          return paquetes;
+      }
+      return [];
+  }, [paquetes, filtroActivo]);
 
 
     if (cargando) {
@@ -133,16 +215,27 @@ const MenuDigital : React.FC = () => {
              
                 
               
-                <div 
-                    className="bg-orange-100 rounded-xl shadow-lg border-2 border-amber-500 p-6 transform hover:scale-[1.02] transition duration-300 cursor-pointer flex flex-col justify-center items-center text-center"
-                    onClick={handleNavigateToPersonalizador}
-                >
-                    <h3 className="text-2xl font-bold text-gray-700 mb-2"> Arma tu Propia Chapata</h3>
-                    <p className="text-gray-700">Elige tus ingredientes desde cero y calcula tu precio.</p>
-                    <button className="mt-4 bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold">
-                        Comenzar
-                    </button>
-                </div>
+                
+                {/* filtroActivo === null || */}
+
+                {( filtroActivo === 1) && ( 
+                    <div 
+                        className="bg-green-100 rounded-xl shadow-lg border-2 border-orange-500 p-6 transform hover:scale-[1.02] transition duration-300 cursor-pointer flex flex-col justify-center items-center text-center"
+                        onClick={() => navigate('/personalizar/nueva')}
+                    >
+                        <h3 className="text-2xl font-bold text-green-700 mb-2"> Arma tu Propia Chapata</h3>
+                        <p className="text-gray-700">Elige tus ingredientes desde cero.</p>
+                        <button className="mt-4 bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold">Comenzar</button>
+                    </div>
+                )}
+
+                {paquetesFiltrados.map(paquete => (
+                    <TarjetaPaquete 
+                        key={paquete.id} 
+                        paquete={paquete} 
+                        onAddToCart={handleAddPaqueteToCart}
+                    />
+                ))}
 
 
 
@@ -151,7 +244,7 @@ const MenuDigital : React.FC = () => {
                         <TarjetaProducto 
                             key={producto.id} 
                             producto={producto} 
-                            onNavigateToDetail={handleNavigateToDetail} // Pasar la nueva función
+                            onNavigateToDetail={handleNavigateToDetail}
                         />
                     ))
                 ) : (

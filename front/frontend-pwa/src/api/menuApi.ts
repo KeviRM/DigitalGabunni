@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { Producto, Categoria, ClaseIngrediente} from "../types/menu";
+import type { Producto, Categoria, ClaseIngrediente, Paquete} from "../types/menu";
 
 
 const BASE_URL = 'http://127.0.0.1:8000/api/v1/catalogo/';
@@ -12,6 +12,16 @@ export const fetchProductos = async(): Promise<Producto[]> => {
         console.error('error al obtener los productos', error);
         return[];
     }
+};
+
+export const fetchPaquetes = async (): Promise<Paquete[]> => {
+  try {
+    const response = await axios.get<Paquete[]>(`${BASE_URL}paquetes/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener paquetes:", error);
+    return [];
+  }
 };
 
 

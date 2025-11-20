@@ -2,7 +2,7 @@ import React from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
-import { FaTachometerAlt, FaBoxOpen, FaClipboardList, FaRuler, FaUsers, FaSignOutAlt, FaUtensils, FaChartLine } from 'react-icons/fa';
+import { FaGift, FaBoxOpen, FaClipboardList, FaRuler, FaUsers, FaSignOutAlt, FaUtensils, FaChartLine } from 'react-icons/fa';
 
 
 
@@ -25,6 +25,7 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
     { name: 'Gestión de Ingredientes', path: '/admin/ingredientes', icon: FaUtensils, role: 'admin' },
     { name: 'Unidades de Medida', path: '/admin/unidades', icon: FaRuler, role: 'admin' },
     { name: 'Gestión de Recetas', path: '/admin/recetas', icon: FaBoxOpen, role: 'admin' },
+    { name: 'Gestión de Paquetes', path: '/admin/paquetes', icon: FaGift, role: 'admin' },
     { name: 'Gestión de Usuarios', path: '/admin/usuarios', icon: FaUsers, role: 'admin' },
 
 ];

@@ -15,7 +15,7 @@ const Carrito : React.FC = () => {
 
     const getPersonalizacionDetalle = (personalizacion: any) => {
         if (!personalizacion) return "Producto Estandar";
-
+       
         const detalles: string[] = [];
         Object.values(personalizacion).forEach((ingredientes: any) =>{
             if (Array.isArray(ingredientes)) {
@@ -60,6 +60,10 @@ const Carrito : React.FC = () => {
             {/* Listado de Productos en el Carrito  */}
             {items.map(item => (
               <div key={item.idUnico} className="flex items-start border-b py-4 last:border-b-0">
+                <img
+                 src={item.productoBase.image ||'https://1.bp.blogspot.com/-JUmaXrEYbPs/XnPhc3k7V0I/AAAAAAAAN0A/reZohppseB4uFlD3L6JS5Xv6yngGprCZgCLcBGAsYHQ/s1600/chapata.jpg' }
+                 alt={item.productoBase.name} className="w-25 h-full pr-1.5 pt-4 object-cover" 
+                 />
                 <div className="grow">
                   <h2 className="text-xl font-bold text-gray-800">{item.productoBase.name}</h2>
                   <p className="text-sm text-gray-500 mt-1 mb-2">
@@ -70,7 +74,27 @@ const Carrito : React.FC = () => {
                     <span className="font-semibold text-lg text-green-600">
                       ${(item.precioUnitario * item.cantidad).toFixed(2)} 
                     </span>
+
+
+                    {/* Contenido del paquete */}
                     
+                    {item.contenidoPaquete && (
+                        <div className="mt-2 bg-gray-50 p-2 rounded-lg border border-orange-100 inline-block">
+                            <p className="text-xs font-bold text-orange-800 mb-1 uppercase">Incluye:</p>
+                            <ul className="text-sm text-gray-700 space-y-1">
+                                {item.contenidoPaquete.map((subItem, idx) => (
+                                    <li key={idx} className="flex items-center">
+                                        <span className="bg-orange-100 text-orange-800 text-xs font-bold px-2 py-0.5 rounded-full mr-2">
+                                            {subItem.quantity}x
+                                        </span>
+                                        {subItem.product_name}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+
                     {/* Control de Cantidad (Opcional, pero útil) */}
                     <input
                         type="number"
