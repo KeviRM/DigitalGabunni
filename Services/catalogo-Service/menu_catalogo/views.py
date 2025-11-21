@@ -10,7 +10,8 @@ from .models import (
     UnidadMedida,
     ProductoIngrediente,
     PaqueteProducto,
-    Paquete
+    Paquete,
+    Favorito
     )
 from .serializers import (
     CategoriaSerializer,
@@ -22,7 +23,8 @@ from .serializers import (
     ProductoIngredienteAdminSerializer,
     PaqueteAdminSerializer,
     PaqueteProductoSerializer,
-    PaquetePublicoSerializer
+    PaquetePublicoSerializer,
+    FavoritoSerializer
 )
 # Create your views here.
 
@@ -130,6 +132,17 @@ class PaqueteProductoGestionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 
+
+
+class FavoritoViewSet(viewsets.ModelViewSet):
+    serializer_class = FavoritoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Favorito.objects.filter(usuario_id=self.request.user.id)
+
+    def perform_create(self, serializer):
+        serializer.save(usuario_id=self.request.user.id)
 
 
 

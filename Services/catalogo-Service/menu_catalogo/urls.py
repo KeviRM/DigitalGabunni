@@ -14,7 +14,8 @@ from .views import (
     ClaseIngredienteGestionViewSet,
     PaquetePublicoViewSet,
     PaqueteGestionViewSet,
-    PaqueteProductoGestionViewSet
+    PaqueteProductoGestionViewSet,
+    FavoritoViewSet
 )
 
 
@@ -27,6 +28,7 @@ router.register("personalizacion", ClaseIngredienteViewSet)
 router.register("ingredientes", IngredienteViewSet)
 router.register("unidades", UnidadMedidaViewSet)
 router.register(r'paquetes', PaquetePublicoViewSet)
+router.register(r'favoritos', FavoritoViewSet, basename='favoritos')
 
 
 router_admin = DefaultRouter()

@@ -9,7 +9,8 @@ from .models import (
     UnidadMedida, 
     ProductoIngrediente,
     Paquete,
-    PaqueteProducto
+    PaqueteProducto,
+    Favorito
     )
 
 
@@ -174,6 +175,16 @@ class PaquetePublicoSerializer(serializers.ModelSerializer):
         
         
         
+        
+################Favoritos
+
+
+
+
+class FavoritoSerializer(serializers.ModelSerializer):
+    producto_detalle = ProductoSerializer(source='producto', read_only=True)
+    class Meta:
+        model = Favorito
         
         
         

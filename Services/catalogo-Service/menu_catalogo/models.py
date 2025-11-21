@@ -117,3 +117,15 @@ class PaqueteProducto(models.Model):
     def __str__(self):
         return f"{self.quantity}x {self.product.name} en {self.package.name}"
 
+
+
+
+
+
+class Favorito(models.Model):
+    usuario_id = models.IntegerField(db_index=True) # ID del usuario (Auth)
+    producto = models.ForeignKey(Producto, on_delete=models.CASCADE)
+    fecha_agregado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario_id', 'producto') # Evitar duplicados
