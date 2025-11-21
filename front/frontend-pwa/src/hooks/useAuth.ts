@@ -2,8 +2,12 @@
 import { useState, useCallback } from 'react';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+// import { access } from 'fs';
 
 const AUTH_API_URL = 'http://127.0.0.1:8002/api/token/'; 
+
+const GOOGLE_AUTH_API_URL = 'http://127.0.0.1:8002/api/google-login/';
+
 
 interface AuthTokens {
   access: string;
@@ -66,6 +70,59 @@ const useAuth = () => {
   }, []);
 
 
+
+  /////Funcion Para Manejar el login de google
+
+
+  const loginWithGoogle = useCallback(async (accessToken: string) =>{
+
+    try{
+      const response = await axios.post(GOOGLE_AUTH_API_URL, { access_token: accessToken });
+      if(response.status === 200){
+        const newTokens: AuthTokens = response.data;
+        const payload: TokenPayload = jwtDecode(newTokens.access);
+
+
+        let role: 'admin' | 'cocinero' | 'cliente' = 'cliente';
+        if (payload.is_admin) role = 'admin';
+        else if (payload.is_cocinero) role = 'cocinero';
+
+
+        localStorage.setItem('accessToken', newTokens.access);
+        localStorage.setItem('refreshToken', newTokens.refresh);
+        localStorage.setItem('userRole', role);
+
+
+        setTokens(newTokens);
+        setUserRole(role);
+
+        return { success: true, role };
+
+      }
+      return { success: false, role: null };
+    } catch(error){
+      console.error("Fallo login con Google", error);
+        return { success: false, role: null };
+    }
+
+  }, []);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // Función para obtener el rol para la redirección
     const getUserRole = useCallback(() => {
         return userRole || localStorage.getItem('userRole');
@@ -76,7 +133,7 @@ const useAuth = () => {
     return tokens ? { Authorization: `Bearer ${tokens.access}` } : {};
   }, [tokens]);
 
-  return { isAuthenticated, login, logout, getAuthHeaders, getUserRole };
+  return { isAuthenticated, login, loginWithGoogle, logout, getAuthHeaders, getUserRole };
 };
 
 export default useAuth;

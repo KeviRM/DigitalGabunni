@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useCarrito } from "../context/CarritoContext";
+import useAuth from '../hooks/useAuth';
+
+import { FaUserLock, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
+
+
 
 
 
@@ -12,14 +17,65 @@ const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
 const Checkout : React.FC = () => {
 
     const { items, totalPrecio, limpiarCarrito } = useCarrito();
-    const navigate = useNavigate();
-    const [tipoEntrega, setTipoEntrega] = useState< 'RECOGER' | 'DOMICILIO'>('RECOGER');
 
+    const { isAuthenticated, getAuthHeaders, getUserRole } = useAuth(); // Obtener estado de auth
+    
+    const navigate = useNavigate();
+
+    
+    const [tipoEntrega, setTipoEntrega] = useState< 'RECOGER' | 'DOMICILIO'>('RECOGER');
     const [nombre, setNombre] = useState('');
     const [direccion, setDireccion] = useState('');
     const [telefono, setTelefono] = useState('');
     const [error, setError] = useState<string | null>('null');
     const [cargando, setCargando] = useState(false);
+
+
+
+    useEffect(() => {
+    // Opcional: Si prefieres redirigir automáticamente
+    // if (!isAuthenticated) navigate('/login');
+  }, [isAuthenticated, navigate]);
+
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-xl shadow-lg text-center max-w-md w-full">
+          <FaUserLock className="text-6xl text-orange-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Inicia sesión para continuar</h2>
+          <p className="text-gray-600 mb-6">
+            Necesitas una cuenta activa para realizar pedidos y acumular puntos.
+          </p>
+          
+          <div className="space-y-3">
+            <button 
+                onClick={() => navigate('/login')}
+                className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg hover:bg-orange-600 flex items-center justify-center"
+            >
+                <FaSignInAlt className="mr-2" /> Iniciar Sesión
+            </button>
+            <button 
+                onClick={() => navigate('/registro')}
+                className="w-full py-3 border border-orange-500 text-orange-500 font-bold rounded-lg hover:bg-orange-50 flex items-center justify-center"
+            >
+                <FaUserPlus className="mr-2" /> Crear Cuenta
+            </button>
+          </div>
+          <button onClick={() => navigate('/')} className="mt-6 text-sm text-gray-500 hover:underline">
+              Volver al Menú
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+
+
+
+
+
+
 
 
     if (items.length === 0){
@@ -35,7 +91,7 @@ const Checkout : React.FC = () => {
 
 
     const handleConfirmarPedido = async () =>{
-        if(!nombre || !telefono || (tipoEntrega == 'DOMICILIO' && direccion)){
+        if(!nombre || !telefono || (tipoEntrega == 'DOMICILIO' && !direccion)){
             setError("Por favor complete todos los campos obligatorios");
             return;
         }
@@ -66,7 +122,9 @@ const Checkout : React.FC = () => {
 
       try {
 
-        const response = await axios.post(PEDIDOS_API_URL + 'crear/', datosPedido);
+        const AUTH_HEADERS = { headers: getAuthHeaders() };
+
+        const response = await axios.post(PEDIDOS_API_URL + 'crear/', datosPedido, AUTH_HEADERS);
         const numeroPedidoUnico = response.data.order_number;
         limpiarCarrito();
 
@@ -74,14 +132,11 @@ const Checkout : React.FC = () => {
 
 
       } catch (err: any) { // Usamos 'any' para acceder a la estructura de AxiosError
-      console.error("Error al confirmar el pedido:", err);
-      
-      // *** ESTO ES CLAVE: Imprimir la respuesta de error del servidor ***
-      if (err.response && err.response.data) {
-          console.log("Detalle de la respuesta de Django:", err.response.data);
-          setError("Error en el pedido. Revise la consola para detalles del formato.");
+      console.error("Error al confirmar:", err);
+      if (err.response?.status === 401) {
+          setError("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.");
       } else {
-          setError("Hubo un error de red o servidor. Inténtalo de nuevo.");
+          setError("Hubo un error al procesar tu pedido. Inténtalo de nuevo.");
       }
     } finally {
       setCargando(false);

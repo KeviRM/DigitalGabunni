@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from usuarios.views import RegistroView
+from usuarios.views import RegistroView, GoogleLoginView
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -38,6 +38,8 @@ urlpatterns = [
     
     
     path('api/registro/', RegistroView.as_view(), name='registro_usuario'),
+    
+    path('api/google-login/', GoogleLoginView.as_view(), name='google_login'),
     
     ####urls de Django Auth => para la gestion de usus
     

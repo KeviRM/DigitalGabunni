@@ -8,6 +8,9 @@ import { useNavigate } from "react-router-dom";
 import TarjetaPaquete from "../components/TarjetaPaquete";
 
 
+import chapataImage from "../assets/images_index/chapata.jpg"
+
+
 interface TarjetaProductoProps {
     producto: Producto;
     onNavigateToDetail: (productoId: number) => void; 
@@ -196,11 +199,36 @@ const MenuDigital : React.FC = () => {
     return (
 
         <div className="min-h-screen bg-gray-50 p-6">
-            <h1 className="text-6xl font-extrabold text-gray-950 text-center mb-8 border-b-5 border-gray-200 pb-3 mx-auto max-w">
-                Menú
-            </h1>
-        
+            <div className="flex flex-nowrap gap-8">
 
+                <div className="w-1/3 space-y-6">
+
+                <img src={chapataImage} className="p-16" alt="" />
+
+                
+                </div>
+                <div className="w-1/3 space-y-6 ">
+
+                
+                <h1 className="text-6xl font-extrabold  text-gray-950 text-center mb-8 border-b-5 border-gray-200 pb-3 mx-auto max-w">
+                    Menú
+                </h1>
+
+                <p className="font-sans  text-gray-500 text-center "> 
+                    ¡Bienvenido/a a nuestro menú, el lugar donde el sabor
+                     y el bienestar se encuentran! Hemos diseñado cada opción pensando en ti: deliciosas chapatas con el toque crujiente perfecto, rellenas de ingredientes frescos y nutritivos, y una variedad de platos saludables que te recargarán de energía.
+
+                </p>
+
+                </div>
+                <div className="w-1/3 space-y-6 p-16">
+                            <img src={chapataImage} alt="" />
+
+                </div>
+            
+            </div>
+
+<hr className="border-orange-400 border-b-5 bg-orange-600"/>
 
             <FiltrosMenu
             categorias={categorias}

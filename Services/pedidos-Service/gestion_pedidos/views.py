@@ -22,10 +22,15 @@ from .filters import PedidoFilter
 # Create your views here.
 
 class PedidoCreationViewSet (mixins.CreateModelMixin, viewsets.GenericViewSet):
-    queryset = Pedido.objects.all()
     
+    queryset = Pedido.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = PedidoCreationSerializer
-    permission_classes = [AllowAny]
+    
+    def perform_create(self, serializer):
+        serializer.save(usuario_id=self.request.user.id)
+    
+    
     
     
 class PedidoEstadoViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -36,6 +41,25 @@ class PedidoEstadoViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [AllowAny]
     
     
+
+
+#
+class MisPedidosViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PedidoEstadoSerializer # Reusamos el serializer de lectura
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Filtrar solo los pedidos del usuario actual
+        return Pedido.objects.filter(usuario_id=self.request.user.id).order_by('-fecha_creacion')
+
+
+
+
+
+
+
+
+
 
 
 ###########Viewset para la gesstion de pedidos
@@ -68,11 +92,11 @@ class AnalyticsView(views.APIView):
     permission_classes = [AllowAny] 
 
     def get(self, request, format=None):
-        # 1. Definir el rango de fechas (ej: últimos 30 días, o según filtros futuros)
+        # Definir el rango de fechas (ej: últimos 30 días, o según filtros futuros)
         dias_pasados = 30
         fecha_inicio = timezone.now() - timedelta(days=dias_pasados)
         
-        # 2. Consultas y Agregaciones Básicas
+        # Consultas y Agregaciones Básicas
         
         # Ganancia Total histórica
         ganancia_total = Pedido.objects.filter(status__in=['ENTREGADO', 'LISTO']).aggregate(
@@ -91,7 +115,7 @@ class AnalyticsView(views.APIView):
         ganancia_reciente = pedidos_recientes.aggregate(total=Sum('amount'))['total'] or 0.00
         ordenes_recientes = pedidos_recientes.count()
         
-        # 3. Datos para Gráfica Diaria (Ganancias Diarias)
+        # Datos para Gráfica Diaria (Ganancias Diarias)
         # Agrupa los pedidos por día y suma los montos
         ganancias_por_dia = Pedido.objects.filter(
             created_at__gte=fecha_inicio,
@@ -102,12 +126,12 @@ class AnalyticsView(views.APIView):
             ganancia=Sum('amount')
         ).order_by('dia')
         
-        # 4. Cálculo de Clientes
+        # Cálculo de Clientes
         # NOTA: Si usáramos un campo 'cliente' que no sea NULL en Pedido, usaríamos Count(Distinct('cliente'))
         # Por ahora, usamos el número de pedidos confirmados como proxy de actividad:
         clientes_activos = Pedido.objects.all().values('client_name').distinct().count()
 
-        # 5. Formato de la Respuesta JSON
+        #  Formato de la Respuesta JSON
         data = {
             # Indicadores de Ventas (Métricas)
             'metricas': {

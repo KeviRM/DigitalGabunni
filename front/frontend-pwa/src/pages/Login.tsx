@@ -6,9 +6,16 @@ import useAuth from '../hooks/useAuth';
 import gabunniImage from "../assets/gabunniLogo.jpg";
 
 
+
+//Hook de google
+
+import { useGoogleLogin } from '@react-oauth/google';
+
+
+
 const Login: React.FC = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, loginWithGoogle } = useAuth();
     
     // NOTA: El diseño sugiere "Correo electrónico", pero JWT usa "username" o "email" para el POST. 
     // Usaremos 'username' en el estado, pero la etiqueta será 'Correo o Usuario'.
@@ -54,9 +61,25 @@ const Login: React.FC = () => {
         }
     };
 
-    const handleGoogleLogin = () => {
-        alert("Iniciando flujo de inicio de sesión con Google (OAuth pendiente).");
-    };
+    
+
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setCargando(true);
+            // Enviamos el access_token de Google a nuestro backend
+            const result = await loginWithGoogle(tokenResponse.access_token);
+            
+            if (result.success) {
+                handleLoginSuccess(result.role);
+            } else {
+                setError('Error al iniciar sesión con Google.');
+            }
+            setCargando(false);
+        },
+        onError: () => {
+            setError('Falló la conexión con Google.');
+        }
+    });
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
@@ -138,12 +161,14 @@ const Login: React.FC = () => {
                         <span className="bg-white px-2 relative -top-6">Acceder con</span>
                     </div>
                     
+
+                    {/* Boton de Google */}
                     <button
                         type="button"
-                        onClick={handleGoogleLogin}
+                        onClick={() => googleLogin()} 
                         className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 flex items-center justify-center"
                     >
-                        <FaGoogle className="mr-2" /> Google
+                        <FaGoogle className="mr-2 text-red-500" /> Google
                     </button>
                     
                     <p className="text-center text-sm mt-4">

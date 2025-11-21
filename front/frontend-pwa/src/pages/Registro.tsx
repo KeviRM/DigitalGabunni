@@ -6,10 +6,17 @@ import axios from 'axios';
 import gabunniImage from "../assets/gabunniLogo.jpg";
 
 
+import useAuth from '../hooks/useAuth';
+import { useGoogleLogin } from '@react-oauth/google';
+
+
 const REGISTRO_API_URL = 'http://127.0.0.1:8002/api/registro/'; 
 
 const Registro: React.FC = () => {
     const navigate = useNavigate();
+
+    const {loginWithGoogle} = useAuth();
+
     const [formData, setFormData] = useState({
         username: '', 
         email: '',
@@ -30,11 +37,40 @@ const Registro: React.FC = () => {
         setErrores({ ...errores, [name]: '' }); 
     };
     
-    // Simulación del registro con Google 
-    const handleGoogleRegistro = () => {
-        alert("Iniciando flujo de registro con Google (OAuth pendiente de implementación)");
-        // Aquí iría el inicio del flujo de OAuth con Google.
+    const handleLoginSuccess = (role: 'admin' | 'cocinero' | 'cliente' | null) => {
+        if (role === 'admin') {
+            navigate('/admin');
+        } else if (role === 'cocinero') {
+            navigate('/admin/cocina');
+        } else if (role === 'cliente') {
+            navigate('/'); 
+        } else {
+            
+            navigate('/');
+        }
     };
+
+    // Configuración del Login de Google
+    const googleLogin = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            setCargando(true);
+            // Enviamos el access_token de Google a nuestro backend
+            const result = await loginWithGoogle(tokenResponse.access_token);
+            
+            if (result.success) {
+                handleLoginSuccess(result.role);
+            } else {
+                setError('Error al registrarte con Google.');
+                console.error('Error al registrarse con Google.')
+            }
+            setCargando(false);
+        },
+        onError: () => {
+            setError('Falló la conexión con Google.');
+            console.error('Falló la conexión con Google.')
+
+        }
+    });
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -203,10 +239,10 @@ const Registro: React.FC = () => {
 
                     <button
                         type="button"
-                        onClick={handleGoogleRegistro}
+                        onClick={() => googleLogin()} // Llamar a la función del hook de Google
                         className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-100 flex items-center justify-center"
                     >
-                        <FaGoogle className="mr-2" /> Google
+                        <FaGoogle className="mr-2 text-red-500" /> Google
                     </button>
                 </form>
 

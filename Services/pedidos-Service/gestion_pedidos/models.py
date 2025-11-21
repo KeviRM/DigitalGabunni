@@ -17,6 +17,8 @@ class Pedido(models.Model):
         ('CANCELADO', 'Cancelado'),
     ]
     
+    usuario_id = models.IntegerField(null=True, blank=True, db_index=True)
+    
     client_name = models.CharField(max_length=100)
     email = models.EmailField(blank=True, null=True)
     phone_number = models.CharField(max_length=20)
