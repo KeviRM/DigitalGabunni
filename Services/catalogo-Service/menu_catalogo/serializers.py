@@ -185,6 +185,7 @@ class FavoritoSerializer(serializers.ModelSerializer):
     producto_detalle = ProductoSerializer(source='producto', read_only=True)
     class Meta:
         model = Favorito
+        fields = ['id', 'producto', 'producto_detalle']
         
         
         

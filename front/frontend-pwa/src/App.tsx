@@ -13,6 +13,8 @@ import Personalizador from "./pages/Personalizador";
 import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 
+import Perfil from "./pages/Perfil";
+
 import AdminLayout from "./layouts/AdminLayout";
 
 import AdminDashboard from "./pages/AdminDashboard";
@@ -50,6 +52,8 @@ function App() {
 
             <Route path="/registro" element={<Registro />} />
             <Route path="/login" element={<Login />} />
+
+            <Route path="/mi-perfil" element={<Perfil />} />
 
             <Route path="/contacto" element={<Contactos />} />
             <Route path="/menu" element={<MenuDigital/>} />

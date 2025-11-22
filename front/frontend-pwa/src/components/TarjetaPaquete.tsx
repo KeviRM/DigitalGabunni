@@ -21,16 +21,16 @@ const TarjetaPaquete: React.FC<TarjetaPaqueteProps> = ({ paquete, onAddToCart}) 
 
 
     return (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-[1.02] transition duration-300 border-2 border-orange-100 relative">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-[1.02] transition duration-300 border-2 border-orange-200 shadow-orange-200 relative">
             
             {/* Badge de Descuento */}
             {discount > 0 && (
-                <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg z-10">
+                <div className="absolute top-0 right-0 bg-red-600 text-white text-sm font-bold px-3 py-1  rounded-bl-lg z-10">
                     {discount}% OFF
                 </div>
             )}
 
-            <div className="relative h-48 bg-orange-50 flex items-center justify-center">
+            <div className="relative h-48 bg-orange-50 flex items-center shadow-2xl shadow-orange-100 justify-center">
                 {paquete.image ? (
                     <img src={paquete.image} alt={paquete.name} className="w-full h-full object-cover" />
                 ) : (

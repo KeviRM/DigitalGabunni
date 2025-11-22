@@ -124,7 +124,8 @@ const Checkout : React.FC = () => {
 
         const AUTH_HEADERS = { headers: getAuthHeaders() };
 
-        const response = await axios.post(PEDIDOS_API_URL + 'crear/', datosPedido, AUTH_HEADERS);
+        const response = await axios.post(PEDIDOS_API_URL + 'crear/', datosPedido, AUTH_HEADERS);      
+        
         const numeroPedidoUnico = response.data.order_number;
         limpiarCarrito();
 
@@ -132,7 +133,7 @@ const Checkout : React.FC = () => {
 
 
       } catch (err: any) { // Usamos 'any' para acceder a la estructura de AxiosError
-      console.error("Error al confirmar:", err);
+       console.error("Error al confirmar:", err);
       if (err.response?.status === 401) {
           setError("Tu sesión ha expirado. Por favor, inicia sesión nuevamente.");
       } else {

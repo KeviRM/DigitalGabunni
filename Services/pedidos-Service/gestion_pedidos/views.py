@@ -49,8 +49,14 @@ class MisPedidosViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        
+        # DEBUG TEMPORAL: Imprimir el usuario para ver si llega autenticado
+        print(f"Usuario solicitante: {self.request.user}, ID: {self.request.user.id}")
+        
+        if self.request.user.is_anonymous:
+            return Pedido.objects.none() # Retorna vacío si no hay usuario
         # Filtrar solo los pedidos del usuario actual
-        return Pedido.objects.filter(usuario_id=self.request.user.id).order_by('-fecha_creacion')
+        return Pedido.objects.filter(usuario_id=self.request.user.id).order_by('-created_at')
 
 
 

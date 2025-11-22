@@ -61,6 +61,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
 }
 
 
@@ -68,11 +71,25 @@ from datetime import timedelta
 
 
 
-SIMPLE_JWT = {
+# SIMPLE_JWT = {
     
+#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+#     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+#     "ROTATE_REFRESH_TOKENS": True,
+# }
+
+from datetime import timedelta
+SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
+    "ALGORITHM": "HS256",
+    
+    # *** ESTA LÍNEA ES LA MÁS IMPORTANTE ***
+    "SIGNING_KEY": SECRET_KEY, 
+    # Obliga a usar la SECRET_KEY definida arriba, sin esto, cada uno usa la suya propia.
+    
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 

@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+
 
 from rest_framework import viewsets
 from .models import (
@@ -142,8 +144,17 @@ class FavoritoViewSet(viewsets.ModelViewSet):
         return Favorito.objects.filter(usuario_id=self.request.user.id)
 
     def perform_create(self, serializer):
-        serializer.save(usuario_id=self.request.user.id)
-
-
+        # CRÍTICO: El usuario debe venir del request, NO del body del frontend
+        if self.request.user.is_authenticated:
+            # Imprimir para depurar
+            print(f"Creando favorito para usuario ID: {self.request.user.id}")
+            try:
+                serializer.save(usuario_id=self.request.user.id)
+            except Exception as e:
+                print(f"Error al guardar favorito: {e}")
+                raise e
+        else:
+            # Si llega aquí, el token no se validó correctamente antes
+            raise PermissionDenied("No estás autenticado correctamente.")
 
     

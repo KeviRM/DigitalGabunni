@@ -8,7 +8,10 @@ import { useNavigate } from "react-router-dom";
 import TarjetaPaquete from "../components/TarjetaPaquete";
 
 
-import chapataImage from "../assets/images_index/chapata.jpg"
+import chapataImage from "../assets/images_index/changuich.png";
+
+import lechugaImage from "../assets/images_index/lechuga.png";
+
 
 
 interface TarjetaProductoProps {
@@ -23,12 +26,12 @@ const ID_CATEGORIA_PAQUETES = -999;
 const TarjetaProducto : React.FC<TarjetaProductoProps> = ({ producto, onNavigateToDetail }) => {
 
     return (
-        <div className="bg-white rounded-xl shadow-2xl overflow-hidden transform hover:scale-[1.02] transition duration-300"
+        <div className="bg-white rounded-xl shadow-xl shadow-orange-100 overflow-hidden transform hover:scale-[1.02] transition duration-300"
             onClick={() => onNavigateToDetail(producto.id)}
         >
 
 
-            <div className="relative h-48">
+            <div className="relative h-48 shadow-xl shadow-orange-100">
                 <img 
                 src={producto.image || 'https://1.bp.blogspot.com/-JUmaXrEYbPs/XnPhc3k7V0I/AAAAAAAAN0A/reZohppseB4uFlD3L6JS5Xv6yngGprCZgCLcBGAsYHQ/s1600/chapata.jpg'}
                 alt={producto.name}
@@ -199,30 +202,31 @@ const MenuDigital : React.FC = () => {
     return (
 
         <div className="min-h-screen bg-gray-50 p-6">
-            <div className="flex flex-nowrap gap-8">
+            <div className="flex flex-nowrap  max-h-[200px] min-h-[100px] gap-8 ">
 
-                <div className="w-1/3 space-y-6">
+                <div className="w-1/3  pt-2 pb-2  hidden md:block  ">
 
-                <img src={chapataImage} className="p-16" alt="" />
+                <img src={chapataImage} className="h-full mx-auto " alt="" />
 
                 
                 </div>
-                <div className="w-1/3 space-y-6 ">
+                <div className="w-full md:w-1/3 space-y-6   ">
 
                 
-                <h1 className="text-6xl font-extrabold  text-gray-950 text-center mb-8 border-b-5 border-gray-200 pb-3 mx-auto max-w">
+                <h1 className="text-6xl font-extrabold  text-gray-950 text-center  border-b-5 border-gray-200 pb-3 mx-auto max-w">
                     Menú
                 </h1>
 
-                <p className="font-sans  text-gray-500 text-center "> 
+                <p className="font-sans line-clamp-3 mt-1 lg:mt-5  text-gray-500 text-center hidden md:block "> 
                     ¡Bienvenido/a a nuestro menú, el lugar donde el sabor
-                     y el bienestar se encuentran! Hemos diseñado cada opción pensando en ti: deliciosas chapatas con el toque crujiente perfecto, rellenas de ingredientes frescos y nutritivos, y una variedad de platos saludables que te recargarán de energía.
+                     y el bienestar se encuentran!
+                      {/* Hemos diseñado cada opción pensando en ti: deliciosas chapatas con el toque crujiente perfecto, rellenas de ingredientes frescos y nutritivos, y una variedad de platos saludables que te recargarán de energía. */}
 
                 </p>
 
                 </div>
-                <div className="w-1/3 space-y-6 p-16">
-                            <img src={chapataImage} alt="" />
+                <div className="w-1/3  pt-2 pb-2 hidden md:block">
+                            <img src={lechugaImage} className="h-full mx-auto" alt="" />
 
                 </div>
             
@@ -248,10 +252,10 @@ const MenuDigital : React.FC = () => {
 
                 {( filtroActivo === 1) && ( 
                     <div 
-                        className="bg-green-100 rounded-xl shadow-lg border-2 border-orange-500 p-6 transform hover:scale-[1.02] transition duration-300 cursor-pointer flex flex-col justify-center items-center text-center"
+                        className="bg-orange-50 rounded-xl shadow-lg shadow-orange-200 border-2 border-orange-300 p-6 transform hover:scale-[1.02] transition duration-300 cursor-pointer flex flex-col justify-center items-center text-center"
                         onClick={() => navigate('/personalizar/nueva')}
                     >
-                        <h3 className="text-2xl font-bold text-green-700 mb-2"> Arma tu Propia Chapata</h3>
+                        <h3 className="text-2xl font-bold text-orange-600 mb-2"> Arma tu Propia Chapata</h3>
                         <p className="text-gray-700">Elige tus ingredientes desde cero.</p>
                         <button className="mt-4 bg-orange-500 text-white py-2 px-4 rounded-lg font-semibold">Comenzar</button>
                     </div>

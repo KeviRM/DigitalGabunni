@@ -4,7 +4,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type{ Producto, RecetaItem, ItemCarrito} from '../types/menu';
 import { fetchProductoById } from '../api/menuApi'; // Asegúrate que tu fetch trae la receta
 import { useCarrito } from '../context/CarritoContext';
+import axios from 'axios';
 
+import useAuth from '../hooks/useAuth';
+
+import { FaHeart, FaRegHeart } from 'react-icons/fa';
+
+
+const FAVORITOS_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/favoritos/';
 
 const DetalleProducto: React.FC = () => {
     const { productoId } = useParams<{ productoId: string }>();
@@ -12,6 +19,10 @@ const DetalleProducto: React.FC = () => {
     const [producto, setProducto] = useState<Producto | null>(null);
     const [cargando, setCargando] = useState(true);
     const { agregarItem } = useCarrito();
+
+
+    const { isAuthenticated, getAuthHeaders } = useAuth();
+    const [esFavorito, setEsFavorito] = useState(false);
 
 
     useEffect(() => {
@@ -23,6 +34,24 @@ const DetalleProducto: React.FC = () => {
             setCargando(false);
         });
     }, [productoId]);
+
+    const handleToggleFavorite = async () => {
+        if (!isAuthenticated) {
+            alert("Debes iniciar sesión para guardar favoritos.");
+            return;
+        }
+        
+        try {
+            const AUTH_HEADERS = { headers: getAuthHeaders() };
+            // NOTA: Para toggle real (añadir/quitar), necesitaríamos saber si ya es favorito.
+            // Por simplicidad, aquí solo implementamos "Añadir".
+            await axios.post(FAVORITOS_API_URL, { producto: producto?.id }, AUTH_HEADERS);
+            setEsFavorito(true);
+            alert("¡Añadido a tus favoritos!");
+        } catch (err) {
+            alert("Ya está en tus favoritos o hubo un error.");
+        }
+    };
 
 
 
@@ -75,13 +104,21 @@ const DetalleProducto: React.FC = () => {
                             alt={producto.name} 
                             className="w-full h-auto rounded-lg shadow-xl"
                         />
-                        <div className="mt-8">
+                        <div className="mt-8 flex flex-nowrap gap-10">
                             <button
                                 // Llamamos a la función de añadir directo en lugar de navegar a personalizar
                                 onClick={handleAddToCart}
-                                className="w-full py-3 bg-orange-500 text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
+                                className="w-4/5 py-3 bg-orange-500 text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
                             >
                                 Añadir al Carrito (${Number(producto.price).toFixed(2)})
+                            </button>
+
+                            <button 
+                                onClick={handleToggleFavorite}
+                                className={` w-1/5 text-3xl focus:outline-none transition-colors ${esFavorito ? 'text-red-500' : 'text-gray-300 hover:text-red-400'}`}
+                                title="Añadir a favoritos"
+                            >
+                                {esFavorito ? <FaHeart /> : <FaRegHeart />}
                             </button>
                         </div>
                     </div>
@@ -97,8 +134,8 @@ const DetalleProducto: React.FC = () => {
                         {/* Ingredientes Fijos */}
                         <h2 className="text-xl font-bold text-gray-800 mb-3">Ingredientes</h2>
                         <ul className="space-y-2">
-                            {(producto.receta || []).map((recetaItem: RecetaItem) => (
-                                <li key={recetaItem.ingredient} className="flex items-center text-gray-700">
+                            {(producto.receta || []).map((recetaItem: RecetaItem, index) => (
+                                <li key={`${recetaItem.ingredient}-${index}`} className="flex items-center text-gray-700">
                                     <span className="mr-2 text-green-500">&rarr;</span> 
                                     {recetaItem.ingrediente_name} 
                                     {recetaItem.quantity && (
