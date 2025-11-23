@@ -1,7 +1,7 @@
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.auth.password_validation import validate_password
 
 
@@ -51,5 +51,30 @@ class RegistroSerializer(serializers.ModelSerializer):
             is_active=True, 
         )
         
+        
+        return user
+    
+    
+class CocineroSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password', 'first_name')
+
+    def create(self, validated_data):
+        # Crear usuario estándar
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email', ''),
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            is_staff=True,
+            is_active=True
+        )
+        
+        # Asignar al grupo 'Cocinero'
+        group, _ = Group.objects.get_or_create(name='Cocinero')
+        user.groups.add(group)
         
         return user

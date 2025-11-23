@@ -15,9 +15,9 @@ const Navbar : React.FC = () => {
     const [pedidoUUID, setPedidoUUID] = React.useState('');
     const [isOpen, setIsOpen] = useState(false);
 
-    const {isAuthenticated, logout} = useAuth();
+    const {isAuthenticated, logout, getUserRole} = useAuth();
 
-
+    const role = getUserRole();
 
     
 
@@ -40,9 +40,14 @@ const Navbar : React.FC = () => {
     };
 
 
-  //   const handlePanelAccess = () => {
-  //   navigate('/admin'); 
-  // }
+    const handlePerfil = () => {
+      
+      if (isAuthenticated && role === 'admin' || role ==='cocinero' ){
+        navigate('/admin'); 
+      } else{
+        navigate('/mi-perfil');
+      }
+    }
   
   
 
@@ -118,13 +123,16 @@ return (
 
             {/* Inicio de Sesión (Cliente/Admin) */}
             {isAuthenticated ? (
-              <Link  to="/mi-perfil" className="hidden sm:block">
+              
                 <button 
+                onClick={handlePerfil}
                     className="px-4 py-2 border hidden md:block border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
                 >
-                  <FaUserCircle className="inline mr-1" /> Mi Perfil
+                  <div></div>
+                   { role === 'admin' ? (  <div><FaUserCircle className="inline mr-1" />Panel Admin</div>):(<div><FaUserCircle className="inline mr-1" />Mi Perfil</div>) } 
+
                 </button>
-              </Link>
+              
             ) : (
               <Link to="/login" className="hidden sm:block">
               <button 

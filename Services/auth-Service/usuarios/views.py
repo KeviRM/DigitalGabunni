@@ -1,11 +1,12 @@
 from django.shortcuts import render
-from rest_framework import generics, views, status, response
-from rest_framework.permissions import AllowAny
+from rest_framework import generics, views, status, response, viewsets
+from rest_framework.permissions import AllowAny, IsAdminUser
 from .serializers import RegistroSerializer
 from django.contrib.auth import get_user_model
 
 
 from django.contrib.auth.models import User
+from .serializers import CocineroSerializer
 import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -21,6 +22,27 @@ class RegistroView(generics.ListCreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = RegistroSerializer
+
+
+
+
+
+
+
+class CocineroManagementViewSet(viewsets.ModelViewSet):
+   
+    serializer_class = CocineroSerializer
+    permission_classes = [IsAdminUser] 
+    def get_queryset(self):
+        # Filtrar solo usuarios que pertenecen al grupo Cocinero
+        return User.objects.filter(groups__name='Cocinero')
+
+
+
+
+
+
+
 
 
 
@@ -88,4 +110,7 @@ class GoogleLoginView(views.APIView):
             'access': str(refresh.access_token),
         }, status=status.HTTP_200_OK)
         
-        
+
+
+
+

@@ -17,7 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-from usuarios.views import RegistroView, GoogleLoginView
+from rest_framework.routers import DefaultRouter
+
+from usuarios.views import RegistroView, GoogleLoginView, CocineroManagementViewSet
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -26,9 +28,12 @@ from rest_framework_simplejwt.views import (
 from usuarios.serializers import CustomTokenObtainPairSerializer
 
 
+router = DefaultRouter()
+router.register(r'cocineros', CocineroManagementViewSet, basename='gestion_cocineros')
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
+    path('api/gestion/', include(router.urls)),
     #Endpoint principal para obtener el Access y Refresh Token
     path('api/token/', TokenObtainPairView.as_view(serializer_class=CustomTokenObtainPairSerializer), name='token_obtain_pair'),
     
