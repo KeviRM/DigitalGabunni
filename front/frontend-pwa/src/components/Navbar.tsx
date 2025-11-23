@@ -40,9 +40,9 @@ const Navbar : React.FC = () => {
     };
 
 
-    const handlePanelAccess = () => {
-    navigate('/admin'); 
-  }
+  //   const handlePanelAccess = () => {
+  //   navigate('/admin'); 
+  // }
   
   
 
@@ -118,12 +118,13 @@ return (
 
             {/* Inicio de Sesión (Cliente/Admin) */}
             {isAuthenticated ? (
-              <button 
-                  onClick={handlePanelAccess}
-                  className="px-4 py-2 border hidden md:block border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
-              >
-                <FaUserCircle className="inline mr-1" /> Panel Admin
-              </button>
+              <Link  to="/mi-perfil" className="hidden sm:block">
+                <button 
+                    className="px-4 py-2 border hidden md:block border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  <FaUserCircle className="inline mr-1" /> Mi Perfil
+                </button>
+              </Link>
             ) : (
               <Link to="/login" className="hidden sm:block">
               <button 
@@ -202,12 +203,13 @@ return (
           {/* Login/Registro en Sidebar (Si fueron ocultados en la vista móvil) */}
           <div className='pt-4 space-y-2'>
             {isAuthenticated ? (
+              <Link to="/mi-perfil" onClick={() => setIsOpen(false)} className="hidden sm:block">
               <button 
-                  onClick={handlePanelAccess}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
               >
-                <FaUserCircle className="inline mr-1" /> Panel Admin
+                <FaUserCircle className="inline mr-1" /> Mi Perfil
               </button>
+              </Link>
             ) : (
               <Link to="/login" onClick={() => setIsOpen(false)} className="hidden sm:block">
               <button 

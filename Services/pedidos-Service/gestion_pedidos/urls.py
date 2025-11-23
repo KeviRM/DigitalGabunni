@@ -1,6 +1,15 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PedidoCreationViewSet, PedidoEstadoViewSet, PedidoGestionViewSet, MisPedidosViewSet
+from .views import (PedidoCreationViewSet,
+                    PedidoEstadoViewSet,
+                    PedidoGestionViewSet,
+                    MisPedidosViewSet
+                    )
+
+from .views import CreatePaymentPreference
+
+
+
 
 router_creacion = DefaultRouter()
 router_creacion.register(r'crear', PedidoCreationViewSet, basename='pedido-crear')
@@ -29,5 +38,7 @@ urlpatterns = [
     
     path('', include(router_mispedidos.urls)),
     
-    path('', include(router_gestion.urls))
+    path('', include(router_gestion.urls)),
+    
+    path('crear-pago/', CreatePaymentPreference.as_view(), name='crear_pago'),
 ]

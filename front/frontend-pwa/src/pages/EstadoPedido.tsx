@@ -163,7 +163,7 @@ const EstadoPedido: React.FC = () => {
         )}
         
         <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/mi-perfil')}
             className="mt-10 py-3 px-6 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
         >
             Volver al Menú Principal

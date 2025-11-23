@@ -16,7 +16,7 @@ const Perfil: React.FC = () => {
     const navigate = useNavigate();
     const AUTH_HEADERS = { headers: getAuthHeaders() };
 
-    const [activeTab, setActiveTab] = useState<'datos' | 'historial' | 'favoritos'>('datos');
+    const [activeTab, setActiveTab] = useState<'datos' | 'historial' | 'favoritos'>('historial');
     const [historial, setHistorial] = useState<any[]>([]);
     const [favoritos, setFavoritos] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);

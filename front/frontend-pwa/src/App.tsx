@@ -36,6 +36,8 @@ import Checkout from "./pages/Checkout";
 
 import EstadoPedido from "./pages/EstadoPedido";
 
+import PedidoExito from "./pages/PedidoExito";
+
 
 function App() {
 
@@ -65,6 +67,7 @@ function App() {
             <Route path="/checkout" element={<Checkout/>}/>
             <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido/>} />
 
+            <Route path="/pedido/exito" element={<PedidoExito />} />
 
 
 

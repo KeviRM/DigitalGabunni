@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render
 from rest_framework import viewsets, mixins, status, views, response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -18,6 +19,12 @@ from .serializers import (
 )
 from .filters import PedidoFilter
 
+
+import mercadopago
+
+from django.conf import settings
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 # Create your views here.
 
@@ -63,11 +70,6 @@ class MisPedidosViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 
-
-
-
-
-
 ###########Viewset para la gesstion de pedidos
 
 
@@ -78,6 +80,105 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
     lookup_field = 'order_number'
     permission_classes = [IsAuthenticated]
     filterset_class = PedidoFilter
+    
+    
+    
+    
+    ########    MERCADO PAGO 
+    
+class CreatePaymentPreference(APIView):
+    def post(self, request):
+            
+        order_id = request.data.get('order_id')
+            
+        try:
+            pedido = Pedido.objects.get(order_number=order_id)
+        except Pedido.DoesNotExist:
+            return Response({'error': 'Pedido no encontrado'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': f'Error buscando pedido: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        
+        
+        if not settings.MERCADO_PAGO_ACCESS_TOKEN:
+             return Response({'error': 'Token de Mercado Pago no configurado'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            #configurar SDK
+            
+        sdk = mercadopago.SDK(settings.MERCADO_PAGO_ACCESS_TOKEN)
+            
+            
+            #Item para la preferencia
+            
+        items = [ ]
+            
+        for detalle in pedido.details.all():
+                
+            items.append({
+            "title": str(detalle.product_name),
+            "quantity": int(detalle.quantity),
+            "unit_price": float(detalle.unit_price),
+            "currency_id": "MXN"
+            })
+                
+                
+            #Datos de la preferencia
+            
+        preference_data = {
+            "items" : items,
+                
+            "payer" : {
+                "name": str(pedido.client_name),
+                "email": str(pedido.email),
+                "phone": {
+                    "area_code": "52",
+                    "number": str(pedido.phone_number)
+                }
+                    
+            },
+            "back_urls": {
+                "success": "http://localhost:5173/pedido/exito",
+                "failure": "http://localhost:5173/pedido/fallo",
+                "pending": "http://localhost:5173/pedido/pendiente"
+            },
+                
+            # "auto_return": "approved",
+            "external_reference": str(pedido.order_number),
+                
+        }
+        
+        
+        # --- DEBUG: IMPRIMIR LO QUE SE ENVÍA ---
+        print("\n--- DATOS ENVIADOS A MERCADO PAGO ---")
+        print(json.dumps(preference_data, indent=2))
+        print("-------------------------------------\n")
+        # ---------------------------------------
+            
+        try:  
+            preference_response = sdk.preference().create(preference_data)
+            
+            
+            # Verificar si Mercado Pago devolvió un error
+            if preference_response["status"] != 201:
+                print("Error MP:", preference_response) # Ver en consola de Django
+                return Response({'error': 'Error al crear preferencia en MP', 'detalle': preference_response}, status=status.HTTP_400_BAD_REQUEST)
+                
+            
+            
+            preference = preference_response["response"]
+                
+                
+            return Response({
+                'preference_id': preference['id'],
+                'init_point': preference['init_point'] ###URL DE pago
+            })
+        except Exception as e:
+            print(f"Excepción interna: {str(e)}")
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+        
+    
     
     
     

@@ -2,7 +2,10 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaPhone, FaClock, FaBreadSlice, FaGlassWhiskey, FaBlender } from 'react-icons/fa';
-import ImageIndex from "../assets/images_index/Chapata.jpeg"
+import ImageIndex from "../assets/images_index/Chapata.jpeg";
+import Imagecat1 from "../assets/images_index/chapata.jpg";
+import Imagecat2 from "../assets/images_index/bebidas.jpg";
+import Imagecat3 from "../assets/images_index/saludable.jpg";
 
 
 const Welcome: React.FC = () => {
@@ -11,16 +14,16 @@ const Welcome: React.FC = () => {
     return (
         <main>
             <div className="relative h-[60vh] " >
-                <div className={`absolute inset-0 bg-[${ImageIndex}] opacity-80 overflow-hidden`}> <img src={ImageIndex} className='w-full  blur-[3px]' alt="" /></div>
-                <div className="relative max-w-7xl  mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center text-white">
+                <div className={`absolute inset-0 bg-[${ImageIndex}] opacity-80 overflow-hidden`}> <img src={ImageIndex} className='w-full  blur-[5px]' alt="" /></div>
+                <div className="relative max-w-7xl text-center   mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center text-white">
                     <h1 className="text-5xl font-extrabold mb-4 ">
                         Saborea la Frescura en Cada Bocado 
                     </h1>
                     <p className="text-xl mb-8">
-                        Bienvenido a Gabunni, donde cada chapata es una obra maestra de sabor. 
+                        Bienvenido a  Gabunni, donde cada chapata es una obra maestra de sabor. 
                     </p>
                     <button 
-                        onClick={() => navigate('/')} 
+                        onClick={() => navigate('/menu')} 
                         className="w-fit px-8 py-3  bg-orange-500 text-white font-semibold rounded-lg text-lg hover:bg-orange-600 transition-colors shadow-lg"
                     >
                         Explorar Menú
@@ -36,29 +39,30 @@ const Welcome: React.FC = () => {
                     <p className="text-lg text-gray-600 mb-10">
                         Elaborado con los ingredientes más frescos, solo para ti. 
                     </p>
-                    <div className="flex flex-wrap justify-center gap-6">
+                    <div className="flex  justify-center  gap-6">
                         {/* Tarjetas de Categoría  */}
                         {/* Chapata */}
-                        <div className="w-full md:w-1/3 p-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                            <FaBreadSlice className="text-3xl text-orange-500 mb-3 inline-block" />
+                        <div className="w-full md:w-1/3   overflow-hidden  bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                            <img src={Imagecat1} className='h-3/5 w-full' alt="" />
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Chapatas</h3>
-                            <p className="text-sm text-gray-600">Nuestras chapatas son la combinación perfecta de pan crujiente y rellenos frescos. </p>
+                            <p className="text-sm text-gray-600 mb-2">Nuestras chapatas son la combinación perfecta de pan crujiente y rellenos frescos. </p>
                         </div>
                         {/* Bebidas */}
-                        <div className="w-full md:w-1/3 p-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                            <FaGlassWhiskey className="text-3xl text-orange-500 mb-3 inline-block" />
+                        <div className="w-full md:w-1/3 overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                            <img src={Imagecat2} className='h-3/5 w-full' alt="" />
+
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Bebidas</h3>
                             <p className="text-sm text-gray-600">Amplia selección de bebidas frías y calientes. Incluye cafés premium, tés herbales y refrescos. </p>
                         </div>
                         {/* Jugos */}
-                        <div className="w-full md:w-1/3 p-4 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
-                            <FaBlender className="text-3xl text-orange-500 mb-3 inline-block" />
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Jugos</h3>
+                        <div className="w-full md:w-1/3 overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
+                            <img src={Imagecat3} className='h-3/5 w-full' alt="" />
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Comida Saludable</h3>
                             <p className="text-sm text-gray-600">Nuestros jugos y batidos naturales, recién hechos. Combina frutas de temporada. </p>
                         </div>
                         
                     </div>
-                    <Link to="/" className="inline-block mt-10 px-10 py-3 bg-orange-500 text-white font-semibold rounded-lg text-lg hover:bg-orange-600 transition-colors shadow-lg">
+                    <Link to="/menu" className="inline-block mt-10 px-10 py-3 bg-orange-500 text-white font-semibold rounded-lg text-lg hover:bg-orange-600 transition-colors shadow-lg">
                         Menú
                     </Link>
                 </div>

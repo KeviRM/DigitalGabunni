@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useCarrito } from "../context/CarritoContext";
@@ -6,8 +6,10 @@ import useAuth from '../hooks/useAuth';
 
 import { FaUserLock, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 
+import { initMercadoPago, Wallet } from "@mercadopago/sdk-react";
 
 
+initMercadoPago('TEST-7a88a069-4869-4c1f-ba63-455308958153');
 
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
@@ -26,14 +28,16 @@ const Checkout : React.FC = () => {
     const [tipoEntrega, setTipoEntrega] = useState< 'RECOGER' | 'DOMICILIO'>('RECOGER');
     const [nombre, setNombre] = useState('');
     const [direccion, setDireccion] = useState('');
+    const [email, setEmail] = useState('');
+
     const [telefono, setTelefono] = useState('');
     const [error, setError] = useState<string | null>('null');
     const [cargando, setCargando] = useState(false);
 
 
+    const [preferenceId, setPreferenceId] = useState<string | null>(null);
 
     useEffect(() => {
-    // Opcional: Si prefieres redirigir automáticamente
     // if (!isAuthenticated) navigate('/login');
   }, [isAuthenticated, navigate]);
 
@@ -91,7 +95,7 @@ const Checkout : React.FC = () => {
 
 
     const handleConfirmarPedido = async () =>{
-        if(!nombre || !telefono || (tipoEntrega == 'DOMICILIO' && !direccion)){
+        if(!nombre || !email || !telefono || (tipoEntrega == 'DOMICILIO' && !direccion)){
             setError("Por favor complete todos los campos obligatorios");
             return;
         }
@@ -113,6 +117,7 @@ const Checkout : React.FC = () => {
 
       const datosPedido = {
           client_name: nombre,
+          email: email,
           phone_number: telefono,
           type_delivery: tipoEntrega,
           delivery_address: tipoEntrega === 'DOMICILIO' ? direccion : null,
@@ -127,9 +132,17 @@ const Checkout : React.FC = () => {
         const response = await axios.post(PEDIDOS_API_URL + 'crear/', datosPedido, AUTH_HEADERS);      
         
         const numeroPedidoUnico = response.data.order_number;
-        limpiarCarrito();
 
-        navigate(`/pedido/estado/${numeroPedidoUnico}`);
+        const pagoResponse = await axios.post(`${PEDIDOS_API_URL}crear-pago/`, {
+                order_id: numeroPedidoUnico
+            }, AUTH_HEADERS);
+
+
+        setPreferenceId(pagoResponse.data.preference_id);
+
+        // limpiarCarrito();
+
+        // navigate(`/pedido/estado/${numeroPedidoUnico}`);
 
 
       } catch (err: any) { // Usamos 'any' para acceder a la estructura de AxiosError
@@ -192,6 +205,18 @@ const Checkout : React.FC = () => {
                   className="w-full p-3 border rounded-lg mb-4"
                 />
 
+
+                 <input
+                  type="email" 
+                  placeholder="Correo Electrónico (Requerido para el pago)" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-3 border rounded-lg mb-4"
+                />
+
+
+
+
                 <input type="tel"
                   placeholder="Telefono(Requerido)"
                   value={telefono}
@@ -235,7 +260,7 @@ const Checkout : React.FC = () => {
               </div>
 
 
-              <button
+              {/* <button
               onClick={handleConfirmarPedido}
               disabled={cargando}
               className={`mt-6 w-full py-4 text-white font-bold rounded-lg transition-colors ${
@@ -244,7 +269,33 @@ const Checkout : React.FC = () => {
               >
                 {cargando ? 'Procesando...' : 'Confirmar Pedido y Pagar'}
                 
-              </button>
+              </button> */}
+
+
+
+              {/* LÓGICA DE BOTÓN DE PAGO */}
+                {!preferenceId ? (
+                    <button
+                        onClick={handleConfirmarPedido}
+                        disabled={cargando}
+                        className="mt-6 w-full py-4 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 transition-colors"
+                    >
+                        {cargando ? 'Procesando...' : 'Confirmar Datos y Pagar'}
+                    </button>
+                ) : (
+                    <div className="mt-6">
+                        <p className="text-center text-sm text-gray-600 mb-2">Pedido registrado. Completa tu pago:</p>
+                        {/* Botón oficial de Mercado Pago (Wallet Brick) */}
+                        <Wallet 
+                            initialization={{ preferenceId: preferenceId }} 
+                            customization={{ texts: { valueProp: 'smart_option' } }}
+                        />
+                    </div>
+                )}  
+
+
+
+
 
             </div>
 
