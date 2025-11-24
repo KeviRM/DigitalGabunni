@@ -101,8 +101,8 @@ const ModuloCocina: React.FC = () => {
     if (cargando) return <div className="text-center p-20 text-xl font-medium flex items-center justify-center"><FaSpinner className="animate-spin mr-2" /> Cargando Comandas...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-700 p-4">
-            <h1 className="text-4xl font-extrabold text-white mb-6 text-center border-b-2 border-gray-200 pb-2">
+        <div className="min-h-screen bg-gray-50 p-4">
+            <h1 className="text-4xl font-extrabold text-gray-700 mb-6 text-center border-b-2 border-gray-200 pb-2">
                 Módulo de Cocina 
             </h1>
             

@@ -104,6 +104,7 @@ const Login: React.FC = () => {
                         <input
                             type="text"
                             value={username}
+                            autoComplete="username"
                             onChange={(e) => setUsername(e.target.value)}
                             className="w-full p-3 border rounded-lg focus:ring-orange-500 focus:border-orange-500"
                             placeholder="Tu correo o usuario"
@@ -115,8 +116,9 @@ const Login: React.FC = () => {
                     <div className="mb-4">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
                         <input
-                            type="password"
+                            type="password" 
                             value={password}
+                            autoComplete="current-password"
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full p-3 border rounded-lg focus:ring-orange-500 focus:border-orange-500"
                             placeholder="********"

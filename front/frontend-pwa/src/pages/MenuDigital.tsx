@@ -213,7 +213,7 @@ const MenuDigital : React.FC = () => {
                 <div className="w-full md:w-1/3 space-y-6   ">
 
                 
-                <h1 className="text-6xl font-extrabold  text-gray-950 text-center  border-b-5 border-gray-200 pb-3 mx-auto max-w">
+                <h1 className="text-6xl font-extrabold  text-gray-800 text-center  border-b-5 border-gray-200 pb-3 mx-auto max-w">
                     Menú
                 </h1>
 

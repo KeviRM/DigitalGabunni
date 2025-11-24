@@ -181,6 +181,7 @@ const Registro: React.FC = () => {
                             <input
                                 type="password"
                                 name="password"
+                                autoComplete="new-password"
                                 placeholder="Contraseña"
                                 value={formData.password}
                                 onChange={handleChange}
@@ -193,6 +194,7 @@ const Registro: React.FC = () => {
                             <input
                                 type="password"
                                 name="password2"
+                                autoComplete="new-password"
                                 placeholder="Confirmar Contraseña"
                                 value={formData.password2}
                                 onChange={handleChange}

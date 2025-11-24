@@ -10,6 +10,10 @@ from django.db.models.functions import TruncDate
 
 from django.utils import timezone
 from datetime import timedelta
+from datetime import datetime
+
+import csv
+from django.http import HttpResponse
 
 from .models import Pedido
 from .serializers import (
@@ -258,3 +262,69 @@ class AnalyticsView(views.APIView):
 
         return response.Response(data, status=status.HTTP_200_OK)
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #########################Reportesss
+    
+    
+class ReporteVentasCSV(views.APIView):
+    
+        permission_classes = [IsAuthenticated]
+
+        def get(self, request, format=None):
+            fecha_inicio_str = request.query_params.get('fecha_inicio')
+            fecha_fin_str = request.query_params.get('fecha_fin')
+
+           
+            pedidos = Pedido.objects.filter(status__in=['ENTREGADO', 'LISTO', 'CONFIRMADO']).prefetch_related('details')
+
+            if fecha_inicio_str:
+                pedidos = pedidos.filter(created_at__date__gte=fecha_inicio_str)
+            if fecha_fin_str:
+                pedidos = pedidos.filter(created_at__date__lte=fecha_fin_str)
+
+            pedidos = pedidos.order_by('-created_at')
+
+            # 3. Crear la respuesta HTTP con tipo de contenido CSV
+            response = HttpResponse(content_type='text/csv')
+            filename = f"reporte_ventas_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+            # 4. Escribir el CSV
+            writer = csv.writer(response)
+            
+            # Encabezados
+            writer.writerow(['ID Pedido', 'Fecha', 'Cliente', 'Teléfono', 'Tipo Entrega', 'Estado', 'Total ($)', 'Items'])
+
+            # Filas de datos
+            for pedido in pedidos:
+                # Resumen de items en una celda
+                items_str = ", ".join([f"{d.quantity}x {d.product_name}" for d in pedido.details.all()])
+                
+                fecha_str = pedido.created_at.strftime('%Y-%m-%d %H:%M') if pedido.created_at else "N/A"
+                
+                writer.writerow([
+                    str(pedido.order_number),
+                    fecha_str,
+                    pedido.client_name,
+                    pedido.phone_number,
+                    pedido.type_delivery,
+                    pedido.status,
+                    pedido.amount,
+                    items_str
+                ])
+
+            return response
+        

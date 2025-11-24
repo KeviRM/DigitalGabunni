@@ -27,6 +27,7 @@ import GestionPaquetes from "./pages/GestionPaquetes";
 import GestionUsuarios from "./pages/GestionUsuarios";
 import ModuloCocina from "./pages/ModuloCocina";
 
+import ReportesAdmin from './pages/ReportesAdmin';
 
 import Carrito from './pages/Carrito';
 
@@ -89,7 +90,7 @@ function App() {
                   <Route path="/admin/paquetes" element={<GestionPaquetes />} />
 
                   <Route path="/admin/usuarios" element={<GestionUsuarios />} />
-              
+                  <Route path="reportes" element={<ReportesAdmin />} />
               </Route>
 
 

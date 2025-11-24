@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCarrito } from "../context/CarritoContext";
-import { FaShoppingCart,  FaUserCircle, FaTruck, FaTimes, FaBars } from "react-icons/fa";
+import { FaShoppingCart,  FaUserCircle,  FaTimes, FaBars } from "react-icons/fa";
 import useAuth from "../hooks/useAuth";
 import gabunniImage from "../assets/gabunniLogo.jpg"
+
 
 
 
@@ -12,7 +13,6 @@ const Navbar : React.FC = () => {
 
     const { items } = useCarrito();
     const navigate = useNavigate();
-    const [pedidoUUID, setPedidoUUID] = React.useState('');
     const [isOpen, setIsOpen] = useState(false);
 
     const {isAuthenticated, logout, getUserRole} = useAuth();
@@ -23,21 +23,13 @@ const Navbar : React.FC = () => {
 
 
     const navItems = [
+    {name: 'INICIO', path: '/'},
     { name: 'MENÚ', path: '/menu' },
     { name: 'CONTACTOS', path: '/contacto' },   
-    { name: 'SEGUIMIENTO', path: '/pedido/seguimiento', icon: <FaTruck className="mr-1" /> } 
     ];
 
 
-    const handleTrackOrder = () =>{
-        if (pedidoUUID) {
-            navigate(`/pedido/estado/${pedidoUUID}`);
-            setPedidoUUID('');
-        } else {
-            alert("Por favor, introduce tu número de pedido único.");
-        }
     
-    };
 
 
     const handlePerfil = () => {
@@ -52,7 +44,7 @@ const Navbar : React.FC = () => {
   
 
 return (
-    <header className="bg-white shadow-md  border-b-4 border-orange-500  sticky top-0 z-40">
+    <header className="bg-white shadow-md  border-b-3 border-orange-400  sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           
@@ -73,7 +65,7 @@ return (
 
           {/* Logo */}
           <Link to="/" className="shrink-0">
-            <img src={gabunniImage} alt="Gabunni Logo" className="h-12 w-auto" /> 
+            <img src={gabunniImage} alt="Gabunni Logo" className="h-20 w-auto shadow-2xl  rounded-b-4xl" /> 
           </Link>
 
           {/* Enlaces de Navegación Central */}
@@ -84,7 +76,7 @@ return (
                 to={item.path}
                 className="text-gray-700 hover:text-orange-600 font-bold tracking-wider transition-colors duration-200 flex items-center"
               >
-                {item.icon}
+                
                 {item.name}
               </Link>
             ))}
@@ -93,22 +85,7 @@ return (
           {/* Íconos y Botones de Usuario/Administrador */}
           <div className="flex items-center space-x-4">
             
-            {/* Campo de Seguimiento de Pedido (Input) */}
-            <div className="hidden lg:flex items-center border rounded-lg p-1">
-                <input
-                    type="text"
-                    placeholder="Num. de Pedido"
-                    value={pedidoUUID}
-                    onChange={(e) => setPedidoUUID(e.target.value)}
-                    className="w-40 px-2 py-1 text-sm border-none focus:outline-none"
-                />
-                <button
-                    onClick={handleTrackOrder}
-                    className="text-sm bg-orange-500 text-white px-3 py-1 rounded-md hover:bg-orange-600"
-                >
-                    <FaTruck />
-                </button>
-            </div>
+           
 
 
             {/* Carrito de Compras */}
@@ -203,25 +180,29 @@ return (
               onClick={() => setIsOpen(false)} // Cierra el menú al navegar
               className="text-gray-700 hover:text-orange-600 font-semibold text-lg py-2 border-b border-gray-100 flex items-center"
             >
-              {item.icon}
+              
               {item.name}
             </Link>
           ))}
           
           {/* Login/Registro en Sidebar (Si fueron ocultados en la vista móvil) */}
-          <div className='pt-4 space-y-2'>
+          <div className='pt-4  flex flex-col space-y-5'>
+            {/* Inicio de Sesión (Cliente/Admin) */}
             {isAuthenticated ? (
-              <Link to="/mi-perfil" onClick={() => setIsOpen(false)} className="hidden sm:block">
-              <button 
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
-              >
-                <FaUserCircle className="inline mr-1" /> Mi Perfil
-              </button>
-              </Link>
+              
+                <button 
+                onClick={handlePerfil}
+                    className="px-4 py-2 border md:block border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                >
+                 
+                   { role === 'admin' ? (  <div><FaUserCircle className="inline mr-1" />Panel Admin</div>):(<div><FaUserCircle className="inline mr-1" />Mi Perfil</div>) } 
+
+                </button>
+              
             ) : (
-              <Link to="/login" onClick={() => setIsOpen(false)} className="hidden sm:block">
+              <Link to="/login" className=" sm:block">
               <button 
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
+                className="px-4 py-2 border md:block border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
 
               >
                 <FaUserCircle className="inline mr-1" /> Iniciar Sesión
