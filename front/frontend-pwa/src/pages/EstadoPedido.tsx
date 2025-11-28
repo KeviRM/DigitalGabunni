@@ -5,8 +5,9 @@ import{  type PedidoStatus, EstadoAmigable } from "../types/pedido";
 
 
 
+
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
-const POLLING_INTERVAL = 1000;
+
 
 
 const EstadoPedido: React.FC = () => {

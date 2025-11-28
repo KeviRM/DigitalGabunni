@@ -1,5 +1,5 @@
 // frontend-pwa/src/pages/ModuloCocina.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +13,8 @@ interface PedidoComanda extends PedidoStatus {
 }
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
-const POLLING_INTERVAL = 10000; 
+
+const WS_URL = 'ws://127.0.0.1:8001/ws/pedidos/cocina/'; // URL del WebSocket
 
 const ModuloCocina: React.FC = () => {
     const { isAuthenticated, getAuthHeaders } = useAuth();
@@ -22,6 +23,8 @@ const ModuloCocina: React.FC = () => {
     
     const [pedidos, setPedidos] = useState<PedidoComanda[]>([]);
     const [cargando, setCargando] = useState(true);
+    const socketRef = useRef< WebSocket | null> (null);
+
 
     const ESTADOS_RELEVANTES = ['CONFIRMADO', 'PREPARACION']; 
 
@@ -47,13 +50,83 @@ const ModuloCocina: React.FC = () => {
         }
     };
 
-    useEffect(() => {
+
+  useEffect(() => {
         if (!isAuthenticated) return;
+        
         fetchPedidos();
-        // Polling: Actualiza cada 10 seg para ver nuevos pedidos
-        const interval = setInterval(fetchPedidos, POLLING_INTERVAL);
-        return () => clearInterval(interval);
+
+        //Conecta al WebSocket
+        const connectWS = () => {
+            const socket = new WebSocket(WS_URL);
+            socketRef.current = socket;
+
+            socket.onopen = () => {
+                console.log("WebSocket Cocina Conectado 🟢");
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                
+                if (data.tipo === 'actualizacion_pedido') {
+                    const pedidoActualizado = data.pedido;
+                    
+                    setPedidos(prevPedidos => {
+                        // Si el estado es LISTO, lo quitamos de la vista de cocina
+                        if (pedidoActualizado.estado === 'LISTO') {
+                            return prevPedidos.filter(p => p.order_number !== pedidoActualizado.order_number);
+                        }
+                        
+                        // Si ya existe, lo actualizamos
+                        const existe = prevPedidos.find(p => p.order_number === pedidoActualizado.order_number);
+                        if (existe) {
+                            return prevPedidos.map(p => 
+                                p.order_number === pedidoActualizado.order_number 
+                                ? { ...p, ...pedidoActualizado } 
+                                : p
+                            );
+                        } 
+                        
+                        // Si es nuevo (ej: CONFIRMADO) y no estaba en la lista, lo agregamos
+                        if (pedidoActualizado.status === 'CONFIRMADO') {
+                            // Nota: Para agregarlo completo, idealmente el WS debe enviar el objeto completo 
+                            // o aquí hacemos un fetch individual rápido.
+                            // Por ahora asumimos que data.pedido tiene lo necesario para mostrar la tarjeta.
+                            return [...prevPedidos, pedidoActualizado];
+                        }
+                        
+                        return prevPedidos;
+                    });
+                }
+            };
+
+            socket.onclose = () => {
+                console.log("WebSocket Desconectado 🔴. Reintentando...");
+                setTimeout(connectWS, 3000); // Re-conexión automática
+            };
+        };
+
+        connectWS();
+
+        // Cleanup al desmontar
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close();
+            }
+        };
     }, [isAuthenticated]);
+
+
+
+
+
+
+
+
+
+
+
+   
 
     // Lógica para avanzar el status del pedido
     const handleAvanzarEstado = async (pedidoId: string, estadoActual: string) => {

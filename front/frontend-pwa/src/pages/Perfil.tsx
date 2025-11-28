@@ -1,14 +1,12 @@
-// frontend-pwa/src/pages/Perfil.tsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaHistory, FaHeart, FaBoxOpen , FaBell } from 'react-icons/fa';
-import type{ Producto } from '../types/menu';
+import { FaUser, FaHistory, FaHeart, FaBoxOpen, FaBell } from 'react-icons/fa';
+import type { Producto } from '../types/menu';
 
 import usePushNotification from '../hooks/usePushNotification';
-
-
+import { useWebSocket } from '../context/WebSocketContext';
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/mis-pedidos/';
 const FAVORITOS_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/favoritos/';
@@ -24,17 +22,7 @@ const Perfil: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     const { subscribeToPush } = usePushNotification();
-    // Datos del usuario (Simulados o decodificados del token si el backend no tiene endpoint 'me')
-    // Idealmente: const [user, setUser] = useState<any>(null); 
-    // y llamar a un endpoint /api/auth/me/
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            navigate('/login');
-            return;
-        }
-        fetchData();
-    }, [activeTab]);
+    const { lastMessage } = useWebSocket();
 
     const fetchData = async () => {
         setLoading(true);
@@ -53,6 +41,23 @@ const Perfil: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (!isAuthenticated) {
+            navigate('/login');
+            return;
+        }
+        fetchData();
+    }, [activeTab, isAuthenticated]);
+
+    useEffect(() => {
+        if (lastMessage && activeTab === 'historial') {
+            // El backend envía { tipo: 'actualizacion_pedido', pedido: { ... } }
+            if (lastMessage.tipo === 'actualizacion_pedido') {
+                fetchData();
+            }
+        }
+    }, [lastMessage, activeTab]);
+
     const handleRemoveFavorite = async (favId: number) => {
         try {
             await axios.delete(`${FAVORITOS_API_URL}${favId}/`, AUTH_HEADERS);
@@ -63,7 +68,7 @@ const Perfil: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-10">
             <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
-                
+
                 {/* Sidebar de Navegación del Perfil */}
                 <aside className="w-full md:w-1/4 bg-gray-800 text-white p-6">
                     <div className="flex flex-col items-center mb-8">
@@ -72,21 +77,21 @@ const Perfil: React.FC = () => {
                         </div>
                         <h2 className="text-xl font-semibold">Mi Cuenta</h2>
                     </div>
-                    
+
                     <nav className="space-y-2">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('datos')}
                             className={`w-full flex items-center p-3 rounded-lg transition ${activeTab === 'datos' ? 'bg-orange-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaUser className="mr-3" /> Mis Datos
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('historial')}
                             className={`w-full flex items-center p-3 rounded-lg transition ${activeTab === 'historial' ? 'bg-orange-600' : 'hover:bg-gray-700'}`}
                         >
                             <FaHistory className="mr-3" /> Historial
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('favoritos')}
                             className={`w-full flex items-center p-3 rounded-lg transition ${activeTab === 'favoritos' ? 'bg-orange-600' : 'hover:bg-gray-700'}`}
                         >
@@ -94,8 +99,8 @@ const Perfil: React.FC = () => {
                         </button>
 
                         <button onClick={subscribeToPush} className="flex items-center p-3 rounded-lg border bg-gray-600 hover:bg-green-500">
-                            <FaBell className='mr-3'/>
-                        Activar Notificaciones de Pedidos
+                            <FaBell className='mr-3' />
+                            Activar Notificaciones de Pedidos
                         </button>
                     </nav>
                 </aside>
@@ -116,7 +121,7 @@ const Perfil: React.FC = () => {
                                     </div>
                                 </div>
 
-                                
+
                             )}
 
                             {/* VISTA: HISTORIAL */}
@@ -128,14 +133,14 @@ const Perfil: React.FC = () => {
                                             {historial.map((pedido: any) => (
                                                 <div key={pedido.order_number} className="border rounded-lg p-4 hover:shadow-md transition">
                                                     <div className="flex justify-between mb-2">
-                                                        <span className="font-bold text-orange-600">#{pedido.order_number.substring(0,8)}</span>
+                                                        <span className="font-bold text-orange-600">#{pedido.order_number.substring(0, 8)}</span>
                                                         <span className="text-sm text-gray-500">{new Date(pedido.created_at).toLocaleDateString()}</span>
                                                     </div>
                                                     <p className="font-semibold">Total: ${parseFloat(pedido.amount).toFixed(2)}</p>
                                                     <span className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${pedido.status === 'ENTREGADO' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                                                         {pedido.status}
                                                     </span>
-                                                    <button 
+                                                    <button
                                                         onClick={() => navigate(`/pedido/estado/${pedido.order_number}`)}
                                                         className="block mt-3 text-sm text-blue-600 hover:underline"
                                                     >
@@ -156,24 +161,24 @@ const Perfil: React.FC = () => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {favoritos.map((fav: any) => (
                                                 <div key={fav.id} className="border rounded-lg p-4 flex flex-col items-center text-center relative group">
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleRemoveFavorite(fav.id)}
                                                         className="absolute top-2 right-2 text-red-300 hover:text-red-600 text-xl"
                                                         title="Eliminar de favoritos"
                                                     >
                                                         <FaHeart />
                                                     </button>
-                                                    
+
                                                     <div className="h-24 w-full bg-gray-100 mb-3 rounded flex items-center justify-center overflow-hidden">
                                                         {fav.producto_detalle.image ? (
                                                             <img src={fav.producto_detalle.image} className="h-full w-full object-cover" />
-                                                        ) : <FaBoxOpen className="text-3xl text-gray-300"/>}
+                                                        ) : <FaBoxOpen className="text-3xl text-gray-300" />}
                                                     </div>
-                                                    
+
                                                     <h3 className="font-bold text-gray-800">{fav.producto_detalle.name}</h3>
                                                     <p className="text-green-600 font-bold">${parseFloat(fav.producto_detalle.price).toFixed(2)}</p>
-                                                    
-                                                    <button 
+
+                                                    <button
                                                         onClick={() => navigate(`/producto/${fav.producto}`)}
                                                         className="mt-3 text-sm bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
                                                     >

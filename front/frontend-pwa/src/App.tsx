@@ -41,47 +41,48 @@ import PedidoExito from "./pages/PedidoExito";
 import { CarritoProvider } from "./context/CarritoContext";
 
 import { AuthProvider } from "./context/AuthContext";
+import { WebSocketProvider } from "./context/WebSocketContext";
 
 function App() {
 
-  return(
+  return (
 
-  <AuthProvider>
+    <AuthProvider>
+      <WebSocketProvider>
+        <Router>
+          <CarritoProvider>
+            <div className="App">
+              <Navbar />
+              <Routes>
 
-    <Router>
-      <CarritoProvider>
-        <div className="App">
-          <Navbar/>
-          <Routes>
+                {/* Rutas Publicas */}
 
-            {/* Rutas Publicas */}
+                <Route path="/" element={<Welcome />} />
 
-              <Route path="/" element={<Welcome/>} /> 
+                <Route path="/registro" element={<Registro />} />
+                <Route path="/login" element={<Login />} />
 
-              <Route path="/registro" element={<Registro />} />
-              <Route path="/login" element={<Login />} />
+                <Route path="/mi-perfil" element={<Perfil />} />
 
-              <Route path="/mi-perfil" element={<Perfil />} />
+                <Route path="/contacto" element={<Contactos />} />
+                <Route path="/menu" element={<MenuDigital />} />
+                <Route path="/producto/:productoId" element={<DetalleProducto />} />
+                {/* Personalizacion de chapata */}
+                <Route path="/personalizar/nueva" element={<Personalizador />} />
+                <Route path="/carrito" element={<Carrito />} />
 
-              <Route path="/contacto" element={<Contactos />} />
-              <Route path="/menu" element={<MenuDigital/>} />
-              <Route path="/producto/:productoId" element={<DetalleProducto />} />
-              {/* Personalizacion de chapata */}
-              <Route path="/personalizar/nueva" element={<Personalizador />} />
-              <Route path="/carrito" element={<Carrito/>}/>
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido />} />
 
-              <Route path="/checkout" element={<Checkout/>}/>
-              <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido/>} />
-
-              <Route path="/pedido/exito" element={<PedidoExito />} />
+                <Route path="/pedido/exito" element={<PedidoExito />} />
 
 
 
-              <Route path="/admin" element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminLayout />}>
                   <Route index element={<AdminDashboard />} />
 
                   <Route path="dashboard" element={<AdminDashboard />} /> {/* Si queremos una ruta explícita */}
-                  <Route path="pedidos" element={<PanelAdmin />} /> 
+                  <Route path="pedidos" element={<PanelAdmin />} />
                   <Route path="cocina" element={<ModuloCocina />} />
                   <Route path="catalogo" element={<GestionCatalogo />} />
                   <Route path="ingredientes" element={<GestionIngredientes />} />
@@ -91,28 +92,29 @@ function App() {
 
                   <Route path="/admin/usuarios" element={<GestionUsuarios />} />
                   <Route path="reportes" element={<ReportesAdmin />} />
-              </Route>
-
-
-              
+                </Route>
 
 
 
-            
 
-              <Route path="*" element={<h1 className="text-center p-10 text-xl">404 - Página no encontrada</h1>} />
-          </Routes>
 
-            <Footer />
-        </div> 
-      </CarritoProvider>
-      
-    </Router>
-  </AuthProvider>
+
+
+
+                <Route path="*" element={<h1 className="text-center p-10 text-xl">404 - Página no encontrada</h1>} />
+              </Routes>
+
+              <Footer />
+            </div>
+          </CarritoProvider>
+
+        </Router>
+      </WebSocketProvider>
+    </AuthProvider>
 
   );
-  
-  
+
+
 }
 
-export default App
+export default App;

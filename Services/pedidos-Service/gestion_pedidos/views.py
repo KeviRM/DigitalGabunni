@@ -35,6 +35,12 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+
+#####chanels
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+
 # Create your views here.
 
 class PedidoCreationViewSet (mixins.CreateModelMixin, viewsets.GenericViewSet):
@@ -45,6 +51,9 @@ class PedidoCreationViewSet (mixins.CreateModelMixin, viewsets.GenericViewSet):
     
     def perform_create(self, serializer):
         serializer.save(usuario_id=self.request.user.id)
+    
+    
+   
     
     
     
@@ -116,6 +125,27 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
         
         if pedido.status == 'LISTO' and pedido.usuario_id:
             self.enviar_notificacion_push(pedido)
+            
+        # Notificar a WebSockets 
+        channel_layer = get_channel_layer()
+        
+        data_pedido = {
+            'order_number': str(pedido.order_number),
+            'status': pedido.status,
+            'client_name': pedido.client_name,
+            
+            # Añade otros campos necesarios para la cocina
+        }
+        
+        # AVISAR AL GRUPO cocina
+        async_to_sync(channel_layer.group_send)(
+            'grupo_cocina', # Nombre del grupo 
+            {
+                'type': 'pedido_update', # Método del consumer a ejecutar
+                'pedido': data_pedido
+            }
+        )
+        
     
     def enviar_notificacion_push(self, pedido):
         try:
