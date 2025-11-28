@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Pedido, DetallePedido
+from .models import Pedido, DetallePedido, PushSubscription
 
 
 class DetallePedidoSerializer(serializers.ModelSerializer):
@@ -125,4 +125,11 @@ class PedidoAdminSerializer(serializers.ModelSerializer):
         #########El admin solo podra cambiar el estado
     
     
-    
+
+
+
+
+class PushSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PushSubscription
+        fields = ['endpoint', 'p256dh', 'auth']

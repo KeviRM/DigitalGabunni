@@ -115,7 +115,7 @@ const GestionUnidades: React.FC = () => {
                 
                 {/* Columna 1: Formulario */}
                 <div className="bg-white p-6 rounded-xl shadow-lg h-fit">
-                    <h2 className="text-xl font-bold text-green-700 mb-4">Añadir Nueva Unidad</h2>
+                    <h2 className="text-xl font-bold text-orange-700 mb-4">Añadir Nueva Unidad</h2>
                     <form onSubmit={handleSubmit}>
                         <input
                             type="text"

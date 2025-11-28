@@ -11,6 +11,9 @@ export default defineConfig({
     tailwindcss(),
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir:'public',
+      filename:'sw.js',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       workbox: {
@@ -29,24 +32,24 @@ export default defineConfig({
             },
         ],
       },
-      manifest: {
-        name: 'Digital Gabunni',
-        short_name: 'Gabbuni',
-        description: 'App de pedidos de chapatas y comida saludables',
-        theme_color: '#f97316', 
-        icons: [
-          {
-            src: 'src/assets/gabunniLogo.jpg',
-            sizes: '192x192',
-            type: 'image/jpg',
-          },
-          {
-            src: 'src/assets/gabunniLogo.jpg',
-            sizes: '512x512',
-            type: 'image/jpg',
-          },
-        ],
-      },
+      // manifest: {
+      //   name: 'Digital Gabunni',
+      //   short_name: 'Gabbuni',
+      //   description: 'App de pedidos de chapatas y comida saludables',
+      //   theme_color: '#f97316', 
+      //   icons: [
+      //     {
+      //       src: 'src/assets/gabunniLogo.jpg',
+      //       sizes: '192x192',
+      //       type: 'image/jpg',
+      //     },
+      //     {
+      //       src: 'src/assets/gabunniLogo.jpg',
+      //       sizes: '512x512',
+      //       type: 'image/jpg',
+      //     },
+      //   ],
+      // },
     })
   ],
 });

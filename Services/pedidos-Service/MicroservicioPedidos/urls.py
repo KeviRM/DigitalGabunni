@@ -16,12 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from gestion_pedidos.views import AnalyticsView, ReporteVentasCSV
+from gestion_pedidos.views import AnalyticsView, ReporteVentasCSV, SavePushSubscriptionView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/pedidos/', include('gestion_pedidos.urls')),
-    
+    path('api/v1/push/subscribe/', SavePushSubscriptionView.as_view(), name='push_subscribe'),
     path('api/v1/analytics/', AnalyticsView.as_view(), name='analytics-data'),
     path('api/v1/reportes/ventas/', ReporteVentasCSV.as_view(), name='reporte-ventas'),
 ]

@@ -1,5 +1,6 @@
 import json
 from django.shortcuts import render
+from requests import request
 from rest_framework import viewsets, mixins, status, views, response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
@@ -15,13 +16,17 @@ from datetime import datetime
 import csv
 from django.http import HttpResponse
 
-from .models import Pedido
+from .models import Pedido, PushSubscription
 from .serializers import (
     PedidoCreationSerializer, 
     PedidoEstadoSerializer,
-    PedidoAdminSerializer
+    PedidoAdminSerializer,
+    PushSubscriptionSerializer
 )
 from .filters import PedidoFilter
+
+from pywebpush import webpush, WebPushException
+
 
 
 import mercadopago
@@ -74,6 +79,27 @@ class MisPedidosViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 
+class SavePushSubscriptionView(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = PushSubscriptionSerializer(data=request.data)
+        if serializer.is_valid():
+            # Guardar o actualizar suscripción para este usuario
+            PushSubscription.objects.update_or_create(
+                usuario_id=request.user.id,
+                defaults=serializer.validated_data
+            )
+            return Response({"status": "Suscripción guardada"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
 ###########Viewset para la gesstion de pedidos
 
 
@@ -84,6 +110,47 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
     lookup_field = 'order_number'
     permission_classes = [IsAuthenticated]
     filterset_class = PedidoFilter
+    
+    def perform_update(self, serializer):
+        pedido = serializer.save()
+        
+        if pedido.status == 'LISTO' and pedido.usuario_id:
+            self.enviar_notificacion_push(pedido)
+    
+    def enviar_notificacion_push(self, pedido):
+        try:
+            sub = PushSubscription.objects.filter(usuario_id = pedido.usuario_id).first()
+            
+            if not sub:
+                return
+            
+            
+            subscription_info ={
+                "endpoint": sub.endpoint,
+                "keys": {
+                    "p256dh": sub.p256dh,
+                    "auth": sub.auth
+                }
+            }
+            
+            payload = json.dumps({
+                "title": "¡Tu pedido está listo!",
+                "body": f"El pedido #{str(pedido.order_number)[:8]} ya está listo para recoger/enviar.",
+                "url": f"/pedido/estado/{pedido.order_number}" # Para abrir la app al tocar
+            })
+            
+            webpush(
+                subscription_info=subscription_info,
+                data=payload,
+                vapid_private_key=settings.WEBPUSH_SETTINGS['VAPID_PRIVATE_KEY'],
+                vapid_claims={"sub": settings.WEBPUSH_SETTINGS['VAPID_ADMIN_EMAIL']}
+            )
+            print(f"Notificacion enviada al usuario {pedido.usuario_id}")
+            
+        except WebPushException as ex:
+            print(f"Error enviando push: {ex}")
+        except Exception as e:
+            print(f"Error general Push: {e}")
     
     
     
@@ -179,6 +246,9 @@ class CreatePaymentPreference(APIView):
         except Exception as e:
             print(f"Excepción interna: {str(e)}")
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+        
+        
         
         
         

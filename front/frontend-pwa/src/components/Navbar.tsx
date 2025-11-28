@@ -44,7 +44,7 @@ const Navbar : React.FC = () => {
   
 
 return (
-    <header className="bg-white shadow-md  border-b-3 border-orange-400  sticky top-0 z-40">
+    <header className="bg-white shadow-md  border-b-3 border-gray-100  sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           

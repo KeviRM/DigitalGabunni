@@ -77,6 +77,14 @@ REST_FRAMEWORK = {
 
 
 
+# Configuración WebPush
+WEBPUSH_SETTINGS = {
+    "VAPID_PUBLIC_KEY": "BAfA5J72akeT3OJ7S0C-PdWyqliZ-qHS34IUjGtnJkbX-9tyuhFY2llXrl7kjXy_zIFQ958Ccp9eDbLDIgOg75U",
+    "VAPID_PRIVATE_KEY": "-RfF_VB9_Dhh6EZkB6pK08cNfXP8uiTZIexl3-_oFRw",
+    "VAPID_ADMIN_EMAIL": "mailto:admin@gabunni.com"
+}
+
+
 ROOT_URLCONF = 'MicroservicioPedidos.urls'
 
 TEMPLATES = [

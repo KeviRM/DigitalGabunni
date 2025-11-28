@@ -155,12 +155,7 @@ const EstadoPedido: React.FC = () => {
           </div>
         </div>
 
-        {/* Simulación de Notificación */}
-        {pedido.status === 'LISTO' && (
-          <div className="mt-8 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 rounded-lg font-semibold">
-            ¡Notificación! Tu pedido esta listo para ser recogido o enviado.
-          </div>
-        )}
+        
         
         <button
             onClick={() => navigate('/mi-perfil')}

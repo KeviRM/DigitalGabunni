@@ -3,8 +3,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { FaUser, FaHistory, FaHeart, FaBoxOpen } from 'react-icons/fa';
+import { FaUser, FaHistory, FaHeart, FaBoxOpen , FaBell } from 'react-icons/fa';
 import type{ Producto } from '../types/menu';
+
+import usePushNotification from '../hooks/usePushNotification';
 
 
 
@@ -21,6 +23,7 @@ const Perfil: React.FC = () => {
     const [favoritos, setFavoritos] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
+    const { subscribeToPush } = usePushNotification();
     // Datos del usuario (Simulados o decodificados del token si el backend no tiene endpoint 'me')
     // Idealmente: const [user, setUser] = useState<any>(null); 
     // y llamar a un endpoint /api/auth/me/
@@ -89,6 +92,11 @@ const Perfil: React.FC = () => {
                         >
                             <FaHeart className="mr-3" /> Favoritos
                         </button>
+
+                        <button onClick={subscribeToPush} className="flex items-center p-3 rounded-lg border bg-gray-600 hover:bg-green-500">
+                            <FaBell className='mr-3'/>
+                        Activar Notificaciones de Pedidos
+                        </button>
                     </nav>
                 </aside>
 
@@ -107,6 +115,8 @@ const Perfil: React.FC = () => {
                                         <p className='mt-2 text-sm text-gray-500'>Para cambiar contraseña, contacta soporte.</p>
                                     </div>
                                 </div>
+
+                                
                             )}
 
                             {/* VISTA: HISTORIAL */}

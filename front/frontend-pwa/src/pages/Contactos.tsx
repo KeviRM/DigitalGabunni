@@ -29,7 +29,7 @@ const Contactos: React.FC = () => {
     return (
         <main className="min-h-screen">
             {/* Título y Hero Section (image_2.png) */}
-            <div className="relative h-64 bg-cover bg-center flex items-center justify-center" style={{ backgroundImage: "url('/img/chapata_contacto.jpg')" }}>
+            <div className="relative h-64 bg-cover bg-center flex items-center justify-center" style={{ backgroundImage: "url('../assets/gabunniLogo.jpg')" }}>
                 <div className="absolute inset-0 bg-black opacity-60"></div>
                 <h1 className="relative text-5xl font-extrabold text-white z-10">
                     Contacto

@@ -73,3 +73,17 @@ class DetallePedido(models.Model):
     
     
 
+
+
+
+
+
+class PushSubscription(models.Model):
+    usuario_id = models.IntegerField() # ID del usuario (del token)
+    endpoint = models.URLField(max_length=500)
+    p256dh = models.CharField(max_length=255)
+    auth = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Subscripcion User {self.usuario_id}"

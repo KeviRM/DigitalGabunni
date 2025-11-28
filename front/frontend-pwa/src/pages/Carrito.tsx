@@ -48,7 +48,7 @@ const Carrito : React.FC = () => {
           <div className="bg-white p-10 rounded-xl shadow-lg text-center">
             <p className="text-xl text-gray-500 mb-6">Tu carrito está vacío.</p>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/menu')}
               className="px-6 py-3 bg-yellow-500 text-gray-900 font-semibold rounded-lg hover:bg-yellow-600 transition-colors"
             >
               Explorar Menú
@@ -95,7 +95,7 @@ const Carrito : React.FC = () => {
                     )}
 
 
-                    {/* Control de Cantidad (Opcional, pero útil) */}
+                    {/* Control de Cantidad */}
                     <input
                         type="number"
                         min="1"

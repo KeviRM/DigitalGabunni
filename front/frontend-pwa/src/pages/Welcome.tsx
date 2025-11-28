@@ -45,20 +45,20 @@ const Welcome: React.FC = () => {
                         <div className="w-full md:w-1/3   overflow-hidden  bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
                             <img src={Imagecat1} className='h-3/5 w-full' alt="" />
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Chapatas</h3>
-                            <p className="text-sm text-gray-600 mb-2">Nuestras chapatas son la combinación perfecta de pan crujiente y rellenos frescos. </p>
+                            <p className="text-sm hidden md:block text-gray-600 mb-2">Nuestras chapatas son la combinación perfecta de pan crujiente y rellenos frescos. </p>
                         </div>
                         {/* Bebidas */}
                         <div className="w-full md:w-1/3 overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
                             <img src={Imagecat2} className='h-3/5 w-full' alt="" />
 
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">Bebidas</h3>
-                            <p className="text-sm text-gray-600">Amplia selección de bebidas frías y calientes. Incluye cafés premium, tés herbales y refrescos. </p>
+                            <p className="text-sm hidden md:block text-gray-600">Amplia selección de bebidas frías y calientes. Incluye cafés premium, tés herbales y refrescos. </p>
                         </div>
                         {/* Jugos */}
                         <div className="w-full md:w-1/3 overflow-hidden bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow cursor-pointer">
                             <img src={Imagecat3} className='h-3/5 w-full' alt="" />
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Comida Saludable</h3>
-                            <p className="text-sm text-gray-600">Nuestros jugos y batidos naturales, recién hechos. Combina frutas de temporada. </p>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">Saludable</h3>
+                            <p className="text-sm hidden md:block text-gray-600">Nuestros jugos y batidos naturales, recién hechos. Combina frutas de temporada. </p>
                         </div>
                         
                     </div>
