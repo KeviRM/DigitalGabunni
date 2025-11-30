@@ -16,6 +16,7 @@ interface ClaseIngrediente {
     id?: number;
     name: string;
     single_selection: boolean;
+    required: boolean;
     ingredientes: Ingrediente[];
 }
 
@@ -30,12 +31,27 @@ const GestionIngredientes: React.FC = () => {
     const [claseSeleccionada, setClaseSeleccionada] = useState<ClaseIngrediente | null>(null);
     
     // Formularios
-    const [formClase, setFormClase] = useState({ name: '', single_selection: false });
+    const [formClase, setFormClase] = useState({ name: '', single_selection: false, required:false });
     const [formIngrediente, setFormIngrediente] = useState({ name: '', additional_price: '0', available: true });
     
     const [editandoClase, setEditandoClase] = useState<number | null>(null);
     const [editandoIngrediente, setEditandoIngrediente] = useState<Ingrediente | null>(null);
 
+
+
+    //Toggle rápido de disponibilidad de ingrediente
+    const toggleDisponibilidadIngrediente = async (ing: Ingrediente) => {
+        try {
+            // Enviamos el opuesto del valor actual
+            await axios.patch(
+                `${CATALOGO_API_URL}ingredientes/${ing.id}/`, 
+                { available: !ing.available }, 
+                AUTH_HEADERS
+            );
+            // Recargamos la lista (o actualizamos estado local optimista)
+            fetchClases();
+        } catch (err) { alert("Error al actualizar disponibilidad"); }
+    };
     // Cargar Datos
     const fetchClases = async () => {
         try {
@@ -60,7 +76,7 @@ const GestionIngredientes: React.FC = () => {
             } else {
                 await axios.post(`${CATALOGO_API_URL}personalizacion/`, formClase, AUTH_HEADERS);
             }
-            setFormClase({ name: '', single_selection: false });
+            setFormClase({ name: '', single_selection: false, required:false });
             setEditandoClase(null);
             fetchClases();
         } catch (err) { alert("Error al guardar clase"); }
@@ -77,7 +93,7 @@ const GestionIngredientes: React.FC = () => {
 
     const startEditClase = (c: ClaseIngrediente) => {
         setEditandoClase(c.id!);
-        setFormClase({ name: c.name, single_selection: c.single_selection });
+        setFormClase({ name: c.name, single_selection: c.single_selection , required: c.required});
     };
 
     // --- LÓGICA DE INGREDIENTES ---
@@ -131,14 +147,28 @@ const GestionIngredientes: React.FC = () => {
                             onChange={e => setFormClase({...formClase, name: e.target.value})}
                             required
                         />
-                        <label className="flex items-center space-x-2 text-sm text-gray-700 mb-2">
-                            <input 
-                                type="checkbox"
-                                checked={formClase.single_selection}
-                                onChange={e => setFormClase({...formClase, single_selection: e.target.checked})}
-                            />
-                            <span>Selección Única (Solo uno)</span>
-                        </label>
+                        <div className="flex flex-col space-y-2 mb-2">
+                            <label className="flex items-center space-x-2 text-sm text-gray-700">
+                                <input 
+                                    type="checkbox"
+                                    checked={formClase.single_selection}
+                                    onChange={e => setFormClase({...formClase, single_selection: e.target.checked})}
+                                />
+                                <span>Selección Única </span>
+                            </label>
+
+                            {/* NUEVO CHECKBOX REQUERIDO */}
+                            <label className="flex items-center space-x-2 text-sm text-gray-700">
+                                <input 
+                                    type="checkbox"
+                                    checked={formClase.required}
+                                    onChange={e => setFormClase({...formClase, required: e.target.checked})}
+                                    className="text-red-500 focus:ring-red-500"
+                                />
+                                <span className="font-bold text-red-600">Requerido </span>
+                            </label>
+                        </div>
+
                         <button className="w-full bg-blue-600 text-white py-1 rounded font-bold">
                             {editandoClase ? 'Actualizar Categoría' : 'Crear Categoría'}
                         </button>
@@ -153,7 +183,10 @@ const GestionIngredientes: React.FC = () => {
                                 className={`p-3 rounded cursor-pointer flex justify-between items-center transition ${claseSeleccionada?.id === c.id ? 'bg-orange-100 border-l-4 border-orange-500' : 'bg-gray-50 hover:bg-gray-100'}`}
                             >
                                 <div>
-                                    <span className="font-bold block">{c.name}</span>
+                                    <span className="font-bold  flex items-center">
+                                        {c.name}
+                                        {c.required && <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">requerido</span>}
+                                    </span>
                                     <span className="text-xs text-gray-500 flex items-center">
                                         {c.single_selection ? <><FaDotCircle className="mr-1"/> Solo 1</> : <><FaCheckSquare className="mr-1"/> Varios</>}
                                     </span>
@@ -221,11 +254,16 @@ const GestionIngredientes: React.FC = () => {
                                         <tr key={ing.id} className="hover:bg-gray-50">
                                             <td className="p-2 font-medium">{ing.name}</td>
                                             <td className="p-2 text-green-600 font-bold">+${Number(ing.additional_price).toFixed(2)}</td>
-                                            <td className="p-2">
-                                                <span className={`text-xs px-2 py-1 rounded ${ing.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                    {ing.available ? 'Disponible' : 'Agotado'}
-                                                </span>
-                                            </td>
+                                                <button 
+                                                    onClick={() => toggleDisponibilidadIngrediente(ing)}
+                                                    className={`text-xs px-2 py-1 rounded font-bold border ${
+                                                        ing.available 
+                                                            ? 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200' 
+                                                            : 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+                                                    }`}
+                                                >
+                                                    {ing.available ? 'Disponible' : 'AGOTADO'}
+                                                </button>
                                             <td className="p-2 text-right space-x-2">
                                                 <button onClick={() => startEditIngrediente(ing)} className="text-blue-500"><FaEdit /></button>
                                                 <button onClick={() => handleDeleteIngrediente(ing.id!)} className="text-red-500"><FaTrash /></button>

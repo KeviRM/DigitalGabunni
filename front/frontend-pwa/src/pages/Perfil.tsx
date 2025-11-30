@@ -6,7 +6,6 @@ import { FaUser, FaHistory, FaHeart, FaBoxOpen, FaBell } from 'react-icons/fa';
 import type { Producto } from '../types/menu';
 
 import usePushNotification from '../hooks/usePushNotification';
-import { useWebSocket } from '../context/WebSocketContext';
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/mis-pedidos/';
 const FAVORITOS_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/favoritos/';
@@ -22,7 +21,6 @@ const Perfil: React.FC = () => {
     const [loading, setLoading] = useState(false);
 
     const { subscribeToPush } = usePushNotification();
-    const { lastMessage } = useWebSocket();
 
     const fetchData = async () => {
         setLoading(true);
@@ -49,14 +47,7 @@ const Perfil: React.FC = () => {
         fetchData();
     }, [activeTab, isAuthenticated]);
 
-    useEffect(() => {
-        if (lastMessage && activeTab === 'historial') {
-            // El backend envía { tipo: 'actualizacion_pedido', pedido: { ... } }
-            if (lastMessage.type === 'actualizacion_pedido') {
-                fetchData();
-            }
-        }
-    }, [lastMessage, activeTab]);
+   
 
     const handleRemoveFavorite = async (favId: number) => {
         try {

@@ -98,7 +98,7 @@ class UnidadMedidaGestionViewSet(viewsets.ModelViewSet):
 class ProductoIngredienteGestionViewSet(viewsets.ModelViewSet):
     queryset = ProductoIngrediente.objects.all().select_related('product', 'ingredient', 'ingredient__unidad_medida')
     serializer_class = ProductoIngredienteAdminSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         queryset = super().get_queryset()

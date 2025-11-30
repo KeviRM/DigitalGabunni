@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import type{ Producto, ClaseIngrediente, Ingrediente, ItemCarrito } from '../types/menu';
 import { fetchClasesIngredientes } from '../api/menuApi';
 import { useCarrito } from '../context/CarritoContext';
+import { FaCheck } from 'react-icons/fa';
 
 interface Selecciones {
     [claseId: number]: Ingrediente[]; 
@@ -42,7 +43,7 @@ const Personalizador: React.FC = () => {
         fetchClasesIngredientes().then(setClases);
 
         
-    } , [clases]);
+    } , []);
 
     const precioBase = productoBase ? parseFloat(productoBase.price) : 0;
 
@@ -70,27 +71,37 @@ const Personalizador: React.FC = () => {
     }, [clases, selecciones]);
     
     // --- Lógica de Manejo de Selección (Mueve la lógica de DetalleProducto aquí) ---
-    const handleSeleccion = (claseId: number, ingrediente: Ingrediente) => {
-        // ... (Lógica para selección simple/múltiple)
-        const clase = clases.find(c => c.id === claseId);
-        if (!clase) return;
-
+    const handleToggleIngrediente = (claseId: number, ingrediente: Ingrediente) => {
         setSelecciones(prev => {
-            const ingredientesActuales = prev[claseId] || [];
-            const yaSeleccionado = ingredientesActuales.some(i => i.id === ingrediente.id);
+            const currentList = prev[claseId] || [];
+            const exists = currentList.find(i => i.id === ingrediente.id);
             
-            let nuevosIngredientes: Ingrediente[];
+            // 1. Buscar la información de la CLASE actual para ver sus reglas
+            const claseInfo = clases.find(c => c.id === claseId);
+            const esSeleccionUnica = claseInfo?.single_selection;
 
-            if (yaSeleccionado) {
-                nuevosIngredientes = ingredientesActuales.filter(i => i.id !== ingrediente.id);
-            } else {
-                if (clase.required) {
-                    nuevosIngredientes = [ingrediente]; // Selección única
+            
+
+            if (esSeleccionUnica) {
+                // LOGICA RADIO BUTTON:
+                // Si es selección única, reemplazamos toda la lista con el nuevo ingrediente
+                // (Si ya estaba seleccionado, lo podemos dejar o quitar, usualmente en radio buttons se deja o se cambia, aquí permitiremos desmarcar si se toca el mismo)
+                if (exists) {
+                    return { ...prev, [claseId]: [] }; // Desmarcar (Opcional, si quieres obligar a tener 1, quita este if)
                 } else {
-                    nuevosIngredientes = [...ingredientesActuales, ingrediente]; // Selección múltiple
+                    return { ...prev, [claseId]: [ingrediente] }; // Reemplazar
                 }
+            } else {
+                // LOGICA CHECKBOX (Múltiple):
+                // Comportamiento anterior
+                let newList;
+                if (exists) {
+                    newList = currentList.filter(i => i.id !== ingrediente.id);
+                } else {
+                    newList = [...currentList, ingrediente];
+                }
+                return { ...prev, [claseId]: newList };
             }
-            return { ...prev, [claseId]: nuevosIngredientes };
         });
     };
     
@@ -155,26 +166,51 @@ const Personalizador: React.FC = () => {
                                 <h3 className="text-xl font-bold text-gray-800 mb-3">
                                     {clase.name} 
                                     {clase.required && <span className="text-red-500 text-sm ml-2"> (Obligatorio)</span>}
+                                    {clase.single_selection && (
+                                        <span className="ml-2 text-xs font-normal text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">
+                                            Elige solo 1
+                                        </span>
+                                    )}
                                 </h3>
 
                                 <div className="grid grid-cols-3 gap-3">
+                                    
                                     {clase.ingredientes.map(ingrediente => {
-                                        const isSelected = (selecciones[clase.id] || []).some(i => i.id === ingrediente.id);
-                                        
+                                        const isAgotado = !ingrediente.available ;
+                                        const isSelected = selecciones[clase.id]?.some(i => i.id === ingrediente.id);
                                         return (
                                             <button
                                                 key={ingrediente.id}
-                                                onClick={() => handleSeleccion(clase.id, ingrediente)}
-                                                className={`py-3 rounded-lg border text-center transition-colors duration-200 ${
-                                                    isSelected ? 'border-orange-500 ring-2 ring-orange-200' : 'border-gray-300 hover:bg-gray-50'
+                                                disabled={isAgotado} // Bloquear clic
+                                                onClick={() => handleToggleIngrediente(clase.id, ingrediente)}
+                                                className={`p-3 rounded-lg border text-left flex justify-between items-center relative ${
+                                                    isAgotado 
+                                                        ? 'bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed' // Estilo Agotado
+                                                        : isSelected 
+                                                            ? 'border-orange-500 bg-orange-50' 
+                                                            : 'border-gray-200 hover:border-orange-300'
                                                 }`}
                                             >
-                                                <span className='font-semibold'>{ingrediente.name}</span>
-                                                {parseFloat(ingrediente.additional_price) > 0 && 
-                                                    <p className='text-xs text-green-600'> 
-                                                      +${parseFloat(ingrediente.additional_price).toFixed(2)}
-                                                    </p>
-                                                }
+                                                <div className="flex items-center">
+                                                    {/* ... Iconos ... */}
+                                                    <span className={isSelected ? 'font-bold text-orange-800' : 'text-gray-700'}>
+                                                        {ingrediente.name}
+                                                    </span>
+                                                </div>
+                                                
+                                                {/* Etiqueta Agotado */}
+                                                {isAgotado && (
+                                                    <span className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1.5 rounded-bl font-bold">
+                                                        AGOTADO
+                                                    </span>
+                                                )}
+                                                
+                                                {/* ... Precio Extra ... */}
+                                                {Number(ingrediente.additional_price) > 0 && (
+                                                    <span className="text-xs font-bold text-green-600">
+                                                        +${ingrediente.additional_price}
+                                                    </span>
+                                                )}
                                             </button>
                                         );
                                     })}

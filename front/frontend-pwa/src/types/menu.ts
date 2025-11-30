@@ -25,6 +25,7 @@ export interface Ingrediente {
     name: string;
     additional_price: string;
     unidad_abreviatura?: string;
+    available: boolean;
 
 }
 
@@ -33,6 +34,8 @@ export interface ClaseIngrediente {
     name: string;
     required: boolean;
     ingredientes: Ingrediente[];
+    single_selection: boolean;
+
 }
 
 

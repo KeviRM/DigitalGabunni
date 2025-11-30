@@ -19,7 +19,7 @@ class IngredienteSerializer(serializers.ModelSerializer):
     unidad_abreviatura = serializers.ReadOnlyField(source='unidad_medida.abbreviation')
     class Meta:
         model = Ingrediente
-        fields = ['id', 'name','available', 'additional_price', '_class', 'created_at', 'unidad_medida', 'unidad_abreviatura']
+        fields = ['id', 'name', 'additional_price','available', '_class', 'created_at', 'unidad_medida', 'unidad_abreviatura']
         read_only_fields = ['id', 'unidad_abreviatura']
  
  
@@ -31,7 +31,7 @@ class ClaseIngredienteSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ClaseIngrediente
-        fields = ['id', 'name', 'single_selection', 'created_at', 'ingredientes']
+        fields = ['id', 'name', 'required', 'single_selection', 'created_at', 'ingredientes']
         
         
 ######Serializer de categorias

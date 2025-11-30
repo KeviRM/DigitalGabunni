@@ -32,7 +32,7 @@ class Producto(models.Model):
     
 class ClaseIngrediente(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    required = models.BooleanField(default=True)
+    required = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     single_selection = models.BooleanField(default=False)
     

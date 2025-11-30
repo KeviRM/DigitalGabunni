@@ -206,7 +206,7 @@ const GestionRecetas: React.FC = () => {
                 </h2>
                 {recetas.length > 0 ? (
                     <ul className="space-y-3">
-                        {recetas.map(r => (
+                        {recetas.filter(r=> r.product === productoActual?.id).map(r => (
                             <li key={r.id} className="flex justify-between items-center p-3 border rounded-lg bg-gray-50">
                                 <span className="font-semibold">{r.ingrediente_nombre}</span>
                                 <span className="text-sm text-gray-600">
