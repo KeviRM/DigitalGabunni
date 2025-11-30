@@ -129,6 +129,8 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
         # Notificar a WebSockets 
         channel_layer = get_channel_layer()
         
+        numero_pedido_str = str(pedido.order_number)
+        
         data_pedido = {
             'order_number': str(pedido.order_number),
             'status': pedido.status,
@@ -145,6 +147,14 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
                 'pedido': data_pedido
             }
         )
+        
+        
+        async_to_sync(channel_layer.group_send)(
+            f'grupo_{numero_pedido_str}', 
+            {'type': 'pedido_update', 'pedido': data_pedido}
+        )
+        
+        
         
     
     def enviar_notificacion_push(self, pedido):

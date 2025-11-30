@@ -3,8 +3,7 @@ import axios from "axios";
 import type { PedidoStatus, DetalePedidoAPI } from '../types/pedido';
 
 import useAuth from "../hooks/useAuth";
-import { useWebSocket } from "../context/WebSocketContext";
-
+import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
 
@@ -51,7 +50,9 @@ const PanelAdmin: React.FC = () => {
     })
 
     const { getAuthHeaders, isAuthenticated } = useAuth();
-    const { lastMessage } = useWebSocket();
+    const { lastMessage } = useOrderWebSocket('cocina');
+
+
 
     const buildQueryUrl = useCallback(() => {
         const params = new URLSearchParams();
@@ -103,13 +104,21 @@ const PanelAdmin: React.FC = () => {
 
     useEffect(() => {
         if (lastMessage) {
-            console.log("WebSocket Message Received:", lastMessage);
-            // El backend envía { tipo: 'actualizacion_pedido', pedido: { ... } }
-            if (lastMessage.tipo === 'actualizacion_pedido') {
-                fetchPedidos();
-            }
+            setPedidos(prev => {
+                const index = prev.findIndex(p => p.order_number === lastMessage.order_number);
+                
+                // Si existe, actualizamos la fila
+                if (index !== -1) {
+                    const nuevos = [...prev];
+                    nuevos[index] = { ...nuevos[index], ...lastMessage };
+                    return nuevos;
+                }
+                
+                // Si es nuevo, lo ponemos al principio de la tabla
+                return [lastMessage, ...prev];
+            });
         }
-    }, [lastMessage, fetchPedidos]);
+    }, [lastMessage]);
 
     ///CHECKBOXS DE ESTADO
     const handleEstadoToggle = (estado: string) => {

@@ -52,7 +52,7 @@ const Perfil: React.FC = () => {
     useEffect(() => {
         if (lastMessage && activeTab === 'historial') {
             // El backend envía { tipo: 'actualizacion_pedido', pedido: { ... } }
-            if (lastMessage.tipo === 'actualizacion_pedido') {
+            if (lastMessage.type === 'actualizacion_pedido') {
                 fetchData();
             }
         }

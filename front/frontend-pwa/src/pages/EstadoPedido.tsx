@@ -1,108 +1,99 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import{  type PedidoStatus, EstadoAmigable } from "../types/pedido";
-
-
-
+import { type PedidoStatus, EstadoAmigable } from "../types/pedido";
+import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
 
 
 
 const EstadoPedido: React.FC = () => {
-    const { numeroPedidoUnico } = useParams<{ numeroPedidoUnico: string }>();
-    const navigate = useNavigate();
+  const { numeroPedidoUnico } = useParams<{ numeroPedidoUnico: string }>();
+  const [pedido, setPedido] = useState<PedidoStatus | null>(null);
+  
+  const navigate = useNavigate();
 
-    const [pedido, setPedido] = useState<PedidoStatus |  null> (null);
-    const [cargando, setCargando] = useState(true);
-    const [error, setError] = useState<string | null> (null);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { lastMessage } = useOrderWebSocket(numeroPedidoUnico || '');
 
-    const fetchEstado = async () => {
-        if (!numeroPedidoUnico) {
-            setError("Numero de pedido no valido.");
-            setCargando(false);
-            return;
+//carga inicial http
+  useEffect(() => {
+        if (numeroPedidoUnico) fetchPedido(numeroPedidoUnico);
+    }, [numeroPedidoUnico]);
 
-        }
-
-        try{
-            const response = await axios.get<PedidoStatus>(`${PEDIDOS_API_URL}estado/${numeroPedidoUnico}/`);
-            setPedido(response.data);
-            setError(null);
-
-        } catch (err) {
-            console.info(`${numeroPedidoUnico}`)
-            console.error("Error al obtener estado del pedido:", err);
-      setError("No se pudo encontrar el pedido o hubo un error de conexión.");
-        } finally {
-            setCargando(false);
-        }
-
+    const fetchPedido = async (id:string) => {
+      try {
+        const response = await axios.get(`${PEDIDOS_API_URL}estado/${numeroPedidoUnico}/`);
+        setPedido(response.data);
+      } catch (err) {
+        console.error("Error al cargar pedido", err);
+        // Manejo de error si no existe
+      } finally {
+        setCargando(false);
+      }
     };
-
-
-    useEffect(() => {
-    // Consulta inicial
-    fetchEstado();
-
-    const interval = setInterval(() => {
-        if (pedido?.status !== 'ENTREGADO' && pedido?.status !== 'CANCELADO') {
-            fetchEstado();
-        }
-    }, POLLING_INTERVAL);
 
    
-    return () => clearInterval(interval);
-  }, [numeroPedidoUnico, pedido?.status]);
+
+    // Reaccionar al WebSocket
+    useEffect(() => {
+        if (lastMessage) {
+            // Doble verificación de seguridad
+            if (lastMessage.order_number === numeroPedidoUnico) {
+                console.log(" Cliente recibió cambio de estado:", lastMessage.status);
+                setPedido((prev: any) => ({ ...prev, status: lastMessage.status }));
+            }
+        }
+    }, [lastMessage, numeroPedidoUnico]);
+
+
+  const getPersonalizacionDetalle = (personalizacion: any): string => {
+    if (!personalizacion) return "Estandar";
+
+    const nombres = Object.values(personalizacion).flatMap((ingredientes: any) => ingredientes.map((ing: any) => ing.name));
+
+    return nombres.join(', ');
+
+  }
+
+
+  //Funcion Para el estado visual del proceso
+
+  const getEstadoStep = (current: string, target: string) => {
+
+
+    const steps = ['CONFIRMADO', 'PREPARACION', 'LISTO'];
+
+    const currentIndex = steps.indexOf(current);
+
+    const targetIndex = steps.indexOf(target);
+
+
+    if (currentIndex === -1 || targetIndex === -1) return 'bg-gray-200';
+
+    if (targetIndex <= currentIndex) return 'bg-green-600 text-white';
+    if (targetIndex === currentIndex + 1) return 'bg-orange-400 text-gray-800';
+
+
+    return 'bg-gray-200 text-gray-500';
+
+
+  };
 
 
 
 
-    const getPersonalizacionDetalle = (personalizacion: any): string =>{
-        if(!personalizacion) return "Estandar";
-
-        const nombres = Object.values(personalizacion).flatMap((ingredientes: any) => ingredientes.map((ing: any) => ing.name));
-
-        return nombres.join(', ');
-        
-    }
-
-
-    //Funcion Para el estado visual del proceso
-
-    const getEstadoStep = (current: string, target: string) =>{
-
-
-        const steps = ['CONFIRMADO', 'PREPARACION', 'LISTO'];
-
-        const currentIndex = steps.indexOf(current);
-
-        const targetIndex = steps.indexOf(target);
-
-
-        if (currentIndex === -1 || targetIndex === -1) return 'bg-gray-200';
-
-        if (targetIndex <= currentIndex) return 'bg-green-600 text-white';
-        if (targetIndex === currentIndex +1) return 'bg-orange-400 text-gray-800';
-
-
-        return 'bg-gray-200 text-gray-500';
-
-
-    };
 
 
 
+  if (cargando) return <div className="text-center p-20 text-xl font-medium"> Buscando pedido....</div>;
+  if (error) return <div className="text-center p-20 text-xl text-red-500">{error}</div>;
+  if (!pedido) return <div className="text-center p-20 text-xl text-gray-500">No se encontro el pedido</div>;
 
-
-
-
-    if (cargando) return <div className="text-center p-20 text-xl font-medium"> Buscando pedido....</div>;
-    if (error) return <div className="text-center p-20 text-xl text-red-500">{error}</div>;
-    if (!pedido) return <div className="text-center p-20 text-xl text-gray-500">No se encontro el pedido</div>;
-
-    return (
+  return (
 
 
     <div className="min-h-screen bg-gray-50 p-6 md:p-10">
@@ -128,13 +119,13 @@ const EstadoPedido: React.FC = () => {
             </div>
           ))}
         </div>
-        
+
         {/* --- Detalles del Pedido --- */}
         <div className='grid md:grid-cols-2 gap-8 mt-8'>
           {/* Resumen General */}
           <div>
             <h2 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Información del Pedido</h2>
-            <p><strong>Total:</strong> <span className='text-green-600 font-extrabold'>${ Number(pedido.amount).toFixed(2) }</span></p>
+            <p><strong>Total:</strong> <span className='text-green-600 font-extrabold'>${Number(pedido.amount).toFixed(2)}</span></p>
             <p><strong>Tipo de Entrega:</strong> {pedido.type_delivery === 'RECOGER' ? 'Recoger en Local' : 'A Domicilio'}</p>
             <p><strong>Fecha:</strong> {new Date(pedido.created_at).toLocaleTimeString()} - {new Date(pedido.created_at).toLocaleDateString()}</p>
           </div>
@@ -156,20 +147,20 @@ const EstadoPedido: React.FC = () => {
           </div>
         </div>
 
-        
-        
+
+
         <button
-            onClick={() => navigate('/mi-perfil')}
-            className="mt-10 py-3 px-6 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
+          onClick={() => navigate('/mi-perfil')}
+          className="mt-10 py-3 px-6 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
         >
-            Volver al Menú Principal
+          Volver al Menú Principal
         </button>
 
       </div>
     </div>
 
 
-    );
+  );
 
 
 

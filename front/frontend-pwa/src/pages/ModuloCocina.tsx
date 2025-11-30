@@ -3,8 +3,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import type{ PedidoStatus } from '../types/pedido'; 
+import type { PedidoStatus } from '../types/pedido';
 import { FaFire, FaCheckCircle, FaClipboardList, FaSpinner } from 'react-icons/fa';
+
+import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 
 interface PedidoComanda extends PedidoStatus {
     phone_number?: number;
@@ -14,19 +16,20 @@ interface PedidoComanda extends PedidoStatus {
 
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
 
-const WS_URL = 'ws://127.0.0.1:8001/ws/pedidos/cocina/'; // URL del WebSocket
 
 const ModuloCocina: React.FC = () => {
     const { isAuthenticated, getAuthHeaders } = useAuth();
     const navigate = useNavigate();
     const AUTH_HEADERS = { headers: getAuthHeaders() };
-    
+
+    const { lastMessage, isConnected } = useOrderWebSocket('cocina');
+
     const [pedidos, setPedidos] = useState<PedidoComanda[]>([]);
     const [cargando, setCargando] = useState(true);
-    const socketRef = useRef< WebSocket | null> (null);
+    const socketRef = useRef<WebSocket | null>(null);
 
 
-    const ESTADOS_RELEVANTES = ['CONFIRMADO', 'PREPARACION']; 
+    const ESTADOS_RELEVANTES = ['CONFIRMADO', 'PREPARACION'];
 
     // Función para obtener la lista de pedidos
     const fetchPedidos = async () => {
@@ -34,9 +37,9 @@ const ModuloCocina: React.FC = () => {
         try {
             // El backend debería ordenar por fecha de creación (ascendente)
             const response = await axios.get<PedidoComanda[]>(`${PEDIDOS_API_URL}gestion/`, AUTH_HEADERS);
-            
+
             // Filtrar los pedidos que están en la etapa de cocina
-            const pedidosActivos = response.data.filter(p => 
+            const pedidosActivos = response.data.filter(p =>
                 ESTADOS_RELEVANTES.includes(p.status)
             );
             setPedidos(pedidosActivos);
@@ -50,73 +53,39 @@ const ModuloCocina: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        fetchPedidos(); 
+    }, []);
 
-  useEffect(() => {
-        if (!isAuthenticated) return;
-        
-        fetchPedidos();
 
-        //Conecta al WebSocket
-        const connectWS = () => {
-            const socket = new WebSocket(WS_URL);
-            socketRef.current = socket;
+    // 2. Reaccionar a mensajes del WebSocket
+    useEffect(() => {
+        if (lastMessage) {
+            console.log(" Cocina recibió actualización:", lastMessage);
+            
+            setPedidos(prevPedidos => {
+                const existe = prevPedidos.find(p => p.order_number === lastMessage.order_number);
 
-            socket.onopen = () => {
-                console.log("WebSocket Cocina Conectado 🟢");
-            };
-
-            socket.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                
-                if (data.tipo === 'actualizacion_pedido') {
-                    const pedidoActualizado = data.pedido;
-                    
-                    setPedidos(prevPedidos => {
-                        // Si el estado es LISTO, lo quitamos de la vista de cocina
-                        if (pedidoActualizado.estado === 'LISTO') {
-                            return prevPedidos.filter(p => p.order_number !== pedidoActualizado.order_number);
-                        }
-                        
-                        // Si ya existe, lo actualizamos
-                        const existe = prevPedidos.find(p => p.order_number === pedidoActualizado.order_number);
-                        if (existe) {
-                            return prevPedidos.map(p => 
-                                p.order_number === pedidoActualizado.order_number 
-                                ? { ...p, ...pedidoActualizado } 
-                                : p
-                            );
-                        } 
-                        
-                        // Si es nuevo (ej: CONFIRMADO) y no estaba en la lista, lo agregamos
-                        if (pedidoActualizado.status === 'CONFIRMADO') {
-                            // Nota: Para agregarlo completo, idealmente el WS debe enviar el objeto completo 
-                            // o aquí hacemos un fetch individual rápido.
-                            // Por ahora asumimos que data.pedido tiene lo necesario para mostrar la tarjeta.
-                            return [...prevPedidos, pedidoActualizado];
-                        }
-                        
-                        return prevPedidos;
-                    });
+                if (lastMessage.status === 'ENTREGADO') {
+                    return prevPedidos.filter(p => p.order_number !== lastMessage.order_number);
                 }
-            };
 
-            socket.onclose = () => {
-                console.log("WebSocket Desconectado 🔴. Reintentando...");
-                setTimeout(connectWS, 3000); // Re-conexión automática
-            };
-        };
+                // B) Si ya existe en pantalla, actualizamos su estado
+                if (existe) {
+                    return prevPedidos.map(p => 
+                        p.order_number === lastMessage.order_number 
+                        ? { ...p, ...lastMessage } 
+                        : p
+                    );
+                }
 
-        connectWS();
-
-        // Cleanup al desmontar
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.close();
-            }
-        };
-    }, [isAuthenticated]);
-
-
+                // C) Si es nuevo y no está en la lista (ej: CONFIRMADO), lo agregamos
+                // Nota: lastMessage puede traer datos parciales. Idealmente el backend envía todo, 
+                // o hacemos un fetch rápido de ese pedido individual aquí.
+                return [lastMessage, ...prevPedidos]; 
+            });
+        }
+    }, [lastMessage]);
 
 
 
@@ -126,31 +95,31 @@ const ModuloCocina: React.FC = () => {
 
 
 
-   
+
 
     // Lógica para avanzar el status del pedido
     const handleAvanzarEstado = async (pedidoId: string, estadoActual: string) => {
         let nuevoEstado = '';
         if (estadoActual === 'CONFIRMADO') {
-            nuevoEstado = 'PREPARACION';  
+            nuevoEstado = 'PREPARACION';
         } else if (estadoActual === 'PREPARACION') {
-            nuevoEstado = 'LISTO'; 
+            nuevoEstado = 'LISTO';
         } else {
             return;
         }
 
         try {
-            await axios.patch(`${PEDIDOS_API_URL}gestion/${pedidoId}/`, 
-                { status: nuevoEstado }, 
+            await axios.patch(`${PEDIDOS_API_URL}gestion/${pedidoId}/`,
+                { status: nuevoEstado },
                 AUTH_HEADERS
             );
-            
+
             // Si el status es LISTO, lo quitamos de la vista (se asume que se pasa al área de entrega)
             if (nuevoEstado === 'LISTO') {
                 setPedidos(pedidos.filter(p => p.order_number !== pedidoId));
             } else {
-                 // Si es PREPARACION, solo actualizamos el status local
-                setPedidos(pedidos.map(p => 
+                // Si es PREPARACION, solo actualizamos el status local
+                setPedidos(pedidos.map(p =>
                     p.order_number === pedidoId ? { ...p, status: nuevoEstado, estado_display: nuevoEstado } : p
                 ));
             }
@@ -159,14 +128,14 @@ const ModuloCocina: React.FC = () => {
             console.error("Fallo al actualizar estado", err);
         }
     };
-    
+
     // Función para mostrar el detalle de personalización
     const getPersonalizacionDetalle = (personalizacion: any): string => {
         if (!personalizacion) return "Estándar";
-        
+
         const nombres = Object.values(personalizacion)
             .flatMap((ingredientes: any) => Array.isArray(ingredientes) ? ingredientes.map((ing: any) => ing.name) : []);
-        
+
         return nombres.join(', ');
     };
 
@@ -176,11 +145,11 @@ const ModuloCocina: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-4">
             <h1 className="text-4xl font-extrabold text-gray-700 mb-6 text-center border-b-2 border-gray-200 pb-2">
-                Módulo de Cocina 
+                Módulo de Cocina
             </h1>
-            
+
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                
+
                 {pedidos.length === 0 ? (
                     <div className="col-span-full text-center text-xl text-gray-400 p-10 bg-gray-800 rounded-xl">
                         <FaClipboardList className="text-4xl mx-auto mb-3" />
@@ -188,22 +157,22 @@ const ModuloCocina: React.FC = () => {
                     </div>
                 ) : (
                     pedidos.map(pedido => (
-                        <div key={pedido.order_number} 
-                             className={`bg-white rounded-xl shadow-2xl p-4 transform transition-all duration-300 ${pedido.status === 'PREPARACION' ? 'border-4 border-green-500' : 'border-4 border-orange-500'}`}
+                        <div key={pedido.order_number}
+                            className={`bg-white rounded-xl shadow-2xl p-4 transform transition-all duration-300 ${pedido.status === 'PREPARACION' ? 'border-4 border-green-500' : 'border-4 border-orange-500'}`}
                         >
                             <h2 className="text-2xl font-bold mb-2 flex justify-between items-center">
                                 <span>Pedido #{pedido.order_number.substring(0, 8)}</span>
                                 <span className='text-sm font-semibold text-gray-500'>{pedido.type_delivery === 'RECOGER' ? 'Recoger' : 'Domicilio'}</span>
                             </h2>
                             <p className="text-sm text-gray-600 mb-3">Cliente: {pedido.client_name} | Tel: {pedido.phone_number}</p>
-                            
+
                             <div className="border-t pt-3 mb-4">
                                 <p className="font-extrabold text-lg mb-2 text-gray-800">Comanda Detallada:</p>
-                                
+
                                 {pedido.details?.map((detalle, index) => (
                                     <div key={index} className="mb-2 p-2 border-l-2 border-red-500">
                                         <p className="font-semibold text-base">{detalle.quantity}x {detalle.product_name}</p>
-                                        
+
                                         {detalle.personalizacion_json && (
                                             <p className="text-xs text-gray-600">
                                                 Ingredientes: {getPersonalizacionDetalle(detalle.personalizacion_json)}

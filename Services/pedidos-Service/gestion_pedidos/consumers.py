@@ -31,7 +31,7 @@ class PedidosConsumer(AsyncJsonWebsocketConsumer):
 
         # Enviar mensaje al WebSocket (al Frontend)
         await self.send(text_data=json.dumps({
-            'tipo': 'actualizacion_pedido',
+            'type': 'actualizacion_pedido',
             'pedido': pedido
         }))
         
