@@ -22,7 +22,7 @@ interface IngredienteGestion extends Ingrediente {
 const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
 
 
-const GestionIngredientes: React.FC = () => {
+const GestionIngrediente: React.FC = () => {
     const { isAuthenticated, getAuthHeaders } = useAuth();
     const navigate = useNavigate();
     const AUTH_HEADERS = { headers: getAuthHeaders() };
@@ -168,4 +168,4 @@ const fetchDatos = async () => {
     );
 };
 
-export default GestionIngredientes;
+export default GestionIngrediente;

@@ -22,8 +22,12 @@ import PanelAdmin from "./pages/PanelAdmin";
 import GestionCatalogo from "./pages/GestionCatalogo";
 import GestionRecetas from "./pages/GestionRecetas";
 import GestionUnidades from "./pages/GestionUnidades";
-import GestionIngredientes from "./pages/GestionIngrediente";
+import GestionIngredientes from "./pages/GestionIngredientes";
 import GestionPaquetes from "./pages/GestionPaquetes";
+
+
+
+
 import GestionUsuarios from "./pages/GestionUsuarios";
 import ModuloCocina from "./pages/ModuloCocina";
 
@@ -41,14 +45,13 @@ import PedidoExito from "./pages/PedidoExito";
 import { CarritoProvider } from "./context/CarritoContext";
 
 import { AuthProvider } from "./context/AuthContext";
-import { WebSocketProvider } from "./context/WebSocketContext";
 
 function App() {
 
   return (
 
     <AuthProvider>
-      <WebSocketProvider>
+      
         <Router>
           <CarritoProvider>
             <div className="App">
@@ -109,7 +112,6 @@ function App() {
           </CarritoProvider>
 
         </Router>
-      </WebSocketProvider>
     </AuthProvider>
 
   );

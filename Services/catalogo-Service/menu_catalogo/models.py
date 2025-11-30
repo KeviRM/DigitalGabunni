@@ -34,9 +34,10 @@ class ClaseIngrediente(models.Model):
     name = models.CharField(max_length=100, unique=True)
     required = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    single_selection = models.BooleanField(default=False)
     
     def __str__(self):
-        return self.name
+        return f"{self.name} ({'Único' if self.single_selection else 'Múltiple'})"
 
 
 
@@ -56,7 +57,7 @@ class Ingrediente(models.Model):
     _class = models.ForeignKey(ClaseIngrediente, on_delete=models.CASCADE, related_name='ingredientes')
     additional_price = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    available = models.BooleanField(default=True)
     
     unidad_medida = models.ForeignKey(UnidadMedida, on_delete=models.SET_NULL, null=True, blank=True)
     
