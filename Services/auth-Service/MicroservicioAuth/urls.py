@@ -19,7 +19,7 @@ from django.urls import path, include
 
 from rest_framework.routers import DefaultRouter
 
-from usuarios.views import RegistroView, GoogleLoginView, CocineroManagementViewSet
+from usuarios.views import RegistroView, GoogleLoginView, CocineroManagementViewSet, MeView
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -41,7 +41,7 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
     
-    
+    path('api/auth/me/', MeView.as_view(), name='user-me'),
     path('api/registro/', RegistroView.as_view(), name='registro_usuario'),
     
     path('api/google-login/', GoogleLoginView.as_view(), name='google_login'),

@@ -1,9 +1,8 @@
 from django.shortcuts import render
 from rest_framework import generics, views, status, response, viewsets
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from .serializers import RegistroSerializer
 from django.contrib.auth import get_user_model
-
 
 from django.contrib.auth.models import User
 from .serializers import CocineroSerializer
@@ -22,6 +21,9 @@ class RegistroView(generics.ListCreateAPIView):
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = RegistroSerializer
+
+
+
 
 
 
@@ -112,5 +114,26 @@ class GoogleLoginView(views.APIView):
         
 
 
+
+
+
+
+
+class MeView(views.APIView):
+    """Devuelve los datos del usuario autenticado"""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Puedes crear un serializer específico si quieres mostrar más o menos datos
+        data = {
+            'id': request.user.id,
+            'username': request.user.username,
+            'email': request.user.email,
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'date_joined': request.user.date_joined.strftime('%Y-%m-%d'),
+            'rol': 'Administrador' if request.user.is_superuser else 'Cliente'
+        }
+        return response.Response(data, status=status.HTTP_200_OK)
 
 

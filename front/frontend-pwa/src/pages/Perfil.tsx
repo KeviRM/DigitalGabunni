@@ -10,6 +10,8 @@ import usePushNotification from '../hooks/usePushNotification';
 const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/mis-pedidos/';
 const FAVORITOS_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/favoritos/';
 
+const AUTH_ME_URL = 'http://127.0.0.1:8002/api/auth/me/';
+
 const Perfil: React.FC = () => {
     const { isAuthenticated, getAuthHeaders, logout } = useAuth();
     const navigate = useNavigate();
@@ -19,6 +21,8 @@ const Perfil: React.FC = () => {
     const [historial, setHistorial] = useState<any[]>([]);
     const [favoritos, setFavoritos] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+
+    const [userData, setUserData] = useState<any>(null);
 
     const { subscribeToPush } = usePushNotification();
 
@@ -32,6 +36,11 @@ const Perfil: React.FC = () => {
                 const res = await axios.get(FAVORITOS_API_URL, AUTH_HEADERS);
                 setFavoritos(res.data);
             }
+             else if (activeTab === 'datos') {
+                // LLAMADA AL NUEVO ENDPOINT
+                const res = await axios.get(AUTH_ME_URL, AUTH_HEADERS);
+                setUserData(res.data);
+             }
         } catch (err) {
             console.error("Error cargando datos", err);
         } finally {
@@ -104,15 +113,42 @@ const Perfil: React.FC = () => {
                             {activeTab === 'datos' && (
                                 <div>
                                     <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Información Personal</h2>
-                                    <p className="text-gray-600">Aquí puedes ver y editar tu información.</p>
-                                    {/* Formulario de datos personales (Pendiente de implementar endpoint de actualización) */}
-                                    <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-                                        <p><strong>Usuario:</strong> (Datos del Token)</p>
-                                        <p className='mt-2 text-sm text-gray-500'>Para cambiar contraseña, contacta soporte.</p>
-                                    </div>
+                                    
+                                    {userData ? (
+                                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
+                                            <div className="flex items-center space-x-4 mb-4">
+                                                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 text-2xl font-bold">
+                                                    {userData.first_name?.[0] || userData.username[0].toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-xl font-bold text-gray-800">
+                                                        {userData.first_name} {userData.last_name}
+                                                    </h3>
+                                                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                                        {userData.rol}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div>
+                                                    <label className="text-sm text-gray-500 block">Nombre de Usuario</label>
+                                                    <p className="font-medium text-gray-800">{userData.username}</p>
+                                                </div>
+                                                <div>
+                                                    <label className="text-sm text-gray-500 block">Correo Electrónico</label>
+                                                    <p className="font-medium text-gray-800">{userData.email}</p>
+                                                </div>
+                                                <div>
+                                                    <label className="text-sm text-gray-500 block">Miembro desde</label>
+                                                    <p className="font-medium text-gray-800">{userData.date_joined}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p>Cargando información...</p>
+                                    )}
                                 </div>
-
-
                             )}
 
                             {/* VISTA: HISTORIAL */}
