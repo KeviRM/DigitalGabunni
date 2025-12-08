@@ -65,6 +65,29 @@ const Perfil: React.FC = () => {
         } catch (err) { alert("Error al eliminar favorito"); }
     };
 
+
+
+    const handlePagarPedido = async (numeroPedido: string) => {
+        try {
+            // Usamos el mismo endpoint que en el Checkout
+            const response = await axios.post(
+                'http://127.0.0.1:8001/api/v1/pedidos/crear-pago/', 
+                { order_id: numeroPedido }, 
+                { headers: getAuthHeaders() }
+            );
+
+            // Si todo sale bien, redirigimos a Mercado Pago
+            if (response.data.init_point) {
+                window.location.href = response.data.init_point;
+            } else {
+                alert("Error al generar el link de pago.");
+            }
+        } catch (err) {
+            console.error("Error recuperando pago:", err);
+            alert("No se pudo iniciar el pago. Por favor intenta de nuevo.");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-6 md:p-10">
             <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[600px]">
@@ -158,21 +181,52 @@ const Perfil: React.FC = () => {
                                     {historial.length === 0 ? <p>No has realizado pedidos aún.</p> : (
                                         <div className="space-y-4">
                                             {historial.map((pedido: any) => (
-                                                <div key={pedido.order_number} className="border rounded-lg p-4 hover:shadow-md transition">
-                                                    <div className="flex justify-between mb-2">
-                                                        <span className="font-bold text-orange-600">#{pedido.order_number.substring(0, 8)}</span>
-                                                        <span className="text-sm text-gray-500">{new Date(pedido.created_at).toLocaleDateString()}</span>
+                                                <div key={pedido.order_number} className="bg-white p-4 rounded-lg shadow border border-gray-200 mb-4">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <p className="font-bold text-gray-800">Pedido #{pedido.order_number.substring(0,8)}</p>
+                                                            <p className="text-sm text-gray-500">{new Date(pedido.created_at).toLocaleDateString()}</p>
+                                                        </div>
+                                                        
+                                                        {/* Etiqueta de Estado */}
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                            pedido.status === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-700' :
+                                                            pedido.status === 'CONFIRMADO' ? 'bg-blue-100 text-blue-700' :
+                                                            pedido.status === 'Listo' ? 'bg-green-100 text-green-700' :
+                                                            'bg-gray-100 text-gray-600'
+                                                        }`}>
+                                                            {pedido.status}
+                                                        </span>
                                                     </div>
-                                                    <p className="font-semibold">Total: ${parseFloat(pedido.amount).toFixed(2)}</p>
-                                                    <span className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${pedido.status === 'ENTREGADO' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                        {pedido.status}
-                                                    </span>
-                                                    <button
-                                                        onClick={() => navigate(`/pedido/estado/${pedido.order_number}`)}
-                                                        className="block mt-3 text-sm text-blue-600 hover:underline"
-                                                    >
-                                                        Ver Detalles &rarr;
-                                                    </button>
+
+                                                    {/* Detalles breves (opcional) */}
+                                                    <div className="mt-2 text-sm text-gray-600">
+                                                        Total: <span className="font-bold">${pedido.amount}</span>
+                                                    </div>
+
+                                                    {/* --- BOTÓN DE ACCIÓN PARA PENDIENTES --- */}
+                                                    {pedido.status === 'PENDIENTE' && (
+                                                        <div className="mt-4 flex gap-3">
+                                                            <button 
+                                                                onClick={() => handlePagarPedido(pedido.order_number)}
+                                                                className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold hover:bg-green-700 transition-colors shadow-md text-sm"
+                                                            >
+                                                                Pagar Ahora 
+                                                            </button>
+                                                            {/* Opcional: Botón para cancelar si quisieras implementarlo */}
+                                                            {/* <button className="text-red-500 text-sm underline">Cancelar</button> */}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Botón para ver seguimiento si YA está pagado */}
+                                                    {pedido.status !== 'PENDIENTE' && (
+                                                        <button 
+                                                            onClick={() => navigate(`/pedido/estado/${pedido.order_number}`)}
+                                                            className="mt-4 w-full bg-gray-100 text-gray-700 py-2 rounded-lg font-bold hover:bg-gray-200 text-sm"
+                                                        >
+                                                            Ver Seguimiento
+                                                        </button>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>

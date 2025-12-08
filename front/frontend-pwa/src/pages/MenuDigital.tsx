@@ -8,9 +8,9 @@ import { useNavigate } from "react-router-dom";
 import TarjetaPaquete from "../components/TarjetaPaquete";
 
 
-import chapataImage from "../assets/images_index/changuich.png";
+import chapataImage from "../assets/images_index/changuich2.webp";
 
-import lechugaImage from "../assets/images_index/lechuga.png";
+import lechugaImage from "../assets/images_index/lechuga.webp";
 
 
 

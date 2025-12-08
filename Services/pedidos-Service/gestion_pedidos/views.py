@@ -50,8 +50,31 @@ class PedidoCreationViewSet (mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = PedidoCreationSerializer
     
     def perform_create(self, serializer):
-        serializer.save(usuario_id=self.request.user.id)
-    
+        pedido = serializer.save(
+            usuario_id=self.request.user.id,
+            status='PENDIENTE'
+        )
+        
+        
+        channel_layer = get_channel_layer()
+        
+        # Datos para enviar (Recuerda convertir UUID a string)
+        data_pedido = {
+            'order_number': str(pedido.order_number),
+            'status': pedido.status,
+            'client_name': pedido.client_name,
+            'amount': str(pedido.amount) 
+        }
+        
+        
+        async_to_sync(channel_layer.group_send)(
+            f'grupo_{str(pedido.order_number)}', 
+            {
+                'type': 'pedido_update', 
+                'pedido': data_pedido
+            }
+        )
+
     
    
     
@@ -114,11 +137,12 @@ class SavePushSubscriptionView(views.APIView):
 
 
 class PedidoGestionViewSet(viewsets.ModelViewSet):
-    queryset = Pedido.objects.all().order_by('-created_at').prefetch_related('details')
+    queryset = Pedido.objects.all().order_by('-created_at').prefetch_related('details').exclude(status='PENDIENTE')
     serializer_class = PedidoAdminSerializer
     lookup_field = 'order_number'
     permission_classes = [IsAuthenticated]
     filterset_class = PedidoFilter
+        
     
     def perform_update(self, serializer):
         pedido = serializer.save()
@@ -198,12 +222,13 @@ class PedidoGestionViewSet(viewsets.ModelViewSet):
     ########    MERCADO PAGO 
     
 class CreatePaymentPreference(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
             
         order_id = request.data.get('order_id')
             
         try:
-            pedido = Pedido.objects.get(order_number=order_id)
+            pedido = Pedido.objects.get(order_number=order_id, usuario_id = request.user.id)
         except Pedido.DoesNotExist:
             return Response({'error': 'Pedido no encontrado'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
@@ -246,6 +271,13 @@ class CreatePaymentPreference(APIView):
                     "number": str(pedido.phone_number)
                 }
                     
+            },
+            "payment_methods": {
+                "excluded_payment_types": [
+                    {"id": "ticket"}, # Excluye OXXO/Pago en efectivo diferido
+                    {"id": "atm"}
+                ],
+                "installments": 1 # Evitar meses sin intereses si no quieres
             },
             "back_urls": {
                 "success": "http://localhost:5173/pedido/exito",
@@ -294,7 +326,83 @@ class CreatePaymentPreference(APIView):
         
     
     
-    
+class MercadoPagoWebhook(APIView):
+    """
+    Recibe notificaciones de Mercado Pago (IPN / Webhooks)
+    y actualiza el estado del pedido en tiempo real.
+    """
+    def post(self, request):
+        # 1. Obtener parámetros de la notificación
+        topic = request.query_params.get('topic') or request.data.get('type')
+        payment_id = request.query_params.get('id') or request.data.get('data', {}).get('id')
+
+        print(f" Webhook recibido: {topic} | ID: {payment_id}")
+
+        # Solo nos interesan notificaciones de pagos
+        if topic == 'payment':
+            try:
+                sdk = mercadopago.SDK(settings.MERCADO_PAGO_ACCESS_TOKEN)
+                
+                # 2. Consultar a Mercado Pago el estado REAL del pago (Seguridad)
+                payment_info = sdk.payment().get(payment_id)
+                response = payment_info["response"]
+                
+                status_payment = response.get('status')
+                external_reference = response.get('external_reference') # Este es nuestro numero_pedido (UUID)
+
+                if status_payment == 'approved':
+                    print(f" Pago Aprobado para Pedido {external_reference}")
+                    self.procesar_pago_exitoso(external_reference)
+                
+                elif status_payment == 'pending':
+                    print(f" Pago Pendiente para Pedido {external_reference}")
+                    # Opcional: Podrías marcar el pedido como 'PROCESANDO_PAGO'
+
+            except Exception as e:
+                print(f" Error procesando webhook: {str(e)}")
+                # Retornamos 200 para que MP no siga reintentando infinitamente si es un error interno nuestro
+                return Response(status=status.HTTP_200_OK)
+
+        # Siempre responder 200 OK a Mercado Pago para confirmar recepción
+        return Response(status=status.HTTP_200_OK)
+
+    def procesar_pago_exitoso(self, order_number):
+        try:
+            pedido = Pedido.objects.get(order_number=order_number)
+
+            # 3. IDEMPOTENCIA: Si ya está confirmado, no hacer nada (evita duplicados)
+            if pedido.status != 'PENDIENTE':
+                print(" El pedido ya estaba procesado. Saltando...")
+                return
+
+            # 4. Actualizar estado
+            pedido.status = 'CONFIRMADO' # O el estado inicial para cocina (ej: CONFIRMADO)
+            pedido.save()
+
+            # 5. Notificar a Cocina vía WebSocket (¡Magia!) ⚡
+            channel_layer = get_channel_layer()
+            data_pedido = {
+                'order_number': str(pedido.order_number),
+                'status': pedido.status,
+                'client_name': pedido.client_name,
+            }
+            
+            # Avisar a Cocina
+            async_to_sync(channel_layer.group_send)(
+                'grupo_cocina', 
+                {'type': 'pedido_update', 'pedido': data_pedido}
+            )
+            
+            # Avisar al Cliente (Su pantalla de "Esperando pago" cambiará sola)
+            async_to_sync(channel_layer.group_send)(
+                f'grupo_{str(pedido.order_number)}', 
+                {'type': 'pedido_update', 'pedido': data_pedido}
+            )
+            
+            print(" Notificaciones WebSocket enviadas")
+
+        except Pedido.DoesNotExist:
+            print(f" Pedido {order_number} no encontrado en DB")
     
     
     

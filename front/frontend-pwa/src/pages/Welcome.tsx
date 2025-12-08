@@ -2,10 +2,10 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaPhone, FaClock, FaBreadSlice, FaGlassWhiskey, FaBlender } from 'react-icons/fa';
-import ImageIndex from "../assets/images_index/Chapata.jpeg";
-import Imagecat1 from "../assets/images_index/chapata.jpg";
-import Imagecat2 from "../assets/images_index/bebidas.jpg";
-import Imagecat3 from "../assets/images_index/saludable.jpg";
+import ImageIndex from "../assets/images_index/Chapata(1).webp";
+import Imagecat1 from "../assets/images_index/chapata.webp";
+import Imagecat2 from "../assets/images_index/bebidas_1.webp";
+import Imagecat3 from "../assets/images_index/saludable.webp";
 
 
 const Welcome: React.FC = () => {

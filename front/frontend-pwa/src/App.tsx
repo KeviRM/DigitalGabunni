@@ -41,6 +41,9 @@ import Checkout from "./pages/Checkout";
 import EstadoPedido from "./pages/EstadoPedido";
 
 import PedidoExito from "./pages/PedidoExito";
+import PedidoFallo from './pages/PedidoFallo';
+import PedidoPendiente from './pages/PedidoPendiente';
+
 import EditContent from "./pages/Admin/EditContent";
 import MensajesAdmin from "./pages/Admin/MensajesAdmin";
 
@@ -80,6 +83,8 @@ function App() {
               <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido />} />
 
               <Route path="/pedido/exito" element={<PedidoExito />} />
+              <Route path="/pedido/fallo" element={<PedidoFallo />} />
+              <Route path="/pedido/pendiente" element={<PedidoPendiente />} />
 
 
 

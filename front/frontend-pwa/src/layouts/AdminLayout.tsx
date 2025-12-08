@@ -80,8 +80,8 @@ const AdminLayout: React.FC = () => {
     return (
         <div className="flex h-screen bg-gray-100 overflow-hidden">
             {/* --- Sidebar --- */}
-            <aside className="w-64 bg-gray-800 text-white flex flex-col shadow-2xl flex-shrink-0">
-                <div className="p-6 border-b border-gray-700 flex-shrink-0">
+            <aside className="w-64 bg-gray-800 text-white flex flex-col shadow-2xl shrink-0">
+                <div className="p-6 border-b border-gray-700 shrink-0">
                     <h1 className="text-2xl font-extrabold text-orange-400">GABUNNI ADMIN</h1>
                     <p className='text-sm text-gray-400 mt-1'>Rol: {userRole.charAt(0).toUpperCase() + userRole.slice(1)}</p>
                 </div>
@@ -127,7 +127,7 @@ const AdminLayout: React.FC = () => {
                     })}
                 </nav>
 
-                <div className="p-4 border-t border-gray-700 flex-shrink-0">
+                <div className="p-4 border-t border-gray-700 shrink-0">
                     <button
                         onClick={logout}
                         className="w-full flex items-center p-3 text-red-400 rounded-lg hover:bg-gray-700 transition-colors duration-200"

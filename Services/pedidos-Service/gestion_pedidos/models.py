@@ -10,11 +10,13 @@ class Pedido(models.Model):
     order_number = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     
     STATUS_CHOISE =[
+        ('PENDIENTE', 'pendiente de pago'),
         ('CONFIRMADO', 'confirmado'),
         ('PREPARACION', 'En Preparación'),    
         ('LISTO', 'Listo para Recoger/Enviar'),
         ('ENTREGADO', 'Entregado'),
         ('CANCELADO', 'Cancelado'),
+        
     ]
     
     usuario_id = models.IntegerField(null=True, blank=True, db_index=True)
@@ -37,7 +39,7 @@ class Pedido(models.Model):
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOISE,
-        default='CONFIRMADO'
+        default='PENDIENTE'
     )
     
     
