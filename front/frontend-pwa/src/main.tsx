@@ -18,16 +18,16 @@ createRoot(document.getElementById('root')!).render(
     </GoogleOAuthProvider>
   </StrictMode>,
 )
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(registration => {
-        console.log('SW registrado con éxito:', registration.scope);
-      })
-      .catch(err => {
-        console.error('Fallo al registrar SW:', err);
-      });
-  });
+import { registerSW } from 'virtual:pwa-register'
 
-}
+const updateSW = registerSW({
+  onNeedRefresh() {
+    if (confirm('New content available. Reload?')) {
+      updateSW(true);
+    }
+  },
+  onOfflineReady() {
+    console.log('App ready to work offline');
+  },
+})
 

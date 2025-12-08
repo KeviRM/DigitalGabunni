@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 
-import { FaGift, FaBoxOpen, FaClipboardList, FaRuler, FaUsers, FaSignOutAlt, FaUtensils, FaChartLine, FaFileAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaGift, FaBoxOpen, FaMailBulk , FaInfo , FaClipboardList, FaRuler, FaUsers, FaSignOutAlt, FaUtensils, FaChartLine, FaFileAlt, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 
 interface NavItem {
     name: string;
@@ -45,6 +45,13 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
         title: "Usuarios",
         items: [
             { name: 'Gestión Usuarios', path: '/admin/usuarios', icon: FaUsers, role: 'admin' },
+        ]
+    },
+    {
+        title: "Contactos",
+        items:[
+            { name: 'Mensajes', path: '/admin/mensajes', icon: FaMailBulk, role: 'admin' },
+            { name: 'Datos', path: '/admin/contenido', icon: FaInfo, role: 'admin' }
         ]
     }
 ];

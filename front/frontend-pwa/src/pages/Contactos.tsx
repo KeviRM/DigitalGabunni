@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
 import { useShopInfo } from '../context/ShopInfoContext';
+import { sendContactMessage } from '../services/contenidoService';
 
 // Endpoint para enviar el formulario de contacto (Microservicio de Contenido, si estuviera separado)
 // Usamos el Microservicio de Catálogo por simplicidad inicial si no creamos un servicio de contenido
@@ -11,7 +12,7 @@ const Contactos: React.FC = () => {
     const { info } = useShopInfo();
     const [formData, setFormData] = useState({
         nombre: '',
-        apellido: '',
+        numero: '',
         mensaje: '',
         email: '' // Añadimos email aunque no esté en el diseño explícito, es necesario para responder
     });
@@ -20,12 +21,15 @@ const Contactos: React.FC = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        alert('Formulario enviado! (Lógica de API pendiente)');
-        // Aquí iría la lógica de axios.post(CONTACT_API_URL, formData)
-        // Criterio de aceptación: Mandar a administración. 
-        setFormData({ nombre: '', apellido: '', mensaje: '', email: '' });
+        try {
+            await sendContactMessage(formData);
+            alert('¡Mensaje enviado correctamente! Nos pondremos en contacto pronto.');
+            setFormData({ nombre: '', numero: '', mensaje: '', email: '' });
+        } catch (error) {
+            alert('Error al enviar el mensaje. Por favor intenta de nuevo.');
+        }
     };
 
     return (
@@ -97,9 +101,9 @@ const Contactos: React.FC = () => {
                                 />
                                 <input
                                     type="text"
-                                    name="apellido"
-                                    placeholder="Tu apellido"
-                                    value={formData.apellido}
+                                    name="numero"
+                                    placeholder="Tu número (opcional)"
+                                    value={formData.numero}
                                     onChange={handleChange}
                                     className="w-1/2 p-3 border rounded-lg focus:ring-orange-500"
                                 />

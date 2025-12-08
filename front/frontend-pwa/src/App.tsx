@@ -42,6 +42,7 @@ import EstadoPedido from "./pages/EstadoPedido";
 
 import PedidoExito from "./pages/PedidoExito";
 import EditContent from "./pages/Admin/EditContent";
+import MensajesAdmin from "./pages/Admin/MensajesAdmin";
 
 import { CarritoProvider } from "./context/CarritoContext";
 
@@ -97,6 +98,7 @@ function App() {
                 <Route path="/admin/usuarios" element={<GestionUsuarios />} />
                 <Route path="reportes" element={<ReportesAdmin />} />
                 <Route path="contenido" element={<EditContent />} />
+                <Route path="mensajes" element={<MensajesAdmin />} />
               </Route>
 
 

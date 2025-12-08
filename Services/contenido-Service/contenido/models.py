@@ -25,3 +25,19 @@ class InformacionTienda(models.Model):
             # For simplicity, we just allow creation but we will typically just fetch .first()
             pass
         super(InformacionTienda, self).save(*args, **kwargs)
+
+class MensajeContacto(models.Model):
+    nombre = models.CharField(max_length=100)
+    numero = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField()
+    mensaje = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    leido = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Mensaje de Contacto"
+        verbose_name_plural = "Mensajes de Contacto"
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f"Mensaje de {self.nombre} ({self.email})"
