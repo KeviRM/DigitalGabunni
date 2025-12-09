@@ -1,12 +1,14 @@
 // frontend-pwa/src/pages/GestionRecetas.tsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+
+import { catalogoApi } from '../api/axiosConfig';
+
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import type{ Producto, Ingrediente, RecetaItem } from '../types/menu'; 
 
 // URLs de los endpoints del Microservicio de Catálogo
-const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
+const CATALOGO_API_URL = '/api/v1/catalogo/admin/gestion/';
 
 const GestionRecetas: React.FC = () => {
     const { isAuthenticated, getAuthHeaders } = useAuth();
@@ -39,9 +41,9 @@ const GestionRecetas: React.FC = () => {
             try {
                 // Endpoint de gestión de productos (trae todos)
                 const [prodRes, ingRes] = await Promise.all([
-                    axios.get<Producto[]>(`${CATALOGO_API_URL}productos/`, AUTH_HEADERS),
+                    catalogoApi.get<Producto[]>(`${CATALOGO_API_URL}productos/`, AUTH_HEADERS),
                     // Endpoint de gestión de ingredientes
-                    axios.get<Ingrediente[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS) 
+                    catalogoApi.get<Ingrediente[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS) 
                 ]);
                 setProductos(prodRes.data.filter(p => p.category_name === 'chapatas')); // Filtrar solo chapatas
                 setIngredientesBase(ingRes.data);
@@ -60,7 +62,7 @@ const GestionRecetas: React.FC = () => {
     const fetchRecetas = async (id: number) => {
         try {
             // Endpoint de gestión de recetas, filtrado por producto_id
-            const response = await axios.get<RecetaItem[]>(
+            const response = await catalogoApi.get<RecetaItem[]>(
                 `${CATALOGO_API_URL}recetas/?producto_id=${id}`, 
                 AUTH_HEADERS
             );
@@ -97,7 +99,7 @@ const GestionRecetas: React.FC = () => {
                 quantity: cantidad,
             };
             
-            const response = await axios.post(`${CATALOGO_API_URL}recetas/`, newReceta, AUTH_HEADERS);
+            const response = await catalogoApi.post(`${CATALOGO_API_URL}recetas/`, newReceta, AUTH_HEADERS);
             
             // Actualizar la lista local con el nuevo ítem devuelto por el servidor
             setRecetas([...recetas, response.data]);
@@ -115,7 +117,7 @@ const GestionRecetas: React.FC = () => {
     const handleDeleteReceta = async (id: number) => {
         if (!window.confirm("¿Seguro que quieres eliminar este ingrediente de la receta?")) return;
         try {
-            await axios.delete(`${CATALOGO_API_URL}recetas/${id}/`, AUTH_HEADERS);
+            await catalogoApi.delete(`${CATALOGO_API_URL}recetas/${id}/`, AUTH_HEADERS);
             setRecetas(recetas.filter(r => r.id !== id));
         } catch (err) {
             alert("Error al eliminar.");

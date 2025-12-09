@@ -1,11 +1,13 @@
 // frontend-pwa/src/pages/AdminDashboard.tsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+
+import { pedidosApi } from '../api/axiosConfig';
+
 import { FaMoneyBillWave, FaShoppingCart, FaUsers, FaSpinner, FaChartLine } from 'react-icons/fa';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'; // Componentes de Gráfica
 import useAuth from '../hooks/useAuth';
 
-const ANALYTICS_API_URL = 'http://127.0.0.1:8001/api/v1/analytics/';
+const ANALYTICS_API_URL = '/api/v1/analytics/';
 
 interface Metrics {
     ganancia_total_historica: number;
@@ -27,7 +29,7 @@ const AdminDashboard: React.FC = () => {
         if (!isAuthenticated) return;
         setCargando(true);
         try {
-            const response = await axios.get(ANALYTICS_API_URL, AUTH_HEADERS);
+            const response = await pedidosApi.get(ANALYTICS_API_URL, AUTH_HEADERS);
             setMetrics(response.data.metricas);
             
             // Mapear los datos de la gráfica: el backend devuelve la fecha completa,

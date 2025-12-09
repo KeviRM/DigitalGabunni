@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import { pedidosApi } from '../api/axiosConfig';
+
 import { type PedidoStatus, EstadoAmigable } from "../types/pedido";
 import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 
-const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
+const PEDIDOS_API_URL = '/api/v1/pedidos/';
 
 
 
@@ -26,7 +28,7 @@ const EstadoPedido: React.FC = () => {
 
     const fetchPedido = async (id:string) => {
       try {
-        const response = await axios.get(`${PEDIDOS_API_URL}estado/${numeroPedidoUnico}/`);
+        const response = await pedidosApi.get(`${PEDIDOS_API_URL}estado/${numeroPedidoUnico}/`);
         setPedido(response.data);
       } catch (err) {
         console.error("Error al cargar pedido", err);

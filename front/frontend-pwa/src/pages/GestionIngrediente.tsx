@@ -1,5 +1,7 @@
 import React, {useState, useEffect} from "react";
-import axios from "axios";
+
+import {catalogoApi} from '../api/axiosConfig';
+
 import useAuth from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import type { Ingrediente, ClaseIngrediente } from "../types/menu";
@@ -19,7 +21,7 @@ interface IngredienteGestion extends Ingrediente {
 }
 
 
-const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
+const CATALOGO_API_URL = '/api/v1/catalogo/admin/gestion/';
 
 
 const GestionIngrediente: React.FC = () => {
@@ -42,9 +44,9 @@ const fetchDatos = async () => {
         setCargando(true);
         try {
             const [ingRes, unidadRes, claseRes] = await Promise.all([
-                axios.get<IngredienteGestion[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS),
-                axios.get<Unidad[]>(`${CATALOGO_API_URL}unidades/`, AUTH_HEADERS),
-                axios.get<ClaseIngrediente[]>(`${CATALOGO_API_URL}personalizacion/`, AUTH_HEADERS), // Reusamos el endpoint de clases
+                catalogoApi.get<IngredienteGestion[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS),
+                catalogoApi.get<Unidad[]>(`${CATALOGO_API_URL}unidades/`, AUTH_HEADERS),
+                catalogoApi.get<ClaseIngrediente[]>(`${CATALOGO_API_URL}personalizacion/`, AUTH_HEADERS), // Reusamos el endpoint de clases
             ]);
             
             setIngredientesBase(ingRes.data);
@@ -70,7 +72,7 @@ const fetchDatos = async () => {
     // 1. Lógica de Actualización de Ingrediente (PATCH)
     const handleUpdateIngrediente = async (ingredienteId: number, data: Partial<IngredienteGestion>) => {
         try {
-            await axios.patch(`${CATALOGO_API_URL}ingredientes/${ingredienteId}/`, data, AUTH_HEADERS);
+            await catalogoApi.patch(`${CATALOGO_API_URL}ingredientes/${ingredienteId}/`, data, AUTH_HEADERS);
             
             // Actualizar el estado local después del éxito
             setIngredientesBase(prev => prev.map(i => {

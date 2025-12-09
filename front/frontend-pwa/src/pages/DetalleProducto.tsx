@@ -4,14 +4,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type{ Producto, RecetaItem, ItemCarrito} from '../types/menu';
 import { fetchProductoById } from '../api/menuApi'; // Asegúrate que tu fetch trae la receta
 import { useCarrito } from '../context/CarritoContext';
-import axios from 'axios';
+
 
 import useAuth from '../hooks/useAuth';
 
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
 
+import {catalogoApi} from '../api/axiosConfig';
 
-const FAVORITOS_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/favoritos/';
+
+
+
+const FAVORITOS_API_URL = '/api/v1/catalogo/favoritos/';
 
 const DetalleProducto: React.FC = () => {
     const { productoId } = useParams<{ productoId: string }>();
@@ -45,7 +49,7 @@ const DetalleProducto: React.FC = () => {
             const AUTH_HEADERS = { headers: getAuthHeaders() };
             // NOTA: Para toggle real (añadir/quitar), necesitaríamos saber si ya es favorito.
             // Por simplicidad, aquí solo implementamos "Añadir".
-            await axios.post(FAVORITOS_API_URL, { producto: producto?.id }, AUTH_HEADERS);
+            await catalogoApi.post(FAVORITOS_API_URL, { producto: producto?.id }, AUTH_HEADERS);
             setEsFavorito(true);
             alert("¡Añadido a tus favoritos!");
         } catch (err) {

@@ -1,12 +1,12 @@
-import axios from "axios";
+
 import type { Producto, Categoria, ClaseIngrediente, Paquete} from "../types/menu";
+import {catalogoApi} from '../api/axiosConfig';
 
-
-const BASE_URL = 'http://127.0.0.1:8000/api/v1/catalogo/';
+const BASE_URL = '/api/v1/catalogo/';
 
 export const fetchProductos = async(): Promise<Producto[]> => {
     try{
-        const response = await axios.get<Producto[]>(`${BASE_URL}productos/`);
+        const response = await catalogoApi.get<Producto[]>(`${BASE_URL}productos/`);
         return response.data;
     } catch(error){
         console.error('error al obtener los productos', error);
@@ -16,7 +16,7 @@ export const fetchProductos = async(): Promise<Producto[]> => {
 
 export const fetchPaquetes = async (): Promise<Paquete[]> => {
   try {
-    const response = await axios.get<Paquete[]>(`${BASE_URL}paquetes/`);
+    const response = await catalogoApi.get<Paquete[]>(`${BASE_URL}paquetes/`);
     return response.data;
   } catch (error) {
     console.error("Error al obtener paquetes:", error);
@@ -29,7 +29,7 @@ export const fetchPaquetes = async (): Promise<Paquete[]> => {
 export const fetchCategorias = async(): Promise<Categoria[]> =>{
 
     try{
-        const response = await axios.get<Categoria[]>(`${BASE_URL}categorias/`);
+        const response = await catalogoApi.get<Categoria[]>(`${BASE_URL}categorias/`);
         return response.data;
     } catch(error){
         console.error("Error al obtener categorias:", error);
@@ -41,7 +41,7 @@ export const fetchCategorias = async(): Promise<Categoria[]> =>{
 export const fetchClasesIngredientes = async(): Promise<ClaseIngrediente[]> =>{
 
     try{
-        const response = await axios.get<ClaseIngrediente[]>(`${BASE_URL}personalizacion/`);
+        const response = await catalogoApi.get<ClaseIngrediente[]>(`${BASE_URL}personalizacion/`);
         return response.data;
     } catch(error){
         console.error("Error al obtener personalización:", error);
@@ -58,7 +58,7 @@ export const fetchClasesIngredientes = async(): Promise<ClaseIngrediente[]> =>{
 
 export const fetchProductoById = async (id: number): Promise< Producto | null> => {
     try{
-        const response = await axios.get<Producto> (`${BASE_URL}productos/${id}/`);
+        const response = await catalogoApi.get<Producto> (`${BASE_URL}productos/${id}/`);
         return response.data;
     } catch(error){
         console.error(`Error al obtener el producto ${id}:`, error);

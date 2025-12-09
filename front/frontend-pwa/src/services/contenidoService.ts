@@ -1,8 +1,9 @@
-import axios from 'axios';
+import { contenidoApi } from '../api/axiosConfig';
+
 
 // Assuming local development port for the new service, adjust as needed.
 // Ideally this comes from env vars.
-const API_URL = 'http://127.0.0.1:8004/api/contenido/info/';
+const API_URL = '/api/contenido/info/';
 
 export interface ShopInfo {
     direccion?: string;
@@ -18,7 +19,7 @@ export interface ShopInfo {
 
 export const getShopInfo = async (): Promise<ShopInfo> => {
     try {
-        const response = await axios.get(API_URL);
+        const response = await contenidoApi.get(API_URL);
         return response.data;
     } catch (error) {
         console.error("Error fetching shop info:", error);
@@ -28,7 +29,7 @@ export const getShopInfo = async (): Promise<ShopInfo> => {
 
 export const updateShopInfo = async (data: ShopInfo): Promise<ShopInfo> => {
     try {
-        const response = await axios.put(API_URL, data); // Or PATCH
+        const response = await contenidoApi.put(API_URL, data); // Or PATCH
         return response.data;
     } catch (error) {
         console.error("Error updating shop info:", error);
@@ -47,11 +48,11 @@ export interface MensajeContacto {
     leido?: boolean;
 }
 
-const MESSAGE_API_URL = 'http://127.0.0.1:8004/api/contenido/contacto/';
+const MESSAGE_API_URL = '/api/contenido/contacto/';
 
 export const sendContactMessage = async (data: MensajeContacto): Promise<MensajeContacto> => {
     try {
-        const response = await axios.post(`${MESSAGE_API_URL}enviar/`, data);
+        const response = await contenidoApi.post(`${MESSAGE_API_URL}enviar/`, data);
         return response.data;
     } catch (error) {
         console.error("Error sending message:", error);
@@ -61,7 +62,7 @@ export const sendContactMessage = async (data: MensajeContacto): Promise<Mensaje
 
 export const getContactMessages = async (): Promise<MensajeContacto[]> => {
     try {
-        const response = await axios.get(`${MESSAGE_API_URL}mensajes/`);
+        const response = await contenidoApi.get(`${MESSAGE_API_URL}mensajes/`);
         return response.data;
     } catch (error) {
         console.error("Error fetching messages:", error);
@@ -71,7 +72,7 @@ export const getContactMessages = async (): Promise<MensajeContacto[]> => {
 
 export const markMessageAsRead = async (id: number, leido: boolean): Promise<MensajeContacto> => {
     try {
-        const response = await axios.patch(`${MESSAGE_API_URL}mensajes/${id}/`, { leido });
+        const response = await contenidoApi.patch(`${MESSAGE_API_URL}mensajes/${id}/`, { leido });
         return response.data;
     } catch (error) {
         console.error("Error marking message as read:", error);

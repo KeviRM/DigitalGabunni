@@ -27,7 +27,7 @@ services:
 
   #  MICROSERVICIO AUTH
   auth_service:
-    build: ./Services/MicroservicioAuth
+    build: ./Services/auth-Service
     container_name: gabunni_auth
     restart: always
     command: gunicorn MicroservicioAuth.wsgi:application --bind 0.0.0.0:8000
@@ -44,7 +44,7 @@ services:
 
   #  MICROSERVICIO CATALOGO
   catalogo_service:
-    build: ./Services/MicroservicioCatalogo
+    build: ./Services/catalogo-Service
     container_name: gabunni_catalogo
     restart: always
     command: gunicorn MicroservicioCatalogo.wsgi:application --bind 0.0.0.0:8000
@@ -61,7 +61,7 @@ services:
 
   #  MICROSERVICIO PEDIDOS (WebSockets con Daphne)
   pedidos_service:
-    build: ./Services/MicroservicioPedidos
+    build: ./Services/pedidos-Service
     container_name: gabunni_pedidos
     restart: always
     # IMPORTANTE: Usamos daphne aquí
@@ -82,7 +82,7 @@ services:
 
   #  MICROSERVICIO CONTENIDO (Nuevo - Ligero)
   contenido_service:
-    build: ./Services/MicroservicioContenido
+    build: ./Services/contenido-Service
     container_name: gabunni_contenido
     restart: always
     command: gunicorn MicroservicioContenido.wsgi:application --bind 0.0.0.0:8000

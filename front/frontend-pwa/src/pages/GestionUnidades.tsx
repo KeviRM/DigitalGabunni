@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+
+import { catalogoApi } from '../api/axiosConfig';
+
 import useAuth from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
@@ -11,7 +13,7 @@ interface Unidad {
     abbreviation: string;
 }
 
-const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
+const CATALOGO_API_URL = '/api/v1/catalogo/admin/gestion/';
 
 
 
@@ -35,7 +37,7 @@ const GestionUnidades: React.FC = () => {
         setCargando(true);
 
         try{
-            const response = await axios.get<Unidad[]>(`${CATALOGO_API_URL}unidades/`, AUTH_HEADERS);
+            const response = await catalogoApi.get<Unidad[]>(`${CATALOGO_API_URL}unidades/`, AUTH_HEADERS);
             setUnidades(response.data);
 
         } catch (err){
@@ -64,7 +66,7 @@ const GestionUnidades: React.FC = () => {
 
         e.preventDefault();
         try {
-            const response = await axios.post(`${CATALOGO_API_URL}unidades/`, nuevaUnidad, AUTH_HEADERS);
+            const response = await catalogoApi.post(`${CATALOGO_API_URL}unidades/`, nuevaUnidad, AUTH_HEADERS);
             setUnidades([...unidades, response.data]);
             setNuevaUnidad({ name: '', abbreviation: '' });
         } catch (err) {
@@ -84,7 +86,7 @@ const GestionUnidades: React.FC = () => {
 
         if(!window.confirm("¿Estas seguro de eliminar esta unidad?")) return;
         try {
-            await axios.delete(`${CATALOGO_API_URL}unidades/${id}/`, AUTH_HEADERS);
+            await catalogoApi.delete(`${CATALOGO_API_URL}unidades/${id}/`, AUTH_HEADERS);
             setUnidades(unidades.filter(u => u.id !== id));
         } catch (err) {
             console.error("Error al eliminar la unidad:", err);

@@ -1,10 +1,14 @@
 // frontend-pwa/src/pages/ReportesAdmin.tsx
 import React, { useState } from 'react';
-import axios from 'axios';
+
+
+import { pedidosApi } from '../api/axiosConfig';
+
+
 import useAuth from '../hooks/useAuth';
 import { FaFileCsv, FaDownload, FaCalendarAlt } from 'react-icons/fa';
 
-const REPORTES_API_URL = 'http://127.0.0.1:8001/api/v1/reportes/ventas/';
+const REPORTES_API_URL = '/api/v1/reportes/ventas/';
 
 const ReportesAdmin: React.FC = () => {
     const { getAuthHeaders } = useAuth();
@@ -26,7 +30,7 @@ const ReportesAdmin: React.FC = () => {
             if (fechas.inicio) params.append('fecha_inicio', fechas.inicio);
             if (fechas.fin) params.append('fecha_fin', fechas.fin);
 
-            const response = await axios.get(`${REPORTES_API_URL}?${params.toString()}`, AUTH_HEADERS);
+            const response = await pedidosApi.get(`${REPORTES_API_URL}?${params.toString()}`, AUTH_HEADERS);
 
             // Crear un enlace invisible para forzar la descarga del archivo (Blob)
             const url = window.URL.createObjectURL(new Blob([response.data]));

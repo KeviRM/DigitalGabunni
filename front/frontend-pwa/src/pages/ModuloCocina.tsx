@@ -1,7 +1,12 @@
 // frontend-pwa/src/pages/ModuloCocina.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+
+
+import { pedidosApi } from '../api/axiosConfig';
+
+
 import useAuth from '../hooks/useAuth';
+
 import { useNavigate } from 'react-router-dom';
 import type { PedidoStatus } from '../types/pedido';
 import { FaFire, FaCheckCircle, FaClipboardList, FaSpinner } from 'react-icons/fa';
@@ -14,7 +19,7 @@ interface PedidoComanda extends PedidoStatus {
     estado_display: string;
 }
 
-const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
+const PEDIDOS_API_URL = '/api/v1/pedidos/';
 
 
 const ModuloCocina: React.FC = () => {
@@ -36,7 +41,7 @@ const ModuloCocina: React.FC = () => {
         if (!isAuthenticated) return;
         try {
             // El backend debería ordenar por fecha de creación (ascendente)
-            const response = await axios.get<PedidoComanda[]>(`${PEDIDOS_API_URL}gestion/`, AUTH_HEADERS);
+            const response = await pedidosApi.get<PedidoComanda[]>(`${PEDIDOS_API_URL}gestion/`, AUTH_HEADERS);
 
             // Filtrar los pedidos que están en la etapa de cocina
             const pedidosActivos = response.data.filter(p =>
@@ -45,7 +50,7 @@ const ModuloCocina: React.FC = () => {
             setPedidos(pedidosActivos);
         } catch (err) {
             console.error("Error al obtener comandas:", err);
-            if (axios.isAxiosError(err) && err.response?.status === 401) {
+            if (pedidosApi.isAxiosError(err) && err.response?.status === 401) {
                 navigate('/admin');
             }
         } finally {
@@ -109,7 +114,7 @@ const ModuloCocina: React.FC = () => {
         }
 
         try {
-            await axios.patch(`${PEDIDOS_API_URL}gestion/${pedidoId}/`,
+            await pedidosApi.patch(`${PEDIDOS_API_URL}gestion/${pedidoId}/`,
                 { status: nuevoEstado },
                 AUTH_HEADERS
             );

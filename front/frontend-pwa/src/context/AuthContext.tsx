@@ -1,11 +1,12 @@
 // frontend-pwa/src/context/AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
+import { authApi } from '../api/axiosConfig';
+
 // URLs de Autenticación
-const AUTH_API_URL = 'http://127.0.0.1:8002/api/token/';
-const GOOGLE_AUTH_API_URL = 'http://127.0.0.1:8002/api/google-login/';
+const AUTH_API_URL = '/api/token/';
+const GOOGLE_AUTH_API_URL = '/api/google-login/';
 
 // Tipos
 interface AuthTokens {
@@ -83,7 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = async (username: string, pass: string) => {
         try {
-            const response = await axios.post(AUTH_API_URL, { username, password: pass });
+            const response = await authApi.post(AUTH_API_URL, { username, password: pass });
             return handleTokenResponse(response.data);
         } catch (error) {
             console.error("Login fallido", error);
@@ -93,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const loginWithGoogle = async (accessToken: string) => {
         try {
-            const response = await axios.post(GOOGLE_AUTH_API_URL, { access_token: accessToken });
+            const response = await authApi.post(GOOGLE_AUTH_API_URL, { access_token: accessToken });
             return handleTokenResponse(response.data);
         } catch (error) {
             console.error(error);

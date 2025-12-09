@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+
+import { pedidosApi } from '../api/axiosConfig';
+
 import useAuth from './useAuth';
 
 const VAPID_PUBLIC_KEY = 'BAfA5J72akeT3OJ7S0C-PdWyqliZ-qHS34IUjGtnJkbX-9tyuhFY2llXrl7kjXy_zIFQ958Ccp9eDbLDIgOg75U'; 
-const SUBSCRIPTION_API_URL = 'http://127.0.0.1:8001/api/v1/push/subscribe/';
+const SUBSCRIPTION_API_URL = '/api/v1/push/subscribe/';
 
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -55,7 +57,7 @@ const usePushNotification = () => {
             };
 
             const AUTH_HEADERS = { headers: getAuthHeaders() };
-            await axios.post(SUBSCRIPTION_API_URL, payload, AUTH_HEADERS);
+            await pedidosApi.post(SUBSCRIPTION_API_URL, payload, AUTH_HEADERS);
             
             setSubscription(sub);
             console.log("Suscripción Push guardada en servidor.");

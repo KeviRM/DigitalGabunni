@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+
+
+import { pedidosApi } from '../api/axiosConfig';
+
+
 import type { PedidoStatus, DetalePedidoAPI } from '../types/pedido';
 
 import useAuth from "../hooks/useAuth";
 import { useOrderWebSocket } from '../hooks/useOrderWebSocket';
 
-const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/';
+const PEDIDOS_API_URL = '/api/v1/pedidos/';
 
 interface DetallePedidoExtended extends DetalePedidoAPI {
     personalizacion_detalle?: string;
@@ -85,7 +89,7 @@ const PanelAdmin: React.FC = () => {
             const url = buildQueryUrl();
 
             // Llama al nuevo endpoint de gestión
-            const response = await axios.get<PedidoAdmin[]>(url, AUTH_HEADERS);
+            const response = await pedidosApi.get<PedidoAdmin[]>(url, AUTH_HEADERS);
             setPedidos(response.data);
             setError(null);
         } catch (err) {
@@ -146,7 +150,7 @@ const PanelAdmin: React.FC = () => {
             const AUTH_HEADERS = { headers: getAuthHeaders() };
 
             // PATCH al endpoint de detalle para actualizar solo el campo 'estado'
-            await axios.patch(`${PEDIDOS_API_URL}gestion/${pedidoId}/`,
+            await pedidosApi.patch(`${PEDIDOS_API_URL}gestion/${pedidoId}/`,
                 { status: nuevoEstado },
                 AUTH_HEADERS
             );

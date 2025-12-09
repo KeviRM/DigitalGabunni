@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+
+import { catalogoApi } from '../api/axiosConfig';
 import useAuth from '../hooks/useAuth';
 import { FaPlus, FaEdit, FaTrash, FaCheckSquare, FaDotCircle } from 'react-icons/fa';
 
@@ -20,7 +21,7 @@ interface ClaseIngrediente {
     ingredientes: Ingrediente[];
 }
 
-const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/';
+const CATALOGO_API_URL = '/api/v1/catalogo/';
 
 const GestionIngredientes: React.FC = () => {
     const { getAuthHeaders } = useAuth();
@@ -43,7 +44,7 @@ const GestionIngredientes: React.FC = () => {
     const toggleDisponibilidadIngrediente = async (ing: Ingrediente) => {
         try {
             // Enviamos el opuesto del valor actual
-            await axios.patch(
+            await catalogoApi.patch(
                 `${CATALOGO_API_URL}ingredientes/${ing.id}/`, 
                 { available: !ing.available }, 
                 AUTH_HEADERS
@@ -55,7 +56,7 @@ const GestionIngredientes: React.FC = () => {
     // Cargar Datos
     const fetchClases = async () => {
         try {
-            const res = await axios.get(`${CATALOGO_API_URL}personalizacion/`, AUTH_HEADERS);
+            const res = await catalogoApi.get(`${CATALOGO_API_URL}personalizacion/`, AUTH_HEADERS);
             setClases(res.data);
             // Si hay una seleccionada, refrescarla
             if (claseSeleccionada) {
@@ -72,9 +73,9 @@ const GestionIngredientes: React.FC = () => {
         e.preventDefault();
         try {
             if (editandoClase) {
-                await axios.patch(`${CATALOGO_API_URL}personalizacion/${editandoClase}/`, formClase, AUTH_HEADERS);
+                await catalogoApi.patch(`${CATALOGO_API_URL}personalizacion/${editandoClase}/`, formClase, AUTH_HEADERS);
             } else {
-                await axios.post(`${CATALOGO_API_URL}personalizacion/`, formClase, AUTH_HEADERS);
+                await catalogoApi.post(`${CATALOGO_API_URL}personalizacion/`, formClase, AUTH_HEADERS);
             }
             setFormClase({ name: '', single_selection: false, required:false });
             setEditandoClase(null);
@@ -85,7 +86,7 @@ const GestionIngredientes: React.FC = () => {
     const handleDeleteClase = async (id: number) => {
         if (!confirm("¿Eliminar clase? Se borrarán todos sus ingredientes.")) return;
         try {
-            await axios.delete(`${CATALOGO_API_URL}personalizacion/${id}/`, AUTH_HEADERS);
+            await catalogoApi.delete(`${CATALOGO_API_URL}personalizacion/${id}/`, AUTH_HEADERS);
             setClaseSeleccionada(null);
             fetchClases();
         } catch (err) { alert("Error al eliminar"); }
@@ -105,9 +106,9 @@ const GestionIngredientes: React.FC = () => {
 
         try {
             if (editandoIngrediente?.id) {
-                await axios.patch(`${CATALOGO_API_URL}ingredientes/${editandoIngrediente.id}/`, payload, AUTH_HEADERS);
+                await catalogoApi.patch(`${CATALOGO_API_URL}ingredientes/${editandoIngrediente.id}/`, payload, AUTH_HEADERS);
             } else {
-                await axios.post(`${CATALOGO_API_URL}ingredientes/`, payload, AUTH_HEADERS);
+                await catalogoApi.post(`${CATALOGO_API_URL}ingredientes/`, payload, AUTH_HEADERS);
             }
             setFormIngrediente({ name: '', additional_price: '0', available: true });
             setEditandoIngrediente(null);
@@ -118,7 +119,7 @@ const GestionIngredientes: React.FC = () => {
     const handleDeleteIngrediente = async (id: number) => {
         if (!confirm("¿Eliminar ingrediente?")) return;
         try {
-            await axios.delete(`${CATALOGO_API_URL}ingredientes/${id}/`, AUTH_HEADERS);
+            await catalogoApi.delete(`${CATALOGO_API_URL}ingredientes/${id}/`, AUTH_HEADERS);
             fetchClases();
         } catch (err) { alert("Error al eliminar"); }
     };

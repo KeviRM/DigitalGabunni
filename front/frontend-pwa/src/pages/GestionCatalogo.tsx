@@ -1,12 +1,13 @@
 
 import React, {useEffect, useState} from "react";
-import axios from "axios";
+import {catalogoApi} from '../api/axiosConfig';
+
 import type{ Producto, Ingrediente } from "../types/menu";
 import useAuth from "../hooks/useAuth";
 import ImageUploader from "../components/ImageUploader";
 
 
-const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/gestion/';
+const CATALOGO_API_URL = '/api/v1/catalogo/admin/gestion/';
 
 interface Unidad {
     id: number;
@@ -53,9 +54,9 @@ const fetchProductos = async () => {
     try{
 
         const [prodRes, unidadRes, ingRes] = await Promise.all([
-                axios.get<Producto[]>(`${CATALOGO_API_URL}productos/`, AUTH_HEADERS),
-                axios.get<Unidad[]>(`${CATALOGO_API_URL}unidades/`, AUTH_HEADERS), // Nuevo fetch de unidades
-                axios.get<IngredienteGestion[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS), 
+                catalogoApi.get<Producto[]>(`${CATALOGO_API_URL}productos/`, AUTH_HEADERS),
+                catalogoApi.get<Unidad[]>(`${CATALOGO_API_URL}unidades/`, AUTH_HEADERS), // Nuevo fetch de unidades
+                catalogoApi.get<IngredienteGestion[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS), 
             ]);
         setProductos(prodRes.data);
         setUnidades(unidadRes.data);
@@ -113,12 +114,12 @@ useEffect(() => {
         try {
             if (productoEditando) {
                 // PUT/PATCH para actualizar el producto existente (Criterio de Aceptación: Modificar)
-                await axios.put(`${CATALOGO_API_URL}productos/${productoEditando.id}/`, formData, { headers });
+                await catalogoApi.put(`${CATALOGO_API_URL}productos/${productoEditando.id}/`, formData, { headers });
                 alert(`Producto ${productoEditando.name} actualizado.`);
                 setProductoEditando(null);
             } else {
                 // POST para crear un nuevo producto (Criterio de Aceptación: Agregar)
-                await axios.post(`${CATALOGO_API_URL}productos/`,  formData, { headers } );
+                await catalogoApi.post(`${CATALOGO_API_URL}productos/`,  formData, { headers } );
                 alert(`Producto ${nuevoProducto.name} creado.`);
                 setNuevoProducto({ name: '', description: '', price: '0.00', category: 1 });
             }
@@ -135,7 +136,7 @@ useEffect(() => {
         if (!window.confirm(`¿Estás seguro de eliminar ${nombre}?`)) return;
 
         try {
-            await axios.delete(`${CATALOGO_API_URL}productos/${id}/`, AUTH_HEADERS);
+            await catalogoApi.delete(`${CATALOGO_API_URL}productos/${id}/`, AUTH_HEADERS);
             alert(`Producto ${nombre} eliminado.`);
             fetchProductos(); // Recargar la lista
         } catch (err) {
@@ -156,7 +157,7 @@ useEffect(() => {
         
         try {
             // PATCH a la API de gestión de productos con el nuevo estado
-            await axios.patch(`${CATALOGO_API_URL}productos/${productoId}/`, 
+            await catalogoApi.patch(`${CATALOGO_API_URL}productos/${productoId}/`, 
                 { is_active: nuevoEstado }, 
                 AUTH_HEADERS
             );
@@ -185,7 +186,7 @@ useEffect(() => {
 
     const handleUpdateIngrediente = async (ingredienteId: number, data: { unidad_medida: number | null }) => {
         try {
-            await axios.patch(`${CATALOGO_API_URL}ingredientes/${ingredienteId}/`, data, AUTH_HEADERS);
+            await catalogoApi.patch(`${CATALOGO_API_URL}ingredientes/${ingredienteId}/`, data, AUTH_HEADERS);
             
             // --- ACTUALIZACIÓN LOCAL DEL ESTADO ---
             // Encontramos la abreviatura de la unidad

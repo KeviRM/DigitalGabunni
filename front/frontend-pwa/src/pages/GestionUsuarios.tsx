@@ -1,9 +1,11 @@
 // frontend-pwa/src/pages/GestionUsuarios.tsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { FaUserPlus, FaTrash, FaUserTie } from 'react-icons/fa';
+
+import { authApi } from '../api/axiosConfig';
 
 interface Usuario {
     id: number;
@@ -13,7 +15,7 @@ interface Usuario {
 }
 
 // URL del Microservicio de Autenticación
-const AUTH_MS_URL = 'http://127.0.0.1:8002/api/gestion/cocineros/';
+const AUTH_MS_URL = '/api/gestion/cocineros/';
 
 const GestionUsuarios: React.FC = () => {
     const { isAuthenticated, getAuthHeaders, getUserRole } = useAuth();
@@ -27,7 +29,7 @@ const GestionUsuarios: React.FC = () => {
     // 1. Cargar lista de cocineros
     const fetchCocineros = async () => {
         try {
-            const response = await axios.get<Usuario[]>(AUTH_MS_URL, AUTH_HEADERS);
+            const response = await authApi.get<Usuario[]>(AUTH_MS_URL, AUTH_HEADERS);
             setCocineros(response.data);
         } catch (err) {
             console.error("Error cargando usuarios:", err);
@@ -52,7 +54,7 @@ const GestionUsuarios: React.FC = () => {
         if (!nuevoCocinero.username || !nuevoCocinero.password) return;
 
         try {
-            await axios.post(AUTH_MS_URL, nuevoCocinero, AUTH_HEADERS);
+            await authApi.post(AUTH_MS_URL, nuevoCocinero, AUTH_HEADERS);
             alert(`Cocinero ${nuevoCocinero.username} creado exitosamente.`);
             setNuevoCocinero({ username: '', password: '', first_name: '', email: '' }); // Limpiar form
             fetchCocineros(); 
@@ -66,7 +68,7 @@ const GestionUsuarios: React.FC = () => {
     const handleDelete = async (id: number) => {
         if (!window.confirm("¿Eliminar el acceso de este cocinero permanentemente?")) return;
         try {
-            await axios.delete(`${AUTH_MS_URL}${id}/`, AUTH_HEADERS);
+            await authApi.delete(`${AUTH_MS_URL}${id}/`, AUTH_HEADERS);
             setCocineros(cocineros.filter(c => c.id !== id));
         } catch (err) {
             alert("Error al eliminar.");

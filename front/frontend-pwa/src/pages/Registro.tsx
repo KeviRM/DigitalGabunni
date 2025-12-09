@@ -2,15 +2,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaGoogle, FaUserPlus } from 'react-icons/fa';
-import axios from 'axios';
+
 import gabunniImage from "../assets/gabunniLogo.jpg";
 
 
 import useAuth from '../hooks/useAuth';
 import { useGoogleLogin } from '@react-oauth/google';
 
+import { authApi } from '../api/axiosConfig';
 
-const REGISTRO_API_URL = 'http://127.0.0.1:8002/api/registro/';
+
+const REGISTRO_API_URL = '/api/registro/';
 
 const Registro: React.FC = () => {
     const navigate = useNavigate();
@@ -98,7 +100,7 @@ const Registro: React.FC = () => {
         };
 
         try {
-            await axios.post(REGISTRO_API_URL, dataToSend);
+            await authApi.post(REGISTRO_API_URL, dataToSend);
             alert("¡Registro exitoso! Ya puedes iniciar sesión.");
             navigate('/login');
         } catch (error: any) {

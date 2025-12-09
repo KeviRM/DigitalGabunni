@@ -1,6 +1,6 @@
 // frontend-pwa/src/pages/GestionPaquetes.tsx
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { catalogoApi } from '../api/axiosConfig';
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import type{ Producto } from '../types/menu'; 
@@ -31,7 +31,7 @@ interface PaqueteItem {
 
 
 
-const CATALOGO_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/admin/';
+const CATALOGO_API_URL = '/api/v1/catalogo/admin/';
 
 const GestionPaquetes: React.FC = () => {
     const { isAuthenticated, getAuthHeaders } = useAuth();
@@ -62,8 +62,8 @@ const GestionPaquetes: React.FC = () => {
         setCargando(true);
         try {
             const [paqRes, prodRes] = await Promise.all([
-                axios.get<PaqueteGestion[]>(`${CATALOGO_API_URL}gestion/paquetes/`, AUTH_HEADERS),
-                axios.get<Producto[]>(`${CATALOGO_API_URL}gestion/productos/`, AUTH_HEADERS),
+                catalogoApi.get<PaqueteGestion[]>(`${CATALOGO_API_URL}gestion/paquetes/`, AUTH_HEADERS),
+                catalogoApi.get<Producto[]>(`${CATALOGO_API_URL}gestion/productos/`, AUTH_HEADERS),
             ]);
             setPaquetes(paqRes.data);
             setProductosBase(prodRes.data);
@@ -111,11 +111,11 @@ const GestionPaquetes: React.FC = () => {
 
         try{
             if (paqueteEditando?.id){
-                const res = await axios.patch(`${CATALOGO_API_URL}gestion/paquetes/${paqueteEditando.id}/`, formData, { headers });
+                const res = await catalogoApi.patch(`${CATALOGO_API_URL}gestion/paquetes/${paqueteEditando.id}/`, formData, { headers });
                 setPaqueteEditando(res.data);
                 alert("Producto actualizado.");
             } else {
-                const res = await axios.post(`${CATALOGO_API_URL}gestion/paquetes/`, formData, { headers });
+                const res = await catalogoApi.post(`${CATALOGO_API_URL}gestion/paquetes/`, formData, { headers });
                 setPaqueteEditando(res.data);
                 alert("Paquete Creado. Ahora añade los productos.");
             }
@@ -134,7 +134,7 @@ const GestionPaquetes: React.FC = () => {
     const handleDeletePaquete = async (id: number) => {
             if(!window.confirm("¿Eliminar este paquete?")) return;
             try {
-                await axios.delete(`${CATALOGO_API_URL}gestion/paquetes/${id}/`, AUTH_HEADERS);
+                await catalogoApi.delete(`${CATALOGO_API_URL}gestion/paquetes/${id}/`, AUTH_HEADERS);
                 setPaqueteEditando(null);
                 fetchDatos();
             } catch(err) {console.error(err); alert("Error al eliminar"); }
@@ -150,7 +150,7 @@ const GestionPaquetes: React.FC = () => {
         if(!paqueteEditando?.id) return;
 
         try{
-            await axios.post(`${CATALOGO_API_URL}gestion/paquete-items/`,{
+            await catalogoApi.post(`${CATALOGO_API_URL}gestion/paquete-items/`,{
                 package: paqueteEditando.id,
                 product: Number(itemForm.product),
                 quantity: itemForm.quantity
@@ -168,7 +168,7 @@ const GestionPaquetes: React.FC = () => {
 ///// Eliminar Item del Paquete
     const handleDeleteItem = async (itemId: number) => {
         try {
-            await axios.delete(`${CATALOGO_API_URL}gestion/paquete-items/${itemId}/`, AUTH_HEADERS);
+            await catalogoApi.delete(`${CATALOGO_API_URL}gestion/paquete-items/${itemId}/`, AUTH_HEADERS);
             fetchDatos();
         } catch (err) { console.error(err); alert("Error al quitar producto."); }
     };

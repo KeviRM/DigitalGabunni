@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaHistory, FaHeart, FaBoxOpen, FaBell } from 'react-icons/fa';
 import type { Producto } from '../types/menu';
 
+import { authApi, catalogoApi, pedidosApi } from '../api/axiosConfig';
+
 import usePushNotification from '../hooks/usePushNotification';
 
-const PEDIDOS_API_URL = 'http://127.0.0.1:8001/api/v1/pedidos/mis-pedidos/';
-const FAVORITOS_API_URL = 'http://127.0.0.1:8000/api/v1/catalogo/favoritos/';
+const PEDIDOS_API_URL = '/api/v1/pedidos/mis-pedidos/';
+const FAVORITOS_API_URL = '/api/v1/catalogo/favoritos/';
 
-const AUTH_ME_URL = 'http://127.0.0.1:8002/api/auth/me/';
+const AUTH_ME_URL = '/api/auth/me/';
 
 const Perfil: React.FC = () => {
     const { isAuthenticated, getAuthHeaders, logout } = useAuth();
@@ -30,15 +31,15 @@ const Perfil: React.FC = () => {
         setLoading(true);
         try {
             if (activeTab === 'historial') {
-                const res = await axios.get(PEDIDOS_API_URL, AUTH_HEADERS);
+                const res = await pedidosApi.get(PEDIDOS_API_URL, AUTH_HEADERS);
                 setHistorial(res.data);
             } else if (activeTab === 'favoritos') {
-                const res = await axios.get(FAVORITOS_API_URL, AUTH_HEADERS);
+                const res = await catalogoApi.get(FAVORITOS_API_URL, AUTH_HEADERS);
                 setFavoritos(res.data);
             }
              else if (activeTab === 'datos') {
                 // LLAMADA AL NUEVO ENDPOINT
-                const res = await axios.get(AUTH_ME_URL, AUTH_HEADERS);
+                const res = await authApi.get(AUTH_ME_URL, AUTH_HEADERS);
                 setUserData(res.data);
              }
         } catch (err) {
@@ -60,7 +61,7 @@ const Perfil: React.FC = () => {
 
     const handleRemoveFavorite = async (favId: number) => {
         try {
-            await axios.delete(`${FAVORITOS_API_URL}${favId}/`, AUTH_HEADERS);
+            await catalogoApi.delete(`${FAVORITOS_API_URL}${favId}/`, AUTH_HEADERS);
             setFavoritos(favoritos.filter(f => f.id !== favId));
         } catch (err) { alert("Error al eliminar favorito"); }
     };
@@ -70,8 +71,8 @@ const Perfil: React.FC = () => {
     const handlePagarPedido = async (numeroPedido: string) => {
         try {
             // Usamos el mismo endpoint que en el Checkout
-            const response = await axios.post(
-                'http://127.0.0.1:8001/api/v1/pedidos/crear-pago/', 
+            const response = await pedidosApi.post(
+                '/api/v1/pedidos/crear-pago/', 
                 { order_id: numeroPedido }, 
                 { headers: getAuthHeaders() }
             );
