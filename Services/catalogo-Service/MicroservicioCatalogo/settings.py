@@ -23,13 +23,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 ####Nota: La clave secreta debe ser la misma que la del microservicio de Auth
-SECRET_KEY = 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^'
+##SECRET_KEY = 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+##DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'FALSE') == 'True'
 
-ALLOWED_HOSTS = []
-
+##ALLOWED_HOSTS = []
+##Pemitimos host separados por conas
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 # Definición de la carpeta base (si usas Pathlib)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -62,8 +66,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-CORS_ALLOW_ALL_ORIGINS = True
 
 
 REST_FRAMEWORK = {
@@ -116,12 +118,33 @@ WSGI_APPLICATION = 'MicroservicioCatalogo.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+#####BASE DE DATOS POSTGRESQL
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'db_default'), # Cada servicio tendrá su propio nombre
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'password'),
+        'HOST': os.environ.get('DB_HOST', 'db'), # 'db' será el nombre del servicio en Docker
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
+
+###
+##CORS_ALLOW_ALL_ORIGINS = True
+
+###Para que el front se pueda comunicar con el back
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
+
+
+
 
 
 # Password validation
@@ -159,6 +182,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

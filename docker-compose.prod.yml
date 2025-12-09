@@ -1,0 +1,145 @@
+version: '3.8'
+
+services:
+  #  BASE DE DATOS (Compartida)
+  db:
+    image: postgres:15-alpine
+    container_name: gabunni_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Script para crear las 4 bases de datos al inicio
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  #  REDIS (Para WebSockets y Caché)
+  redis:
+    image: redis:alpine
+    container_name: gabunni_redis
+    restart: always
+
+  #  MICROSERVICIO AUTH
+  auth_service:
+    build: ./Services/MicroservicioAuth
+    container_name: gabunni_auth
+    restart: always
+    command: gunicorn MicroservicioAuth.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_NAME=gabunni_auth
+    depends_on:
+      db:
+        condition: service_healthy
+
+  #  MICROSERVICIO CATALOGO
+  catalogo_service:
+    build: ./Services/MicroservicioCatalogo
+    container_name: gabunni_catalogo
+    restart: always
+    command: gunicorn MicroservicioCatalogo.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_NAME=gabunni_catalogo
+    depends_on:
+      db:
+        condition: service_healthy
+
+  #  MICROSERVICIO PEDIDOS (WebSockets con Daphne)
+  pedidos_service:
+    build: ./Services/MicroservicioPedidos
+    container_name: gabunni_pedidos
+    restart: always
+    # IMPORTANTE: Usamos daphne aquí
+    command: daphne -b 0.0.0.0 -p 8000 MicroservicioPedidos.asgi:application
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_NAME=gabunni_pedidos
+      - REDIS_HOST=redis
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  #  MICROSERVICIO CONTENIDO (Nuevo - Ligero)
+  contenido_service:
+    build: ./Services/MicroservicioContenido
+    container_name: gabunni_contenido
+    restart: always
+    command: gunicorn MicroservicioContenido.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    env_file: .env
+    environment:
+      - DB_HOST=db
+      - DB_NAME=gabunni_contenido
+    depends_on:
+      db:
+        condition: service_healthy
+
+  #  FRONTEND (React)
+  frontend:
+    build: ./front/frontend-pwa
+    container_name: gabunni_frontend
+    restart: always
+    # No necesita volúmenes ni envs complejos, ya que se compila a estático
+
+  #  NGINX (Gateway / Portero)
+  nginx:
+    image: nginx:alpine
+    container_name: gabunni_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Configuración de rutas
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      # Certificados SSL (LetsEncrypt)
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+      # Archivos estáticos y media compartidos
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      - frontend
+      - auth_service
+      - catalogo_service
+      - pedidos_service
+      - contenido_service
+
+  #  CERTBOT (Para renovar SSL automáticamente)
+  certbot:
+    image: certbot/certbot
+    container_name: gabunni_certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # Este comando renueva certificados cada 12h (no hace nada si no caducan)
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+# DEFINICIÓN DE VOLÚMENES PERSISTENTES
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:

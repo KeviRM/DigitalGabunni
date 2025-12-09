@@ -4,7 +4,17 @@ __pycache__/
 *sqlite3
 /media/
 .env
+.env.*
+**/staticfiles/
+**/static_root/
 
+**/media/
+
+db.sqlite3
+
+# Ignorar carpeta de node (Frontend)
+**/node_modules/
+**/dist/
 
 /Services/catalogo-Service/db.sqlite3
 /Services/pedidos-Service/db.sqlite3

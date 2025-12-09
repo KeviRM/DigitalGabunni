@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +20,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^'
+
+##SECRET_KEY = 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-0d#un$cv-gxd@(wb95-6%+93a9jayn_i@h49fdoby5j5v-+#6^')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 
-ALLOWED_HOSTS = []
+##DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+
+
+##ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 
 # Application definition
@@ -56,11 +64,9 @@ MIDDLEWARE = [
 ]
 
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 
-
-MERCADO_PAGO_ACCESS_TOKEN = "TEST-8446794572864653-112216-bb3be81cb06782f9e066eeb2a7dd972a-478240166"
+MERCADO_PAGO_ACCESS_TOKEN = os.environ.get('MERCADO_PAGO_ACCESS_TOKEN', '')
 
 
 REST_FRAMEWORK = {
@@ -81,8 +87,8 @@ REST_FRAMEWORK = {
 
 # Configuración WebPush
 WEBPUSH_SETTINGS = {
-    "VAPID_PUBLIC_KEY": "BAfA5J72akeT3OJ7S0C-PdWyqliZ-qHS34IUjGtnJkbX-9tyuhFY2llXrl7kjXy_zIFQ958Ccp9eDbLDIgOg75U",
-    "VAPID_PRIVATE_KEY": "-RfF_VB9_Dhh6EZkB6pK08cNfXP8uiTZIexl3-_oFRw",
+    "VAPID_PUBLIC_KEY": os.environ.get('WEBPUSH_VAPID_PUBLIC_KEY', ''),
+    "VAPID_PRIVATE_KEY": os.environ.get('WEBPUSH_VAPID_PRIVATE_KEY', ''),
     "VAPID_ADMIN_EMAIL": "mailto:admin@gabunni.com"
 }
 
@@ -147,13 +153,27 @@ WSGI_APPLICATION = 'MicroservicioPedidos.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'db_default'), # Cada servicio tendrá su propio nombre
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'password'),
+        'HOST': os.environ.get('DB_HOST', 'db'), # 'db' será el nombre del servicio en Docker
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
+
+##CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:5173').split(',')
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -191,6 +211,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -206,8 +228,21 @@ ASGI_APPLICATION = 'MicroservicioPedidos.asgi.application'
 #Configuracion de capa de canales
 ### es InMemory para desarrollo
 ###Se debe cambiar a redis en produccion :[
+
+
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
+
+###Ya lo cambie a redis :]
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(os.environ.get('REDIS_HOST', 'redis'), 6379)],
+        },
+    },
 }
+
