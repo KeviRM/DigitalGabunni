@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// URL Base del WebSocket (Ajusta el puerto si es necesario)
-const WS_BASE_URL = 'ws://127.0.0.1:8001/ws/pedidos/';
+import { WS_BASE_URL } from '../api/axiosConfig';
+
+// URL Base del WebSocket
+const WS_PEDIDOS_URL = `${WS_BASE_URL}/ws/pedidos/`;
 
 interface PedidoUpdate {
     order_number: string;
@@ -19,12 +21,11 @@ export const useOrderWebSocket = (roomId: string) => {
         if (socketRef.current?.readyState === WebSocket.OPEN) return;
 
         // Construir URL: si roomId es 'cocina', conecta al canal global. Si es UUID, al privado.
-        const url = `${WS_BASE_URL}${roomId}/`;
+        const url = `${WS_PEDIDOS_URL}${roomId}/`;
         const socket = new WebSocket(url);
         socketRef.current = socket;
 
         socket.onopen = () => {
-            console.log(` WS Conectado a sala: ${roomId}`);
             setIsConnected(true);
         };
 
@@ -35,14 +36,13 @@ export const useOrderWebSocket = (roomId: string) => {
                     setLastMessage(data.pedido);
                 }
             } catch (err) {
-                console.error("Error parseando mensaje WS:", err);
+                // Error silencioso en producción o enviar a servicio de logs
             }
         };
 
         socket.onclose = () => {
-            console.log(` WS Desconectado de sala: ${roomId}`);
             setIsConnected(false);
-            setTimeout(() => connect(), 3000); 
+            setTimeout(() => connect(), 3000);
         };
 
         socket.onerror = (error) => {

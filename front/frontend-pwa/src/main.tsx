@@ -6,7 +6,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ShopInfoProvider } from './context/ShopInfoContext'
 
 
-const GOOGLE_CLIENT_ID = "841107781554-3ocfsr9et0oqd5jiqj8l2gl142g9d1m5.apps.googleusercontent.com";
+import { GOOGLE_CLIENT_ID } from './api/axiosConfig';
 
 
 createRoot(document.getElementById('root')!).render(

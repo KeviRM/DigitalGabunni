@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // 1. Instancia para Autenticación (Usuarios, Tokens)
 export const authApi = axios.create({
-    baseURL: import.meta.env.VITE_AUTH_URL, 
+    baseURL: import.meta.env.VITE_AUTH_URL,
     withCredentials: true // Importante para cookies si las usas
 });
 
@@ -21,3 +21,7 @@ export const pedidosApi = axios.create({
 export const contenidoApi = axios.create({
     baseURL: import.meta.env.VITE_CONTENIDO_URL,
 });
+
+// Configuración Global y Variables de Entorno
+export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+export const WS_BASE_URL = import.meta.env.VITE_WS_URL;

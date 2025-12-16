@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 
+import { WS_BASE_URL } from '../api/axiosConfig';
+
 // Conectamos a la sala 'cocina' que es donde el backend envía los eventos
-const WS_URL = 'ws://127.0.0.1:8001/ws/pedidos/cocina/';
+const WS_URL = `${WS_BASE_URL}/ws/pedidos/cocina/`;
 
 type WebSocketStatus = 'CONNECTING' | 'OPEN' | 'CLOSED';
 
@@ -46,7 +48,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setStatus('CONNECTING');
 
         socket.onopen = () => {
-            console.log('WebSocket Connected');
             setStatus('OPEN');
             // Clear any pending reconnect timeout
             if (reconnectTimeout.current) {
@@ -60,19 +61,17 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
                 const data = JSON.parse(event.data);
                 setLastMessage(data);
             } catch (e) {
-                console.error('Error parsing WebSocket message:', e);
+                // Error silencioso
             }
         };
 
         socket.onclose = () => {
-            console.log('WebSocket Disconnected');
             setStatus('CLOSED');
             ws.current = null;
 
             // Attempt to reconnect after 3 seconds
             if (isAuthenticated) {
                 reconnectTimeout.current = setTimeout(() => {
-                    console.log('Attempting to reconnect...');
                     connect();
                 }, 3000);
             }
