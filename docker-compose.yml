@@ -36,6 +36,9 @@ services:
       - media_volume:/app/media
     env_file: .env
     environment:
+      - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
       - DB_HOST=db
       - DB_NAME=gabunni_auth
     depends_on:
@@ -53,6 +56,9 @@ services:
       - media_volume:/app/media
     env_file: .env
     environment:
+      - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
       - DB_HOST=db
       - DB_NAME=gabunni_catalogo
     depends_on:
@@ -71,6 +77,9 @@ services:
       - media_volume:/app/media
     env_file: .env
     environment:
+      - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
       - DB_HOST=db
       - DB_NAME=gabunni_pedidos
       - REDIS_HOST=redis
@@ -91,6 +100,9 @@ services:
       - media_volume:/app/media
     env_file: .env
     environment:
+      - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
       - DB_HOST=db
       - DB_NAME=gabunni_contenido
     depends_on:
