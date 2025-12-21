@@ -69,6 +69,8 @@ MIDDLEWARE = [
 
 
 REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': None,
+    'PAGE_SIZE': None,
     # para que Django intente autenticar con el token JWT
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'menu_catalogo.authentication.StatelessJWTAuthentication',
