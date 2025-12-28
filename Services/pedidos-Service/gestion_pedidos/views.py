@@ -280,12 +280,12 @@ class CreatePaymentPreference(APIView):
                 "installments": 1 # Evitar meses sin intereses si no quieres
             },
             "back_urls": {
-                "success": "http://localhost:5173/pedido/exito",
-                "failure": "http://localhost:5173/pedido/fallo",
-                "pending": "http://localhost:5173/pedido/pendiente"
+                "success": "https://gabunny.agenciakeops.com/pedido/exito",
+                "failure": "https://gabunny.agenciakeops.com/pedido/fallo",
+                "pending": "https://gabunny.agenciakeops.com/pedido/pendiente"
             },
                 
-            # "auto_return": "approved",
+            "auto_return": "approved",
             "external_reference": str(pedido.order_number),
                 
         }
