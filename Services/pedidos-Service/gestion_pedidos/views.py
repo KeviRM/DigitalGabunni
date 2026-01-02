@@ -328,6 +328,9 @@ class CreatePaymentPreference(APIView):
     
     
 class MercadoPagoWebhook(APIView):
+    
+    permission_classes = [AllowAny] # <--- AGREGAR ESTO (Puerta abierta para MP)
+    authentication_classes = []     # <--- Opcional: Desactivar auth para esta vista
     """
     Recibe notificaciones de Mercado Pago (IPN / Webhooks)
     y actualiza el estado del pedido en tiempo real.
