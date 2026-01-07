@@ -25,3 +25,4 @@ export const contenidoApi = axios.create({
 // Configuración Global y Variables de Entorno
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 export const WS_BASE_URL = import.meta.env.VITE_WS_URL;
+export const MERCADO_P_INIT = import.meta.env.VITE_MERCADO_P;

@@ -5,6 +5,7 @@ import { useCarrito } from "../context/CarritoContext";
 import useAuth from '../hooks/useAuth';
 
 import { pedidosApi } from '../api/axiosConfig';
+import { MERCADO_P_INIT } from "../api/axiosConfig";
 
 
 import { FaUserLock, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
@@ -12,7 +13,7 @@ import { FaUserLock, FaSignInAlt, FaUserPlus } from 'react-icons/fa';
 import { initMercadoPago, Wallet } from "@mercadopago/sdk-react";
 
 
-initMercadoPago('TEST-7a88a069-4869-4c1f-ba63-455308958153');
+initMercadoPago(MERCADO_P_INIT);
 
 
 const PEDIDOS_API_URL = '/api/v1/pedidos/';
