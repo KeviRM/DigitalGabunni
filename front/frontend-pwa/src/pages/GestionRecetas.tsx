@@ -45,7 +45,7 @@ const GestionRecetas: React.FC = () => {
                     // Endpoint de gestión de ingredientes
                     catalogoApi.get<Ingrediente[]>(`${CATALOGO_API_URL}ingredientes/`, AUTH_HEADERS) 
                 ]);
-                setProductos(prodRes.data.filter(p => p.category_name === 'chapatas')); // Filtrar solo chapatas
+                setProductos(prodRes.data.filter(p => p.category_name === 'Chapatas')); // Filtrar solo chapatas
                 setIngredientesBase(ingRes.data);
                 setError(null);
             } catch (err) {
