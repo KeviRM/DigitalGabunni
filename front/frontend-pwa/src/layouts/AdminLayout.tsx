@@ -39,6 +39,7 @@ const ADMIN_NAV_GROUPS: NavGroup[] = [
             { name: 'Recetas', path: '/admin/recetas', icon: FaBoxOpen, role: 'admin' },
             { name: 'Paquetes', path: '/admin/paquetes', icon: FaGift, role: 'admin' },
             { name: 'Unidades', path: '/admin/unidades', icon: FaRuler, role: 'admin' },
+            { name: 'Categorías', path: '/admin/categorias', icon: FaClipboardList, role: 'admin' },
         ]
     },
     {

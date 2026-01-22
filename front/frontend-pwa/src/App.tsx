@@ -25,6 +25,7 @@ import GestionUnidades from "./pages/GestionUnidades";
 import GestionIngredientes from "./pages/GestionIngredientes";
 import GestionPaquetes from "./pages/GestionPaquetes";
 
+import GestionCategoria from "./pages/GestionCategoria";
 
 
 
@@ -95,6 +96,9 @@ function App() {
                 <Route path="pedidos" element={<PanelAdmin />} />
                 <Route path="cocina" element={<ModuloCocina />} />
                 <Route path="catalogo" element={<GestionCatalogo />} />
+                                
+                <Route path="categorias" element={<GestionCategoria />} />
+                
                 <Route path="ingredientes" element={<GestionIngredientes />} />
                 <Route path="unidades" element={<GestionUnidades />} />
                 <Route path="recetas" element={<GestionRecetas />} />

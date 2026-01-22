@@ -38,7 +38,7 @@ services:
     environment:
       - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
-      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com,http://localhost:5173,http://127.0.0.1:5173
       - DB_HOST=db
       - DB_NAME=gabunni_auth
     depends_on:
@@ -58,7 +58,7 @@ services:
     environment:
       - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
-      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com,http://localhost:5173,http://127.0.0.1:5173
       - DB_HOST=db
       - DB_NAME=gabunni_catalogo
     depends_on:
@@ -79,7 +79,7 @@ services:
     environment:
       - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
-      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com,http://localhost:5173,http://127.0.0.1:5173
       - DB_HOST=db
       - DB_NAME=gabunni_pedidos
       - REDIS_HOST=redis
@@ -102,7 +102,7 @@ services:
     environment:
       - ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
       - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,gabunny.agenciakeops.com
-      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com
+      - CSRF_TRUSTED_ORIGINS=https://gabunny.agenciakeops.com,http://localhost:5173,http://127.0.0.1:5173
       - DB_HOST=db
       - DB_NAME=gabunni_contenido
     depends_on:

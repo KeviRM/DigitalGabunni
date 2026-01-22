@@ -8,8 +8,13 @@ import Imagecat2 from "../assets/images_index/bebidas_1.webp";
 import Imagecat3 from "../assets/images_index/saludable.webp";
 
 
+import { useShopInfo } from '../context/ShopInfoContext';
+
+
 const Welcome: React.FC = () => {
     const navigate = useNavigate();
+
+    const { info } = useShopInfo();
 
     return (
         <main>
@@ -78,13 +83,13 @@ const Welcome: React.FC = () => {
                         
                         {/* Información de Contacto */}
                         <div className="w-full md:w-1/3 space-y-6">
-                            <p className="text-lg text-gray-600">Estamos ansiosos por atenderte.</p>
+                            <p className="text-2xl text-gray-700">Estamos ansiosos por atenderte.</p>
 
                             <div className="flex items-start">
                                 <FaMapMarkerAlt className="text-orange-500 text-xl mr-3 mt-1" />
                                 <div>
                                     <p className="font-semibold">Dirección</p>
-                                    <p className="text-gray-700">Plaza de la Constitución S/N, Cuauhtémoc, 06010 Ciudad de México, CDMX </p>
+                                    <p className="text-gray-700">{ info.direccion }</p>
                                 </div>
                             </div>
 
@@ -92,7 +97,7 @@ const Welcome: React.FC = () => {
                                 <FaPhone className="text-orange-500 text-xl mr-3 mt-1" />
                                 <div>
                                     <p className="font-semibold">Teléfono</p>
-                                    <p className="text-gray-700">(555) 123-4567 </p>
+                                    <p className="text-gray-700">{ info.telefono_principal } </p>
                                 </div>
                             </div>
                             
@@ -100,7 +105,7 @@ const Welcome: React.FC = () => {
                                 <FaClock className="text-orange-500 text-xl mr-3 mt-1" />
                                 <div>
                                     <p className="font-semibold">Horario</p>
-                                    <p className="text-gray-700">Lun - Sáb: 9:00 AM - 10:00 PM </p>
+                                    <p className="text-gray-700">{ info.horario_atencion} </p>
                                 </div>
                             </div>
                         </div>
