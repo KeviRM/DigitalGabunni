@@ -3,6 +3,7 @@ from django.shortcuts import render
 from requests import request
 from rest_framework import viewsets, mixins, status, views, response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import action
 
 from django.db.models import Sum, Count
 
@@ -50,15 +51,27 @@ class PedidoCreationViewSet (mixins.CreateModelMixin, viewsets.GenericViewSet):
     serializer_class = PedidoCreationSerializer
     
     def perform_create(self, serializer):
+
+        origen_request = self.request.data.get('origen', 'APP')
+        estado_inicial = 'PENDIENTE'
+
+
+        if origen_request == 'KIOSCO':
+            estado_inicial = 'ESPERANDO_PAGO'
+
+
+
         pedido = serializer.save(
             usuario_id=self.request.user.id,
-            status='PENDIENTE'
+            status=estado_inicial,
+            origen = origen_request
+            
         )
         
         
         channel_layer = get_channel_layer()
         
-        # Datos para enviar (Recuerda convertir UUID a string)
+
         data_pedido = {
             'order_number': str(pedido.order_number),
             'status': pedido.status,
@@ -137,7 +150,7 @@ class SavePushSubscriptionView(views.APIView):
 
 
 class PedidoGestionViewSet(viewsets.ModelViewSet):
-    queryset = Pedido.objects.all().order_by('-created_at').prefetch_related('details').exclude(status='PENDIENTE')
+    queryset = Pedido.objects.all().order_by('-created_at').prefetch_related('details').exclude(status__in=['PENDIENTE', 'ESPERANDO_PAGO'])
     serializer_class = PedidoAdminSerializer
     lookup_field = 'order_number'
     permission_classes = [IsAuthenticated]
@@ -383,7 +396,7 @@ class MercadoPagoWebhook(APIView):
             pedido.status = 'CONFIRMADO' # O el estado inicial para cocina (ej: CONFIRMADO)
             pedido.save()
 
-            # 5. Notificar a Cocina vía WebSocket (¡Magia!) ⚡
+            # 5. Notificar a Cocina vía WebSocket (¡Magia!) 
             channel_layer = get_channel_layer()
             data_pedido = {
                 'order_number': str(pedido.order_number),
@@ -550,3 +563,55 @@ class ReporteVentasCSV(views.APIView):
 
             return response
         
+
+
+
+
+
+
+class CajaViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def pendientes(self, request):
+        pedidos = Pedido.objects.filter(status='ESPERANDO_PAGO').order_by('created_at')
+        serializer = PedidoEstadoSerializer(pedidos, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'], url_path='(?P<order_number>[^/.]+)/confirmar_pago')
+    def confirmar_pago(self, request, order_number=None):
+        try:
+            pedido = Pedido.objects.get(order_number=order_number)
+
+            if pedido.status != 'ESPERANDO_PAGO':
+                return Response({'error': 'El pedido no está en estado de esperando pago.'}, status=400)
+            
+            pedido.status = 'CONFIRMADO'
+            pedido.save()
+
+
+            channel_layer = get_channel_layer()
+            data_pedido = {
+                'order_number': str(pedido.order_number),
+                'status': pedido.status,
+                'client_name': pedido.client_name,
+            }
+
+
+
+             # GRUPO COCINA
+            async_to_sync(channel_layer.group_send)(
+                'grupo_cocina', 
+                {'type': 'pedido_update', 'pedido': data_pedido}
+            )
+
+            # GRUPO CLIENTE (Para que el Kiosko muestre "¡Pago Exitoso!")
+            async_to_sync(channel_layer.group_send)(
+                f'grupo_{str(pedido.order_number)}', 
+                {'type': 'pedido_update', 'pedido': data_pedido}
+            )
+
+            return Response({'status': 'Pago confirmado y enviado a cocina'})
+
+        except Pedido.DoesNotExist:
+            return Response({'error': 'Pedido no encontrado'}, status=404)

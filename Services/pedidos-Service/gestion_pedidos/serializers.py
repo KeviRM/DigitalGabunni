@@ -26,6 +26,7 @@ class PedidoCreationSerializer(serializers.ModelSerializer):
             'delivery_address',
             'amount',
             'items_carrito',
+            'origen',
         ]
         
         

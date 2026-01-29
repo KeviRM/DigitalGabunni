@@ -4,6 +4,7 @@ from .views import (PedidoCreationViewSet,
                     PedidoEstadoViewSet,
                     PedidoGestionViewSet,
                     MisPedidosViewSet,
+                    CajaViewSet
                     )
 
 from .views import CreatePaymentPreference
@@ -26,6 +27,11 @@ router_mispedidos = DefaultRouter()
 router_mispedidos.register(r'mis-pedidos', MisPedidosViewSet, basename='mis-pedidos')
 
 
+router_caja = DefaultRouter()
+router_caja.register(r'caja', CajaViewSet, basename='caja')
+
+
+
 
 
 urlpatterns = [
@@ -40,6 +46,8 @@ urlpatterns = [
     path('', include(router_mispedidos.urls)),
     
     path('', include(router_gestion.urls)),
+
+    path('', include(router_caja.urls)),
     
     path('crear-pago/', CreatePaymentPreference.as_view(), name='crear_pago'),
 ]

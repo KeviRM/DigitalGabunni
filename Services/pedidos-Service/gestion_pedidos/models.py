@@ -11,6 +11,7 @@ class Pedido(models.Model):
     
     STATUS_CHOISE =[
         ('PENDIENTE', 'pendiente de pago'),
+        ('ESPERANDO_PAGO', 'Esperando Pago En Caja'),
         ('CONFIRMADO', 'confirmado'),
         ('PREPARACION', 'En Preparación'),    
         ('LISTO', 'Listo para Recoger/Enviar'),
@@ -18,6 +19,15 @@ class Pedido(models.Model):
         ('CANCELADO', 'Cancelado'),
         
     ]
+
+
+
+    ORIGEN_CHOISE =[
+        ('APP', 'Aplicacion Movil'),
+        ('KIOSCO', 'Kiosco Digital'),
+        ('CAJA', 'En Caja del Local'),
+    ]
+
     
     usuario_id = models.IntegerField(null=True, blank=True, db_index=True)
     
@@ -40,6 +50,12 @@ class Pedido(models.Model):
         max_length=20,
         choices=STATUS_CHOISE,
         default='PENDIENTE'
+    )
+
+    origen = models.CharField(
+        max_length=10,
+        choices=ORIGEN_CHOISE,
+        default='APP'
     )
     
     
