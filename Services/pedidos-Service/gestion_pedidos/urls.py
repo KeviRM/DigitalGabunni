@@ -4,7 +4,8 @@ from .views import (PedidoCreationViewSet,
                     PedidoEstadoViewSet,
                     PedidoGestionViewSet,
                     MisPedidosViewSet,
-                    CajaViewSet
+                    CajaViewSet,
+                    SesionCajaViewSet
                     )
 
 from .views import CreatePaymentPreference
@@ -29,6 +30,7 @@ router_mispedidos.register(r'mis-pedidos', MisPedidosViewSet, basename='mis-pedi
 
 router_caja = DefaultRouter()
 router_caja.register(r'caja', CajaViewSet, basename='caja')
+router_caja.register(r'sesion-caja', SesionCajaViewSet, basename='sesion-caja')
 
 
 

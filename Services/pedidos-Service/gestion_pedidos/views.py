@@ -17,12 +17,13 @@ from datetime import datetime
 import csv
 from django.http import HttpResponse
 
-from .models import Pedido, PushSubscription
+from .models import Pedido, PushSubscription, SesionCaja
 from .serializers import (
     PedidoCreationSerializer, 
     PedidoEstadoSerializer,
     PedidoAdminSerializer,
-    PushSubscriptionSerializer
+    PushSubscriptionSerializer,
+    SesionCajaSerializer
 )
 from .filters import PedidoFilter
 
@@ -577,19 +578,44 @@ class CajaViewSet(viewsets.ViewSet):
         pedidos = Pedido.objects.filter(status='ESPERANDO_PAGO').order_by('created_at')
         serializer = PedidoEstadoSerializer(pedidos, many=True)
         return Response(serializer.data)
-    
+
     @action(detail=False, methods=['post'], url_path='(?P<order_number>[^/.]+)/confirmar_pago')
     def confirmar_pago(self, request, order_number=None):
         try:
             pedido = Pedido.objects.get(order_number=order_number)
+                    
+                    
+            monto_recibido = request.data.get('monto_recibido')
+            metodo_pago = request.data.get('metodo_pago', 'EFECTIVO')
+                    
+                    
+            sesion_actual = SesionCaja.objects.filter(
+                usuario_id=request.user.id, 
+                estado='ABIERTA'
+                ).first()
 
-            if pedido.status != 'ESPERANDO_PAGO':
-                return Response({'error': 'El pedido no está en estado de esperando pago.'}, status=400)
-            
-            pedido.status = 'CONFIRMADO'
+                    
+            if sesion_actual:
+                pedido.sesion_caja = sesion_actual
+            else:
+                        
+                print(f"ADVERTENCIA: El usuario {request.user.id} cobró sin abrir caja.")
+
+                    
+            pedido.monto_recibido = monto_recibido
+            pedido.metodo_pago = metodo_pago
+                    
+                    # Calcular cambio
+            if monto_recibido and metodo_pago == 'EFECTIVO':
+                pedido.cambio_dado = float(monto_recibido) - float(pedido.amount)
+            else:
+                pedido.cambio_dado = 0
+                    
+                    
+            pedido.status = 'CONFIRMADO' 
             pedido.save()
 
-
+                    
             channel_layer = get_channel_layer()
             data_pedido = {
                 'order_number': str(pedido.order_number),
@@ -599,7 +625,7 @@ class CajaViewSet(viewsets.ViewSet):
 
 
 
-             # GRUPO COCINA
+            # GRUPO COCINA
             async_to_sync(channel_layer.group_send)(
                 'grupo_cocina', 
                 {'type': 'pedido_update', 'pedido': data_pedido}
@@ -611,7 +637,86 @@ class CajaViewSet(viewsets.ViewSet):
                 {'type': 'pedido_update', 'pedido': data_pedido}
             )
 
-            return Response({'status': 'Pago confirmado y enviado a cocina'})
+
+            return Response({
+                'status': 'Pago registrado correctamente',
+                'caja_id': sesion_actual.id if sesion_actual else None
+            })
 
         except Pedido.DoesNotExist:
             return Response({'error': 'Pedido no encontrado'}, status=404)
+
+
+
+
+
+
+
+
+class SesionCajaViewSet(viewsets.ModelViewSet):
+    queryset = SesionCaja.objects.all()
+    serializer_class = SesionCajaSerializer
+
+    @action(detail=False, methods=['get'])
+    def resumen_actual(self, request):
+        
+        sesion = SesionCaja.objects.filter(usuario_id=request.user.id, estado='ABIERTA').first()
+        
+        if not sesion:
+            return Response({'error': 'No tienes una caja abierta'}, status=404)
+
+        # Calcular totales sumando los pedidos vinculados a esta sesión
+        ventas_efectivo = sesion.pedidos.filter(metodo_pago='EFECTIVO', status='CONFIRMADO').aggregate(Sum('monto_recibido'))['monto_recibido__sum'] or 0
+        
+        # suma los montos de venta real.
+        
+        total_ventas_efectivo = sesion.pedidos.filter(metodo_pago='EFECTIVO', status='CONFIRMADO').aggregate(Sum('monto_recibido'))['monto_recibido__sum'] or 0
+        # Resta el cambio entregado para saber la venta neta real en caja
+        total_cambios = sesion.pedidos.filter(metodo_pago='EFECTIVO', status='CONFIRMADO').aggregate(Sum('cambio_entregado'))['cambio_entregado__sum'] or 0
+        efectivo_neto = float(total_ventas_efectivo) - float(total_cambios)
+
+        ventas_tarjeta = sesion.pedidos.filter(metodo_pago='TARJETA', status='CONFIRMADO').aggregate(Sum('monto_recibido'))['monto_recibido__sum'] or 0
+
+        total_esperado = float(sesion.fondo_inicial) + efectivo_neto + float(ventas_tarjeta)
+
+        return Response({
+            'fondo_inicial': sesion.fondo_inicial,
+            'ventas_efectivo': efectivo_neto,
+            'ventas_tarjeta': ventas_tarjeta,
+            'total_esperado': total_esperado,
+            'sesion_id': sesion.id
+        })
+
+    # Endpoint para Cerrar la Caja 
+    # URL: /api/gestion_pedidos/caja/{id}/cerrar/
+    @action(detail=True, methods=['post'])
+    def cerrar(self, request, pk=None):
+        sesion = self.get_object()
+        
+      
+        total_real_efectivo = request.data.get('total_real_efectivo', 0)
+        total_real_tarjeta = request.data.get('total_real_tarjeta', 0)
+        
+        
+        ventas_efectivo = sesion.pedidos.filter(metodo_pago='EFECTIVO', status='CONFIRMADO').aggregate(Sum('monto_recibido'))['monto_recibido__sum'] or 0
+        total_cambios = sesion.pedidos.filter(metodo_pago='EFECTIVO', status='CONFIRMADO').aggregate(Sum('cambio_entregado'))['cambio_entregado__sum'] or 0
+        efectivo_sistema = float(ventas_efectivo) - float(total_cambios)
+        tarjeta_sistema = sesion.pedidos.filter(metodo_pago='TARJETA', status='CONFIRMADO').aggregate(Sum('monto_recibido'))['monto_recibido__sum'] or 0
+
+        sesion.total_sistema_efectivo = efectivo_sistema
+        sesion.total_sistema_tarjeta = tarjeta_sistema
+        sesion.total_real_efectivo = total_real_efectivo
+        sesion.total_real_tarjeta = total_real_tarjeta
+        
+        # Calcular Diferencias
+        sesion.diferencia_efectivo = float(total_real_efectivo) - (float(sesion.fondo_inicial) + efectivo_sistema)
+        
+        sesion.diferencia_tarjeta = float(total_real_tarjeta) - float(tarjeta_sistema)
+        
+        sesion.fecha_fin = timezone.now()
+        sesion.estado = 'CERRADA'
+        sesion.save()
+        
+        return Response({'status': 'Caja cerrada correctamente', 'diferencia_total': sesion.diferencia_efectivo + sesion.diferencia_tarjeta})
+    
+    

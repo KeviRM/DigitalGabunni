@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Pedido, DetallePedido, PushSubscription
+from .models import Pedido, DetallePedido, PushSubscription, SesionCaja
 
 
 class DetallePedidoSerializer(serializers.ModelSerializer):
@@ -134,3 +134,11 @@ class PushSubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PushSubscription
         fields = ['endpoint', 'p256dh', 'auth']
+
+
+
+
+class SesionCajaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SesionCaja
+        fields = '__all__'

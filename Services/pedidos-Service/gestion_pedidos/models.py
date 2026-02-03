@@ -61,6 +61,23 @@ class Pedido(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     amount = models.DecimalField(max_digits=8, decimal_places=2)
+
+
+
+    sesion_caja = models.ForeignKey('SesionCaja', on_delete=models.SET_NULL, null=True, blank=True, related_name='pedidos')
+
+    METODO_PAGO_CHOICES = [
+        ('EFECTIVO', 'Efectivo'),  
+        ('TARJETA', 'Tarjeta de Crédito/Débito'),  
+        ('MIXTO', 'Pago Mixto'),
+        ('ONLINE', 'Pago Online'),  
+    ]  
+
+    metodo_pago = models.CharField(max_length=20, choices=METODO_PAGO_CHOICES, blank=True, null=True)
+
+    monto_recibido = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    cambio_entregado = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
     
     
     class Meta:
@@ -105,3 +122,35 @@ class PushSubscription(models.Model):
     
     def __str__(self):
         return f"Subscripcion User {self.usuario_id}"
+
+
+
+
+class SesionCaja(models.Model):
+    ESTADOS = [
+        ('ABIERTA', 'Abierta'),
+        ('CERRADA', 'Cerrada'),
+    ]
+
+
+    usuario_id = models.IntegerField(db_index=True)
+    fecha_inicio = models.DateTimeField(auto_now_add=True)
+    fondo_inicial = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    fecha_cierre = models.DateTimeField(null=True, blank=True)
+    estado = models.CharField(max_length=10, choices=ESTADOS, default='ABIERTA')
+
+    total_sistema_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total_sistema_tarjeta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    total_real_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total_real_tarjeta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    diferencia_efectivo = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    diferencia_tarjeta = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    observaciones = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"Caja{self.id} - Usuario {self.usuario_id} - ({self.estado})"
+    
