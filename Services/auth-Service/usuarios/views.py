@@ -5,7 +5,7 @@ from .serializers import RegistroSerializer
 from django.contrib.auth import get_user_model
 
 from django.contrib.auth.models import User
-from .serializers import CocineroSerializer
+from .serializers import CocineroSerializer, CajeroSerializer
 import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -41,7 +41,13 @@ class CocineroManagementViewSet(viewsets.ModelViewSet):
 
 
 
-
+class CajeroManagementViewSet(viewsets.ModelViewSet):
+   
+    serializer_class = CajeroSerializer
+    permission_classes = [IsAdminUser] 
+    def get_queryset(self):
+        # Filtrar solo usuarios que pertenecen al grupo Cajero
+        return User.objects.filter(groups__name='Cajero')
 
 
 

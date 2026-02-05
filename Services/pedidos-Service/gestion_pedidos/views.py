@@ -27,6 +27,8 @@ from .serializers import (
 )
 from .filters import PedidoFilter
 
+""" from django.contrib.auth.models import User, Group """
+
 from pywebpush import webpush, WebPushException
 
 
@@ -656,6 +658,10 @@ class CajaViewSet(viewsets.ViewSet):
 class SesionCajaViewSet(viewsets.ModelViewSet):
     queryset = SesionCaja.objects.all()
     serializer_class = SesionCajaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(usuario_id=self.request.user.id)
 
     @action(detail=False, methods=['get'])
     def resumen_actual(self, request):

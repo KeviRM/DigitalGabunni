@@ -36,6 +36,8 @@ import ReportesAdmin from './pages/ReportesAdmin';
 
 import Carrito from './pages/Carrito';
 
+import GestionCaja from "./pages/GestionCaja";
+
 //Checkout
 import Checkout from "./pages/Checkout";
 
@@ -51,6 +53,7 @@ import MensajesAdmin from "./pages/Admin/MensajesAdmin";
 import { CarritoProvider } from "./context/CarritoContext";
 
 import { AuthProvider } from "./context/AuthContext";
+import CajaLayout from "./layouts/CajaLayout";
 
 function App() {
 
@@ -86,6 +89,21 @@ function App() {
               <Route path="/pedido/exito" element={<PedidoExito />} />
               <Route path="/pedido/fallo" element={<PedidoFallo />} />
               <Route path="/pedido/pendiente" element={<PedidoPendiente />} />
+
+
+
+              
+                
+
+                <Route path="/caja" element={<CajaLayout />}>
+                <Route index element={<GestionCaja />} />
+
+                
+                
+              </Route>
+
+
+              {/* Rutas Admin */}
 
 
 

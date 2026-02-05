@@ -19,7 +19,7 @@ from django.urls import path, include
 
 from rest_framework.routers import DefaultRouter
 
-from usuarios.views import RegistroView, GoogleLoginView, CocineroManagementViewSet, MeView
+from usuarios.views import RegistroView, GoogleLoginView, CocineroManagementViewSet, MeView, CajeroManagementViewSet
 
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -30,6 +30,8 @@ from usuarios.serializers import CustomTokenObtainPairSerializer
 
 router = DefaultRouter()
 router.register(r'cocineros', CocineroManagementViewSet, basename='gestion_cocineros')
+router.register(r'cajeros', CajeroManagementViewSet, basename='gestion_cajeros')
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),

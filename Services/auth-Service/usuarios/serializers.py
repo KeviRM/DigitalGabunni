@@ -78,3 +78,28 @@ class CocineroSerializer(serializers.ModelSerializer):
         user.groups.add(group)
         
         return user
+    
+
+class CajeroSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'password', 'first_name')
+
+    def create(self, validated_data):
+        # Crear usuario estándar
+        user = User.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data.get('email', ''),
+            password=validated_data['password'],
+            first_name=validated_data.get('first_name', ''),
+            is_staff=True,
+            is_active=True
+        )
+        
+        
+        group, _ = Group.objects.get_or_create(name='Cajero')
+        user.groups.add(group)
+        
+        return user

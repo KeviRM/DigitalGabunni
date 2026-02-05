@@ -142,3 +142,4 @@ class SesionCajaSerializer(serializers.ModelSerializer):
     class Meta:
         model = SesionCaja
         fields = '__all__'
+        read_only_fields = ['usuario_id']
