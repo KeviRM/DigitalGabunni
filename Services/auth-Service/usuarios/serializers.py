@@ -14,8 +14,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
     
         token['is_admin'] = user.is_superuser
-        token['is_cocinero'] = user.groups.filter(name='Cocinero').exists() or (user.is_staff and not user.is_superuser)
-        token['is_active'] = user.is_active 
+        token['is_cocinero'] = user.groups.filter(name='Cocinero').exists() 
+        token['is_cajero'] = user.groups.filter(name='Cajero').exists()
+        token['is_active'] = user.is_active
+
         
         return token
     

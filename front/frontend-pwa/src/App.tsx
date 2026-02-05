@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from './components/Footer';
 
@@ -36,7 +36,6 @@ import ReportesAdmin from './pages/ReportesAdmin';
 
 import Carrito from './pages/Carrito';
 
-import GestionCaja from "./pages/GestionCaja";
 
 //Checkout
 import Checkout from "./pages/Checkout";
@@ -53,7 +52,11 @@ import MensajesAdmin from "./pages/Admin/MensajesAdmin";
 import { CarritoProvider } from "./context/CarritoContext";
 
 import { AuthProvider } from "./context/AuthContext";
+
+//CAJA
+import GestionCaja from "./pages/GestionCaja";
 import CajaLayout from "./layouts/CajaLayout";
+import TerminalCaja from "./pages/caja/TerminalCaja";
 
 function App() {
 
@@ -96,7 +99,9 @@ function App() {
                 
 
                 <Route path="/caja" element={<CajaLayout />}>
-                <Route index element={<GestionCaja />} />
+                <Route index element={<Navigate to="/caja/terminal" replace />} />
+                <Route path="terminal" element={<TerminalCaja />} />
+                <Route path="gestion" element={<GestionCaja />} />
 
                 
                 

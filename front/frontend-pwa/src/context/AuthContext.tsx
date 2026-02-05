@@ -17,11 +17,12 @@ interface AuthTokens {
 interface TokenPayload {
     is_admin: boolean;
     is_cocinero: boolean;
+    is_cajero: boolean;
     is_active: boolean;
     user_id?: number;
 }
 
-type UserRole = 'admin' | 'cocinero' | 'cliente' | null;
+type UserRole = 'admin' | 'cocinero' | 'cliente' | 'cajero' | null;
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -64,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             let role: UserRole = 'cliente';
             if (payload.is_admin) role = 'admin';
             else if (payload.is_cocinero) role = 'cocinero';
+            else if (payload.is_cajero) role = 'cajero';
             else if (!payload.is_active) throw new Error("Cuenta inactiva");
 
             // Guardar en localStorage

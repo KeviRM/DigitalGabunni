@@ -111,6 +111,7 @@ class GoogleLoginView(views.APIView):
         #Añadir los claims de roles
         refresh['is_admin'] = user.is_superuser
         refresh['is_cocinero'] = user.groups.filter(name='Cocinero').exists() or (user.is_staff and not user.is_superuser)
+        refresh['is_cajero'] = user.groups.filter(name='Cajero').exists()
         refresh['is_active'] = user.is_active
         
         return response.Response({

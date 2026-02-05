@@ -8,7 +8,7 @@ interface NavItem {
     name: string;
     path: string;
     icon: React.ElementType;
-    role: 'admin' | 'cocinero';
+    role: 'admin' | 'cocinero'| 'cajero';
 }
 
 interface NavGroup {
@@ -69,7 +69,7 @@ const AdminLayout: React.FC = () => {
         "Usuarios": true
     });
 
-    if (!isAuthenticated || !userRole || (userRole !== 'admin' && userRole !== 'cocinero')) {
+    if (!isAuthenticated || !userRole || (userRole !== 'admin' && userRole !== 'cocinero' && userRole !== 'cajero')) {
         navigate('/login');
         return null;
     }
@@ -90,7 +90,7 @@ const AdminLayout: React.FC = () => {
                 <nav className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                     {ADMIN_NAV_GROUPS.map(group => {
                         const filteredItems = group.items.filter(item =>
-                            item.role === 'admin' || (userRole === 'cocinero' && item.role === 'cocinero')
+                            item.role === 'admin' || (userRole === 'cocinero' && item.role === 'cocinero') || (userRole === 'cajero' && item.role === 'cajero')
                         );
 
                         if (filteredItems.length === 0) return null;
