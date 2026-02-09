@@ -21,7 +21,7 @@ const CajaLayout: React.FC = () => {
     return (
         <div className="flex flex-col h-screen bg-white">
             {/* --- HEADER SUPERIOR --- */}
-            <header className="flex justify-between items-center px-8 py-4 bg-white shadow-sm border-b border-gray-100 h-20 shrink-0">
+            <header className="flex justify-between items-center px-8 py-4 bg-white shadow-sm border-b-2 border-orange-300   h-20 shrink-0">
                 {/* 1. Logo */}
                 <div className="flex items-center cursor-pointer" onClick={() => navigate('/caja/terminal')}>
                     <img src={gabunniLogo} alt="Gabunni" className="h-12 w-auto object-contain" />
@@ -30,7 +30,7 @@ const CajaLayout: React.FC = () => {
                 {/* 2. Zona Derecha: Nombre y Botones */}
                 <div className="flex items-center gap-6">
                     <p className="text-gray-500 font-medium">
-                        Cajero: <span className="text-gray-800 font-bold">{user?.username || 'Cajero 1'}</span>
+                        Cajero: <span className="text-gray-800 font-bold">{user?.username || 'Cajero x'}</span>
                     </p>
 
                     <button 

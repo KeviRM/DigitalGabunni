@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { pedidosApi } from '../api/axiosConfig';
-import useAuth from '../hooks/useAuth';
+import { pedidosApi } from '../../api/axiosConfig';
+import useAuth from '../../hooks/useAuth';
 const PEDIDOS_API_URL = '/api/v1/pedidos/';
 
 const GestionCaja = () => {

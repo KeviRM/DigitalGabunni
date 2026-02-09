@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { pedidosApi } from '../../api/axiosConfig'; 
 import useAuth from "../../hooks/useAuth";
 import ModalCobro from "../../components/ModalCobro";
 import { FaClock, FaArrowRight, FaCashRegister } from 'react-icons/fa';
 
-const TerminalCaja = () => {
+const TerminalCaja: React.FC = () => {
+    const navigate = useNavigate();
     const [pedidos, setPedidos] = useState<any[]>([]);
     const [pedidoSeleccionado, setPedidoSeleccionado] = useState<any | null>(null);
     
@@ -12,10 +14,10 @@ const TerminalCaja = () => {
     const [modalAbierto, setModalAbierto] = useState(false);
     const { getAuthHeaders } = useAuth();
 
-    // 1. Cargar Pedidos
+    //  Cargar Pedidos
     const fetchPedidos = async () => {
         try {
-            const url = '/api/v1/pedidos/gestion/?status=CONFIRMADO&status=PREPARACION&status=LISTO';
+            const url = '/api/v1/pedidos/caja/pendientes/';
             const response = await pedidosApi.get(url, { headers: getAuthHeaders() });
             // Filtramos solo los NO pagados
             const pendientes = response.data.filter((p: any) => !p.metodo_pago);
@@ -30,6 +32,36 @@ const TerminalCaja = () => {
             console.error("Error cargando terminal", error);
         }
     };
+
+
+     const getPersonalizacionDetalle = (personalizacion: any): string => {
+        if (!personalizacion) return "Estandar";
+
+        const nombres = Object.values(personalizacion).flatMap((ingredientes: any) => ingredientes.map((ing: any) => ing.name));
+
+        return nombres.join(', ');
+
+    };
+
+    /* Verificar si hay caja abierta al cargar la página */
+
+        useEffect(() => {
+        const verificarCajaAbierta = async () => {
+            try {
+                await pedidosApi.get('/api/v1/pedidos/sesion-caja/resumen_actual/', { headers: getAuthHeaders() });
+            } catch (error: any) {
+                if (error.response && error.response.status === 404) {
+                    alert("No tienes caja abierta. Serás redirigido a la gestión de caja.");
+                    navigate('/caja/gestion');
+                } else {
+                    console.error("Error al verificar caja abierta:", error);
+                }
+            }
+        };
+        verificarCajaAbierta();
+    }, [navigate, getAuthHeaders]);
+
+
 
     // Polling: Actualizar cada 5 segundos automáticamente
     useEffect(() => {
@@ -68,10 +100,10 @@ const TerminalCaja = () => {
                         <div 
                             key={pedido.order_number}
                             onClick={() => setPedidoSeleccionado(pedido)}
-                            className={`p-4 rounded-xl cursor-pointer transition-all border-l-4 shadow-sm group
+                            className={`p-4 rounded-xl cursor-pointer transition-all border-l-5 border-b-2 shadow-sm group
                                 ${pedidoSeleccionado?.order_number === pedido.order_number 
-                                    ? 'bg-orange-50 border-orange-500 shadow-md ring-1 ring-orange-100' 
-                                    : 'bg-white hover:bg-gray-50 border-gray-200 border'
+                                    ? 'bg-orange-50 border-orange-500 shadow-md-3 ring-1 ring-orange-100' 
+                                    : 'bg-white hover:bg-gray-50 border-gray-300 border-b-2'
                                 }`}
                         >
                             <div className="flex justify-between items-center mb-2">
@@ -113,7 +145,7 @@ const TerminalCaja = () => {
                         <div className="p-8 overflow-y-auto flex-1">
                             <h3 className="text-gray-500 font-bold mb-4 text-sm uppercase border-b pb-2">Detalle de Consumo</h3>
                             <div className="space-y-4">
-                                {pedidoSeleccionado.details.map((detalle: any, idx: number) => (
+                                {pedidoSeleccionado.details?.map((detalle: any, idx: any) => (
                                     <div key={idx} className="flex justify-between items-center">
                                         <div className="flex items-center gap-4">
                                             <span className="bg-orange-100 text-orange-700 font-bold w-8 h-8 flex items-center justify-center rounded-lg">
@@ -121,13 +153,14 @@ const TerminalCaja = () => {
                                             </span>
                                             <div>
                                                 <p className="font-bold text-gray-800 text-lg">{detalle.product_name}</p>
-                                                {detalle.personalizacion_detalle && (
+                                                {/* {detalle.personalizacion_json && (
                                                     <p className="text-xs text-gray-400">{detalle.personalizacion_detalle}</p>
-                                                )}
+                                                )} */}
+                                                Ingredientes: {getPersonalizacionDetalle(detalle.personalizacion_json) ? detalle.personalizacion_detalle : "Estandar"}
                                             </div>
                                         </div>
                                         <p className="font-bold text-gray-700 text-lg">
-                                            ${(parseFloat(detalle.unit_price) * detalle.quantity).toFixed(2)}
+                                            ${(detalle.unit_price * detalle.quantity).toFixed(2)}
                                         </p>
                                     </div>
                                 ))}

@@ -55,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const isAuthenticated = !!tokens;
+    
 
     // Función auxiliar para procesar el token y guardar estado
     const handleTokenResponse = (data: any): { success: boolean; role: UserRole } => {
@@ -83,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return { success: false, role: null };
         }
     };
+    
 
     const login = async (username: string, pass: string) => {
         try {

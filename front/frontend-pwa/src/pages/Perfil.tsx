@@ -187,6 +187,8 @@ const Perfil: React.FC = () => {
                                                         <div>
                                                             <p className="font-bold text-gray-800">Pedido #{pedido.order_number.substring(0,8)}</p>
                                                             <p className="text-sm text-gray-500">{new Date(pedido.created_at).toLocaleDateString()}</p>
+                                                        
+                                                           
                                                         </div>
                                                         
                                                         {/* Etiqueta de Estado */}

@@ -122,6 +122,7 @@ class PedidoAdminSerializer(serializers.ModelSerializer):
             'delivery_address',
             'created_at',
             'amount',
+            'origen',
         ]
         #########El admin solo podra cambiar el estado
     

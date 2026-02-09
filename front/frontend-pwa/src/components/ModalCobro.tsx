@@ -61,7 +61,7 @@ const ModalCobro = ({ isOpen, onClose, orderNumber, total, onPaymentSuccess }) =
 
   return (
     <div className="fixed inset-0  flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-[600px]">
+      <div className="bg-white rounded-xl shadow-2xl shadow-gray-600  p-8 w-[600px]">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-gray-700">Cobrar Orden #{orderNumber}</h2>

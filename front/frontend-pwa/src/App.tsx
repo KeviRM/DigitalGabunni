@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Navbar from "./components/Navbar";
 import Footer from './components/Footer';
 
+import Layout from "./layouts/Layout";
+
 
 import Welcome from "./pages/Welcome";
 import Contactos from './pages/Contactos';
@@ -30,6 +32,9 @@ import GestionCategoria from "./pages/GestionCategoria";
 
 
 import GestionUsuarios from "./pages/GestionUsuarios";
+
+
+import CocinaLayout from "./layouts/CocinaLayout";
 import ModuloCocina from "./pages/ModuloCocina";
 
 import ReportesAdmin from './pages/ReportesAdmin';
@@ -54,7 +59,7 @@ import { CarritoProvider } from "./context/CarritoContext";
 import { AuthProvider } from "./context/AuthContext";
 
 //CAJA
-import GestionCaja from "./pages/GestionCaja";
+import GestionCaja from "./pages/caja/GestionCaja";
 import CajaLayout from "./layouts/CajaLayout";
 import TerminalCaja from "./pages/caja/TerminalCaja";
 
@@ -67,41 +72,61 @@ function App() {
       <Router>
         <CarritoProvider>
           <div className="App">
-            <Navbar />
+
+        
+
+            {/* <Navbar /> */}
             <Routes>
 
               {/* Rutas Publicas */}
 
-              <Route path="/" element={<Welcome />} />
+              <Route path="/" element={<Layout />} >
 
-              <Route path="/registro" element={<Registro />} />
-              <Route path="/login" element={<Login />} />
-
-              <Route path="/mi-perfil" element={<Perfil />} />
-
-              <Route path="/contacto" element={<Contactos />} />
-              <Route path="/menu" element={<MenuDigital />} />
-              <Route path="/producto/:productoId" element={<DetalleProducto />} />
-              {/* Personalizacion de chapata */}
-              <Route path="/personalizar/nueva" element={<Personalizador />} />
-              <Route path="/carrito" element={<Carrito />} />
-
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido />} />
-
-              <Route path="/pedido/exito" element={<PedidoExito />} />
-              <Route path="/pedido/fallo" element={<PedidoFallo />} />
-              <Route path="/pedido/pendiente" element={<PedidoPendiente />} />
+                <Route index element={<Navigate to="/inicio" replace />} />
 
 
+                <Route path="/inicio" element={<Welcome />} />
 
-              
+                <Route path="/registro" element={<Registro />} />
+                <Route path="/login" element={<Login />} />
+
+                <Route path="/mi-perfil" element={<Perfil />} />
+
+                <Route path="/contacto" element={<Contactos />} />
+                <Route path="/menu" element={<MenuDigital />} />
+                <Route path="/producto/:productoId" element={<DetalleProducto />} />
+                {/* Personalizacion de chapata */}
+                <Route path="/personalizar/nueva" element={<Personalizador />} />
+                <Route path="/carrito" element={<Carrito />} />
+
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/pedido/estado/:numeroPedidoUnico" element={<EstadoPedido />} />
+
+                <Route path="/pedido/exito" element={<PedidoExito />} />
+                <Route path="/pedido/fallo" element={<PedidoFallo />} />
+                <Route path="/pedido/pendiente" element={<PedidoPendiente />} />
+
+
+              </Route>
+      
+
+
+              {/* RUTAS CAJA */}
                 
 
-                <Route path="/caja" element={<CajaLayout />}>
+              <Route path="/caja" element={<CajaLayout />}>
                 <Route index element={<Navigate to="/caja/terminal" replace />} />
                 <Route path="terminal" element={<TerminalCaja />} />
                 <Route path="gestion" element={<GestionCaja />} />
+
+                {/* RUTAS COCINA */}
+                
+              </Route>
+
+              <Route path="/cocina" element={<CocinaLayout />}>
+                <Route index element={<Navigate to="/cocina/comanda-pedidos" replace />} />
+                <Route path="comanda-pedidos" element={<ModuloCocina />} />
+                
 
                 
                 
@@ -117,7 +142,6 @@ function App() {
 
                 <Route path="dashboard" element={<AdminDashboard />} /> {/* Si queremos una ruta explícita */}
                 <Route path="pedidos" element={<PanelAdmin />} />
-                <Route path="cocina" element={<ModuloCocina />} />
                 <Route path="catalogo" element={<GestionCatalogo />} />
                                 
                 <Route path="categorias" element={<GestionCategoria />} />
@@ -143,7 +167,7 @@ function App() {
               <Route path="*" element={<h1 className="text-center p-10 text-xl">404 - Página no encontrada</h1>} />
             </Routes>
 
-            <Footer />
+            {/* <Footer /> */}
           </div>
         </CarritoProvider>
 
