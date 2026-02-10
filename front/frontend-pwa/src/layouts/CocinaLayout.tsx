@@ -44,7 +44,7 @@ const CocinaLayout: React.FC = () => {
             </header>
 
             {/* --- CONTENIDO PRINCIPAL --- */}
-            <main className="flex-1 overflow-hidden bg-gray-50 relative">
+            <main className="flex-1 bg-gray-50 relative">
                 <Outlet />
             </main>
         </div>

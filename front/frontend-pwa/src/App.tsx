@@ -63,6 +63,11 @@ import GestionCaja from "./pages/caja/GestionCaja";
 import CajaLayout from "./layouts/CajaLayout";
 import TerminalCaja from "./pages/caja/TerminalCaja";
 
+//KIOSCO
+import KioscoLayout from "./layouts/KioscoLayout";
+import MenuKiosco from "./pages/Kiosco/MenuKiosco";
+import BienvenidaKiosco from "./pages/Kiosco/Bienvenida";
+
 function App() {
 
   return (
@@ -119,10 +124,10 @@ function App() {
                 <Route path="terminal" element={<TerminalCaja />} />
                 <Route path="gestion" element={<GestionCaja />} />
 
-                {/* RUTAS COCINA */}
                 
               </Route>
 
+                {/* RUTAS COCINA */}
               <Route path="/cocina" element={<CocinaLayout />}>
                 <Route index element={<Navigate to="/cocina/comanda-pedidos" replace />} />
                 <Route path="comanda-pedidos" element={<ModuloCocina />} />
@@ -131,6 +136,23 @@ function App() {
                 
                 
               </Route>
+
+
+              
+                {/* RUTAS Kiosco */}
+              <Route path="/kiosco" element={<KioscoLayout />}>
+                <Route index element={<Navigate to="/kiosco/bienvenida" replace />} />
+                <Route path="menu" element={<MenuKiosco />} />
+                <Route path="bienvenida" element={<BienvenidaKiosco />} />
+                
+
+                
+                
+              </Route>
+
+              
+
+
 
 
               {/* Rutas Admin */}

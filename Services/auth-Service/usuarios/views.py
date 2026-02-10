@@ -5,7 +5,7 @@ from .serializers import RegistroSerializer
 from django.contrib.auth import get_user_model
 
 from django.contrib.auth.models import User
-from .serializers import CocineroSerializer, CajeroSerializer
+from .serializers import CocineroSerializer, CajeroSerializer, KioscoSerializer
 import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -49,7 +49,13 @@ class CajeroManagementViewSet(viewsets.ModelViewSet):
         # Filtrar solo usuarios que pertenecen al grupo Cajero
         return User.objects.filter(groups__name='Cajero')
 
-
+class KioscoManagementViewSet(viewsets.ModelViewSet):
+   
+    serializer_class = KioscoSerializer
+    permission_classes = [IsAdminUser] 
+    def get_queryset(self):
+        # Filtrar solo usuarios que pertenecen al grupo Kiosco
+        return User.objects.filter(groups__name='Kiosco')
 
 
 
@@ -110,8 +116,9 @@ class GoogleLoginView(views.APIView):
         
         #Añadir los claims de roles
         refresh['is_admin'] = user.is_superuser
-        refresh['is_cocinero'] = user.groups.filter(name='Cocinero').exists() or (user.is_staff and not user.is_superuser)
+        refresh['is_cocinero'] = user.groups.filter(name='Cocinero').exists()
         refresh['is_cajero'] = user.groups.filter(name='Cajero').exists()
+        refresh['is_kiosco'] = user.groups.filter(name='Kiosco').exists()
         refresh['is_active'] = user.is_active
         
         return response.Response({

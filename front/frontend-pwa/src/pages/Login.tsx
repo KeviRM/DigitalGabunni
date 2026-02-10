@@ -26,13 +26,15 @@ const Login: React.FC = () => {
     const [cargando, setCargando] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleLoginSuccess = (role: 'admin' | 'cocinero' | 'cliente' | 'cajero' | null) => {
+    const handleLoginSuccess = (role: 'admin' | 'cocinero' | 'cliente' | 'cajero' | 'kiosco' | null) => {
         if (role === 'admin') {
             navigate('/admin');
         } else if (role === 'cocinero') {
-            navigate('/admin/cocina');
+            navigate('/cocina/comanda-pedidos');
         } else if (role === 'cajero') {
             navigate('/caja');
+        } else if (role === 'kiosco') {
+            navigate('/kiosco');
         } else if (role === 'cliente') {
             navigate('/');
         } else {

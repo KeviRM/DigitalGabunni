@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useAuth from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { FaUserPlus, FaTrash, FaUtensils, FaCashRegister } from 'react-icons/fa';
+import { FaUserPlus, FaTrash, FaUtensils, FaCashRegister, FaTabletAlt } from 'react-icons/fa';
 import { authApi } from '../api/axiosConfig';
 
 interface Usuario {
@@ -11,10 +11,9 @@ interface Usuario {
     first_name: string;
 }
 
-// ⚠️ ASEGÚRATE QUE ESTAS URLs COINCIDAN CON TU BACKEND
-// Nota: Ajusta si tu router backend usa '/authentication/' o '/gestion/'
 const URL_COCINEROS = '/api/gestion/cocineros/'; 
 const URL_CAJEROS = '/api/gestion/cajeros/'; 
+const URL_KIOSCOS = '/api/gestion/kioscos/';
 
 const GestionUsuarios: React.FC = () => {
     const { isAuthenticated, getAuthHeaders, getUserRole } = useAuth();
@@ -24,30 +23,33 @@ const GestionUsuarios: React.FC = () => {
     // Estados para las listas
     const [cocineros, setCocineros] = useState<Usuario[]>([]);
     const [cajeros, setCajeros] = useState<Usuario[]>([]);
+    const [kioscos, setKioscos] = useState<Usuario[]>([]);
     
     // Estado para saber qué pestaña estamos viendo (cocina o caja)
-    const [tabActiva, setTabActiva] = useState<'COCINA' | 'CAJA'>('COCINA');
+    const [tabActiva, setTabActiva] = useState<'COCINA' | 'CAJA' | 'KIOSCO'>('COCINA');
 
     // Estado del Formulario
     const [nuevoUsuario, setNuevoUsuario] = useState({ 
         username: '', password: '', first_name: '', email: '', 
-        rol: 'COCINERO' // 'COCINERO' o 'CAJERO'
+        rol: 'COCINERO' 
     });
     
     const [cargando, setCargando] = useState(true);
 
-    // 1. Función unificada para cargar datos
+    // Función unificada para cargar datos
     const fetchData = useCallback(async () => {
         setCargando(true);
         try {
             // Cargamos AMBOS grupos (o puedes cargar solo el activo para optimizar)
-            const [resCocineros, resCajeros] = await Promise.all([
+            const [resCocineros, resCajeros, resKioscos] = await Promise.all([
                 authApi.get<Usuario[]>(URL_COCINEROS, AUTH_HEADERS).catch(() => ({ data: [] })),
-                authApi.get<Usuario[]>(URL_CAJEROS, AUTH_HEADERS).catch(() => ({ data: [] }))
+                authApi.get<Usuario[]>(URL_CAJEROS, AUTH_HEADERS).catch(() => ({ data: [] })),
+                authApi.get<Usuario[]>(URL_KIOSCOS, AUTH_HEADERS).catch(() => ({ data: [] }))
             ]);
 
             setCocineros(resCocineros.data as Usuario[]);
             setCajeros(resCajeros.data as Usuario[]);
+            setKioscos(resKioscos.data as Usuario[]);
         } catch (err) {
             console.error("Error cargando personal:", err);
         } finally {
@@ -64,13 +66,13 @@ const GestionUsuarios: React.FC = () => {
         }
     }, [isAuthenticated, fetchData, navigate, getUserRole]);
 
-    // 2. Crear nuevo empleado (Lógica Dinámica)
+    //  Crear nuevo empleado
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!nuevoUsuario.username || !nuevoUsuario.password) return;
 
         // Decidir a qué URL enviar según el rol seleccionado
-        const urlDestino = nuevoUsuario.rol === 'COCINERO' ? URL_COCINEROS : URL_CAJEROS;
+        const urlDestino = nuevoUsuario.rol === 'COCINERO' ? URL_COCINEROS : nuevoUsuario.rol === 'CAJERO' ? URL_CAJEROS : URL_KIOSCOS;
 
         try {
             await authApi.post(urlDestino, {
@@ -80,7 +82,7 @@ const GestionUsuarios: React.FC = () => {
                 email: nuevoUsuario.email
             }, AUTH_HEADERS);
 
-            alert(`${nuevoUsuario.rol === 'COCINERO' ? 'Cocinero' : 'Cajero'} ${nuevoUsuario.username} creado exitosamente.`);
+            alert(`${nuevoUsuario.rol === 'COCINERO' ? 'Cocinero' : nuevoUsuario.rol === 'CAJERO' ? 'Cajero' : 'K n     iosco'} ${nuevoUsuario.username} creado exitosamente.`);
             
             // Limpiar form pero mantener el rol seleccionado
             setNuevoUsuario(prev => ({ ...prev, username: '', password: '', first_name: '', email: '' }));
@@ -88,6 +90,7 @@ const GestionUsuarios: React.FC = () => {
             // Si creé un cajero, cambio la vista a cajeros para verlo aparecer
             if (nuevoUsuario.rol === 'CAJERO') setTabActiva('CAJA');
             if (nuevoUsuario.rol === 'COCINERO') setTabActiva('COCINA');
+            if (nuevoUsuario.rol === 'KIOSCO') setTabActiva('KIOSCO');
             
             fetchData();
         } catch (err: any) {
@@ -97,18 +100,22 @@ const GestionUsuarios: React.FC = () => {
     };
 
     //  Eliminar empleado
-    const handleDelete = async (id: number, rol: 'COCINA' | 'CAJA') => {
+    const handleDelete = async (id: number, rol: 'COCINA' | 'CAJA' | 'KIOSCO') => {
         if (!window.confirm(`¿Eliminar acceso de este ${rol.toLowerCase()}?`)) return;
 
-        const urlDestino = rol === 'COCINA' ? URL_COCINEROS : URL_CAJEROS;
+        const urlDestino = rol === 'COCINA' ? URL_COCINEROS : rol === 'CAJA' ? URL_CAJEROS : URL_KIOSCOS;
 
         try {
             await authApi.delete(`${urlDestino}${id}/`, AUTH_HEADERS);
             // Actualizar estado local sin recargar todo
             if (rol === 'COCINA') {
                 setCocineros(cocineros.filter(c => c.id !== id));
-            } else {
+            }
+            else if (rol === 'CAJA') {
                 setCajeros(cajeros.filter(c => c.id !== id));
+            }
+            else if (rol === 'KIOSCO') {
+                setKioscos(kioscos.filter(c => c.id !== id));
             }
         } catch (err) {
             alert("Error al eliminar.");
@@ -133,7 +140,7 @@ const GestionUsuarios: React.FC = () => {
                     
                     <form onSubmit={handleCreate} className="space-y-4">
                         {/* Selector de Rol */}
-                        <div className="grid grid-cols-2 gap-2 mb-4">
+                        <div className="grid grid-cols-3 gap-2 mb-4">
                             <button
                                 type="button"
                                 onClick={() => setNuevoUsuario({...nuevoUsuario, rol: 'COCINERO'})}
@@ -147,6 +154,14 @@ const GestionUsuarios: React.FC = () => {
                                 className={`p-2 rounded-lg flex flex-col items-center justify-center border-2 transition-all ${nuevoUsuario.rol === 'CAJERO' ? 'border-green-500 bg-green-50 text-green-700 font-bold' : 'border-gray-200 text-gray-400'}`}
                             >
                                 <FaCashRegister className="mb-1"/> Caja
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setNuevoUsuario({...nuevoUsuario, rol: 'KIOSCO'})}
+                                className={`p-2 rounded-lg flex flex-col items-center justify-center border-2 transition-all ${nuevoUsuario.rol === 'KIOSCO' ? 'border-purple-500 bg-purple-50 text-purple-700 font-bold' : 'border-gray-200 text-gray-400'}`}
+                            >
+                                <FaTabletAlt className="mb-1"/> Kiosco
                             </button>
                         </div>
 
@@ -183,10 +198,10 @@ const GestionUsuarios: React.FC = () => {
                         <button 
                             type="submit" 
                             className={`w-full py-3 text-white font-bold rounded-lg shadow-md transition-colors mt-4
-                                ${nuevoUsuario.rol === 'COCINERO' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-green-600 hover:bg-green-700'}
+                                ${nuevoUsuario.rol === 'COCINERO' ? 'bg-blue-600 hover:bg-blue-700' : nuevoUsuario.rol === 'KIOSCO' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-green-600 hover:bg-green-700'}
                             `}
                         >
-                            Registrar {nuevoUsuario.rol === 'COCINERO' ? 'Cocinero ' : 'Cajero '}
+                            Registrar {nuevoUsuario.rol === 'COCINERO' ? 'Cocinero ' : nuevoUsuario.rol === 'KIOSCO' ? 'Kiosco ' : 'Cajero '}
                         </button>
                     </form>
                 </div>
@@ -211,6 +226,14 @@ const GestionUsuarios: React.FC = () => {
                             `}
                         >
                             <FaCashRegister /> Personal Caja ({cajeros.length})
+                        </button>
+                        <button 
+                            onClick={() => setTabActiva('KIOSCO')}
+                            className={`flex-1 py-4 font-bold text-center transition-colors flex items-center justify-center gap-2
+                                ${tabActiva === 'KIOSCO' ? 'bg-purple-50 text-purple-600 border-b-4 border-purple-600' : 'text-gray-400 hover:bg-gray-50'}
+                            `}
+                        >
+                            <FaTabletAlt /> Personal Kiosco ({kioscos.length})
                         </button>
                     </div>
 
@@ -267,6 +290,35 @@ const GestionUsuarios: React.FC = () => {
                                             onClick={() => handleDelete(user.id, 'CAJA')}
                                             className="text-gray-300 hover:text-red-500 p-2 transition-colors"
                                             title="Eliminar cajero"
+                                        >
+                                            <FaTrash />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        {/* VISTA CAJEROS */}
+                        {tabActiva === 'KIOSCO' && (
+                            <ul className="divide-y divide-gray-100">
+                                {kioscos.length === 0 && <p className="text-center text-gray-400 mt-10">No hay kioscos registrados.</p>}
+                                {kioscos.map(user => (
+                                    <li key={user.id} className="py-4 flex justify-between items-center group hover:bg-purple-50 px-2 rounded transition-colors">
+                                        <div className="flex items-center">
+                                            <div className="bg-purple-100 p-3 rounded-full mr-4 text-purple-600 shadow-sm">
+                                                <FaTabletAlt />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-gray-800">{user.username}</p>
+                                                <p className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded-full w-fit">
+                                                    {user.first_name || 'Sin nombre'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleDelete(user.id, 'KIOSCO')}
+                                            className="text-gray-300 hover:text-red-500 p-2 transition-colors"
+                                            title="Eliminar kiosco"
                                         >
                                             <FaTrash />
                                         </button>
