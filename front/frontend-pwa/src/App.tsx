@@ -75,7 +75,7 @@ function App() {
     <AuthProvider>
 
       <Router>
-        <CarritoProvider>
+        {/* <CarritoProvider> */}
           <div className="App">
 
         
@@ -191,7 +191,7 @@ function App() {
 
             {/* <Footer /> */}
           </div>
-        </CarritoProvider>
+        {/* </CarritoProvider> */}
 
       </Router>
     </AuthProvider>

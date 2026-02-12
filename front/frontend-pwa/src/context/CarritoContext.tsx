@@ -1,5 +1,5 @@
-import React, {createContext, useState, useContext, useMemo} from "react";
-import type{ ItemCarrito, CarritoContextType, Producto, Ingrediente } from "../types/menu";
+import React, { createContext, useState, useContext, useMemo } from "react";
+import type { ItemCarrito, CarritoContextType, Producto, Ingrediente } from "../types/menu";
 import { v4 as uuidv4 } from 'uuid'; // generador de id's unicos
 
 
@@ -24,19 +24,32 @@ export const useCarrito = () => {
 
 // el Provider del Carrito
 
-export const CarritoProvider: React.FC< {children: React.ReactNode}> = ({ children }) =>{
+export const CarritoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [items, setItems] = useState<ItemCarrito[]>([]);
 
 
     //Calcular el precio de un item
 
-    const calcularPrecioUnitario = (productoBase: Producto, personalizacion?: {[claseId: number]: Ingrediente[] }): number => {
-        let price = parseFloat(productoBase.price);
+    const calcularPrecioUnitario = (productoBase: Producto, personalizacion?: { [claseId: number]: Ingrediente[] }): number => {
+        let price = 0;
 
-        if(personalizacion){
+        // Parseo robusto del precio base
+        if (typeof productoBase.price === 'number') {
+            price = productoBase.price;
+        } else if (typeof productoBase.price === 'string') {
+            price = parseFloat(productoBase.price.replace('$', '').replace(/,/g, '')) || 0;
+        }
+
+        if (personalizacion) {
             Object.values(personalizacion).forEach(ingredientes => {
-                ingredientes.forEach(ing =>{
-                    price += parseFloat(ing.additional_price);
+                ingredientes.forEach(ing => {
+                    let addPrice = 0;
+                    if (typeof ing.additional_price === 'number') {
+                        addPrice = ing.additional_price;
+                    } else if (typeof ing.additional_price === 'string') {
+                        addPrice = parseFloat(ing.additional_price.replace('$', '').replace(/,/g, '')) || 0;
+                    }
+                    price += addPrice;
                 });
             });
         }
@@ -47,11 +60,11 @@ export const CarritoProvider: React.FC< {children: React.ReactNode}> = ({ childr
 
     // Agregar nuevo itenm al carrito
 
-    const agregarItem = (itemData: Omit<ItemCarrito, 'idUnico' | 'cantidad'>) =>{
-        const nuevoItem: ItemCarrito ={
+    const agregarItem = (itemData: Omit<ItemCarrito, 'idUnico' | 'cantidad'>) => {
+        const nuevoItem: ItemCarrito = {
             ...itemData,
-            idUnico: uuidv4(), // Generar un id unico 
-            cantidad: 1, 
+            idUnico: uuidv4(),
+            cantidad: 1,
             precioUnitario: calcularPrecioUnitario(itemData.productoBase, itemData.personalizacion),
 
         };
@@ -69,13 +82,13 @@ export const CarritoProvider: React.FC< {children: React.ReactNode}> = ({ childr
 
     //Actualizar Item
 
-    const actualizarCantidad = (idUnico: string, nuevaCantidad: number) =>{
+    const actualizarCantidad = (idUnico: string, nuevaCantidad: number) => {
         if (nuevaCantidad <= 0) {
             eliminarItem(idUnico);
             return;
         }
 
-        setItems (prevItems =>
+        setItems(prevItems =>
             prevItems.map(item =>
                 item.idUnico === idUnico ? { ...item, cantidad: nuevaCantidad } : item
             )
@@ -87,13 +100,19 @@ export const CarritoProvider: React.FC< {children: React.ReactNode}> = ({ childr
 
     const limpiarCarrito = () => {
         setItems([]);
+
     };
 
 
     //Calculo del precio total
 
-    const totalPrecio = useMemo(() =>{
-        return items.reduce((total, item) => total + (item.precioUnitario * item.cantidad), 0);
+    const totalPrecio = useMemo(() => {
+        const total = items.reduce((acc, item) => {
+            const precio = typeof item.precioUnitario === 'number' ? item.precioUnitario : 0;
+            const cantidad = typeof item.cantidad === 'number' ? item.cantidad : 0;
+            return acc + (precio * cantidad);
+        }, 0);
+        return total;
     }, [items]);
 
     const contextValue: CarritoContextType = {

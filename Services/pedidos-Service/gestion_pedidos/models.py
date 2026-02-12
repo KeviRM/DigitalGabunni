@@ -38,10 +38,13 @@ class Pedido(models.Model):
     TYPE_DELIVERY_CHOICES = [
         ('RECOGER', 'Recoger en el Local'),
         ('DOMICILIO', 'A Domicilio'),
+        ('LLEVAR', 'Llevar a Otro Lugar'),
+        ('COMER_AQUI', 'Comer en el Local')
     ]
     
     
-    type_delivery = models.CharField(max_length=10, choices=TYPE_DELIVERY_CHOICES)
+    type_delivery = models.CharField(max_length=20, choices=TYPE_DELIVERY_CHOICES, default='RECOGER')
+    
     
     delivery_address = models.TextField(blank=True, null=True)
     
