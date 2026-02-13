@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// --- IMPORTS DE TU LÓGICA REAL ---
+// --- IMPORTS DE API ---
 import { fetchCategorias, fetchProductos, fetchPaquetes } from '../../api/menuApi';
-// import type { Producto, Categoria, Paquete, ItemCarrito } from '../../types/menu'; // <-- COMENTADO para evitar conflictos de tipo "precioUnitario"
 import { pedidosApi } from '../../api/axiosConfig';
 import useAuth from '../../hooks/useAuth';
 
@@ -29,6 +28,7 @@ const MenuKiosco: React.FC = () => {
         eliminarDelCarrito: eliminarItem,
         modificarCantidad,
         total,
+        cantidadItems, // Asegúrate de que tu context exponga esto, si no usa items.length
         limpiarCarrito
     } = useKiosco();
 
@@ -40,13 +40,17 @@ const MenuKiosco: React.FC = () => {
     const [filtroActivo, setFiltroActivo] = useState<number | null>(null);
     const [cargando, setCargando] = useState(true);
 
-    // Estados para Checkout 
+    // --- ESTADOS DE FLUJO ---
     const [modalCheckout, setModalCheckout] = useState(false);
     const [tipoEntrega, setTipoEntrega] = useState<'COMER_AQUI' | 'LLEVAR'>('COMER_AQUI');
     const [enviandoOrden, setEnviandoOrden] = useState(false);
     const [showModalPersonalizar, setShowModalPersonalizar] = useState(false);
 
-    // --- CARGA DE DATOS ---
+    // --- NUEVOS ESTADOS PARA PANTALLA DE ÉXITO (#01) ---
+    const [ordenExitosa, setOrdenExitosa] = useState<number | null>(null);
+    const [segundosRestantes, setSegundosRestantes] = useState(45);
+
+    // --- 1. CARGA DE DATOS ---
     useEffect(() => {
         const cargarDatos = async () => {
             try {
@@ -55,7 +59,6 @@ const MenuKiosco: React.FC = () => {
                 setPaquetes(paqs);
 
                 if (paqs.length > 0) {
-                    // Forzamos any para evitar errores de TS con tipos viejos
                     const catPaquetes: any = { id: ID_CATEGORIA_PAQUETES, name: 'Paquetes' };
                     setCategorias([catPaquetes, ...cats]);
                     setFiltroActivo(ID_CATEGORIA_PAQUETES);
@@ -72,7 +75,26 @@ const MenuKiosco: React.FC = () => {
         cargarDatos();
     }, []);
 
-    // --- FILTRADO ---
+    // --- 2. CONTADOR REGRESIVO (PANTALLA ÉXITO) ---
+    useEffect(() => {
+        let intervalo: any;
+        if (ordenExitosa !== null && segundosRestantes > 0) {
+            intervalo = setInterval(() => {
+                setSegundosRestantes((prev) => prev - 1);
+            }, 1000);
+        } else if (segundosRestantes === 0) {
+            handleFinalizar(); // Se acabó el tiempo
+        }
+        return () => clearInterval(intervalo);
+    }, [ordenExitosa, segundosRestantes]);
+
+    const handleFinalizar = () => {
+        setOrdenExitosa(null);
+        setSegundosRestantes(45);
+        navigate('/kiosco'); // Volver a bienvenida/inicio
+    };
+
+    // --- 3. FILTROS ---
     const productosFiltrados = useMemo(() => {
         if (filtroActivo === ID_CATEGORIA_PAQUETES) return [];
         if (filtroActivo === null) return productos;
@@ -86,53 +108,75 @@ const MenuKiosco: React.FC = () => {
         return [];
     }, [paquetes, filtroActivo]);
 
-    // --- MANEJADORES ---
-
-    // Simplificamos: El contexto Kiosco ya sabe cómo extraer precios y nombres
+    // --- 4. MANEJADORES DE CARRITO ---
     const handleAddProducto = (producto: any) => {
-
         agregarItem(producto, false);
     };
 
     const handleAddPaqueteToCart = (paquete: any) => {
-        // true = es paquete
         agregarItem(paquete, true);
     };
 
-    // --- CONFIRMAR ORDEN ---
+    // --- 5. ENVIAR PEDIDO A LA BD (CORREGIDO Y BLINDADO) ---
     const handleConfirmarOrden = async () => {
         setEnviandoOrden(true);
         try {
-            const payload = {
-                items: items.map(item => ({
-                    product_id: item.esPaquete ? -item.producto.id : item.producto.id,
+            // 1. Mapeo correcto de items para el Serializer del Backend
+            const itemsParaBackend = items.map(item => {
+                let personalizacion = {};
+                
+                // Si es paquete, intentamos mandar su contenido como info extra
+                if (item.esPaquete && item.producto.items) {
+                     personalizacion = { "Contenido": item.producto.items };
+                }
+
+                return {
+                    product_name: item.producto.name,
                     quantity: item.cantidad,
-                    is_package: item.esPaquete,
-                    package_data: item.esPaquete ? item.producto : null
-                })),
+                    unit_price: item.precio, // El precio ya viene limpio del KioscoContext
+                    personalizacion_json: personalizacion
+                };
+            });
+
+            // 2. Construcción del Payload con TODOS los campos requeridos
+            const payload = {
+                client_name: "Cliente Kiosco",
+                phone_number: "0000000000",
+                email: "kiosco@gabunni.com",
+                amount: total, // Usamos 'total' del contexto
                 type_delivery: tipoEntrega,
-                total: total
+                origen: "KIOSCO", // Esto dispara el status ESPERANDO_PAGO en el backend
+                items_carrito: itemsParaBackend // La llave correcta para la lista de productos
             };
 
+            console.log(" Enviando Payload:", payload);
+
             const res = await pedidosApi.post('/api/v1/pedidos/crear/', payload, { headers: getAuthHeaders() });
-            alert(` Pedido #${res.data.order_number} Creado.`);
+            
+            // ÉXITO: Obtenemos el número corto (daily_sequence)
+            const numeroTurno = res.data.daily_sequence; 
+
             limpiarCarrito();
             setModalCheckout(false);
-            navigate('/kiosco');
-        } catch (error) {
-            console.error(error);
-            alert("Error al crear pedido.");
+            
+            // Activamos la pantalla de éxito
+            setOrdenExitosa(numeroTurno);
+
+        } catch (error: any) {
+            console.error("Error creating order:", error);
+            const msg = error.response?.data ? JSON.stringify(error.response.data) : "Error desconocido";
+            alert(`Error al crear el pedido: ${msg}`);
         } finally {
             setEnviandoOrden(false);
         }
     };
 
-    if (cargando) return <div className="flex h-screen items-center justify-center text-3xl font-bold text-gray-400 animate-pulse">Cargando Menú... 🍔</div>;
+    if (cargando) return <div className="flex h-screen items-center justify-center text-3xl font-bold text-gray-400 animate-pulse">Cargando Menú... </div>;
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden font-sans select-none">
 
-            {/* --- COLUMNA : CATEGORÍAS  --- */}
+            {/* --- COLUMNA 1: CATEGORÍAS --- */}
             <aside className="w-1/5 bg-white shadow-xl z-20 flex flex-col">
                 <div className="p-6 border-b border-gray-100 flex justify-center bg-white">
                     <img src={gabunniLogo} alt="Logo" className="w-32 object-contain" />
@@ -165,7 +209,7 @@ const MenuKiosco: React.FC = () => {
                 </div>
             </aside>
 
-            {/* ---  GRID DE PRODUCTOS --- */}
+            {/* --- COLUMNA 2: GRID DE PRODUCTOS --- */}
             <main className="w-3/5 p-6 overflow-y-auto bg-gray-50 relative custom-scrollbar">
 
                 <h2 className="text-4xl font-extrabold text-gray-800 mb-8 capitalize sticky top-0 bg-gray-50/95 z-10 py-4 backdrop-blur-sm border-b border-gray-200">
@@ -266,7 +310,7 @@ const MenuKiosco: React.FC = () => {
                 </div>
             </main>
 
-            {/* --- COLUMNA  CARRITO  --- */}
+            {/* --- COLUMNA 3: CARRITO --- */}
             <aside className="w-1/5 bg-white border-l border-gray-200 flex flex-col shadow-2xl z-30">
                 <div className="p-6 bg-orange-500 text-white shadow-md">
                     <h3 className="text-xl font-bold flex items-center gap-2">
@@ -349,20 +393,52 @@ const MenuKiosco: React.FC = () => {
                 </div>
             </aside>
 
-            {/* MODAL CHECKOUT */}
+            {/* --- MODAL 1: CHECKOUT (SELECCIÓN DE ENTREGA) --- */}
             {modalCheckout && (
                 <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-3xl p-8 max-w-lg w-full">
-                        <h3 className="text-3xl font-bold text-center mb-6">¿Para dónde es?</h3>
+                        <h3 className="text-3xl font-bold text-center mb-6 text-gray-800">¿Para dónde es?</h3>
                         <div className="grid grid-cols-2 gap-4 mb-8">
-                            <button onClick={() => setTipoEntrega('COMER_AQUI')} className={`p-6 rounded-2xl border-4 font-bold ${tipoEntrega === 'COMER_AQUI' ? 'border-orange-500 bg-orange-50' : 'border-gray-100'}`}>Para Comer Aquí</button>
-                            <button onClick={() => setTipoEntrega('LLEVAR')} className={`p-6 rounded-2xl border-4 font-bold ${tipoEntrega === 'LLEVAR' ? 'border-orange-500 bg-orange-50' : 'border-gray-100'}`}>Para Llevar</button>
+                            <button onClick={() => setTipoEntrega('COMER_AQUI')} className={`p-6 rounded-2xl border-4 font-bold transition-all ${tipoEntrega === 'COMER_AQUI' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-100 text-gray-400'}`}>
+                                <span className="text-3xl block mb-2"></span> Para Comer Aquí
+                            </button>
+                            <button onClick={() => setTipoEntrega('LLEVAR')} className={`p-6 rounded-2xl border-4 font-bold transition-all ${tipoEntrega === 'LLEVAR' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-100 text-gray-400'}`}>
+                                <span className="text-3xl block mb-2"></span> Para Llevar
+                            </button>
                         </div>
                         <div className="flex gap-4">
-                            <button onClick={() => setModalCheckout(false)} className="flex-1 py-4 font-bold bg-gray-100 rounded-xl">Volver</button>
-                            <button onClick={handleConfirmarOrden} disabled={enviandoOrden} className="flex-2 py-4 font-bold text-white bg-green-600 rounded-xl">{enviandoOrden ? '...' : 'Finalizar'}</button>
+                            <button onClick={() => setModalCheckout(false)} className="flex-1 py-4 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Volver</button>
+                            <button onClick={handleConfirmarOrden} disabled={enviandoOrden} className="flex-2 py-4 font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors shadow-lg">
+                                {enviandoOrden ? 'Enviando...' : 'Finalizar'}
+                            </button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* --- MODAL 2: PANTALLA DE ÉXITO (#01) --- */}
+            {ordenExitosa !== null && (
+                <div className="fixed inset-0 bg-white z-60 flex flex-col items-center justify-center animate-fade-in">
+                    <div className="absolute top-0 bg-orange-500 w-fit px-12 pb-4 pt-2 rounded-b-3xl shadow-lg">
+                        <img src={gabunniLogo} className="h-20 object-contain brightness-0 invert" alt="Gabunni" />
+                    </div>
+
+                    <div className="border-4 border-orange-500 rounded-[3rem] p-12 max-w-4xl w-full text-center mt-10 shadow-2xl bg-white">
+                        <div className="text-[150px] font-extrabold text-orange-500 leading-none mb-4 drop-shadow-sm">
+                            #{ordenExitosa.toString().padStart(2, '0')}
+                        </div>
+                        <h2 className="text-4xl text-orange-800 font-bold mb-6">Tu pedido está creado!</h2>
+                        <p className="text-2xl text-gray-600 mb-12 font-medium">
+                            Pasa a caja y menciona el número <strong className="text-orange-600 text-3xl">#{ordenExitosa.toString().padStart(2, '0')}</strong> para pagar.
+                        </p>
+                        <button onClick={handleFinalizar} className="bg-white border-2 border-orange-500 text-orange-500 text-2xl font-bold py-4 px-20 rounded-full hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-md">
+                            Finalizar
+                        </button>
+                    </div>
+
+                    <p className="absolute bottom-10 text-gray-400 font-medium">
+                        Esta ventana se cerrará automáticamente en {segundosRestantes}s
+                    </p>
                 </div>
             )}
 

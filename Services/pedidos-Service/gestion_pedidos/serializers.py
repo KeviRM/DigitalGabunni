@@ -19,6 +19,7 @@ class PedidoCreationSerializer(serializers.ModelSerializer):
         
         fields = [
             'order_number',
+            'daily_sequence',
             'client_name',
             'email',
             'phone_number',
@@ -30,7 +31,7 @@ class PedidoCreationSerializer(serializers.ModelSerializer):
         ]
         
         
-        read_only_fields = ['order_number', 'status', 'created_at']
+        read_only_fields = ['order_number', 'status', 'created_at', 'daily_sequence']
         
         
         

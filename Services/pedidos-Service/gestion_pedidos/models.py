@@ -1,5 +1,6 @@
 from django.db import models
 import uuid
+from django.utils import timezone
 
 # Create your models here.
 
@@ -60,6 +61,8 @@ class Pedido(models.Model):
         choices=ORIGEN_CHOISE,
         default='APP'
     )
+
+    daily_sequence = models.PositiveIntegerField(default=1, editable=False)  # Secuencia diaria para mostrar en el local
     
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -85,10 +88,21 @@ class Pedido(models.Model):
     
     class Meta:
         ordering = ['-created_at']
-        
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+
+            today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+
+            last_order = Pedido.objects.filter(created_at__gte=today_start).order_by('-daily_sequence').first()
+            if last_order:
+                self.daily_sequence = last_order.daily_sequence + 1
+            else:
+                self.daily_sequence = 1
+        super().save(*args, **kwargs)
         
     def __str__(self):
-        return f"Pedido #{self.order_number} - {self.get_estado_display()}"
+        return f"Pedido #{self.daily_sequence:02d} - {self.client_name}"
     
     
     
