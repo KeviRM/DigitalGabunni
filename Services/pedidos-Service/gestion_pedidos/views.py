@@ -623,6 +623,7 @@ class CajaViewSet(viewsets.ViewSet):
                 'order_number': str(pedido.order_number),
                 'status': pedido.status,
                 'client_name': pedido.client_name,
+                'daily_sequence': pedido.daily_sequence
             }
 
 

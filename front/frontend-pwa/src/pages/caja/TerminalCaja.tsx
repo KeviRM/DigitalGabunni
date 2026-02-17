@@ -3,207 +3,241 @@ import { useNavigate } from "react-router-dom";
 import { pedidosApi } from '../../api/axiosConfig'; 
 import useAuth from "../../hooks/useAuth";
 import ModalCobro from "../../components/ModalCobro";
-import { FaClock, FaArrowRight, FaCashRegister } from 'react-icons/fa';
+import { FaClock, FaTimes, FaEdit, FaCashRegister, FaCheckCircle } from 'react-icons/fa';
+import gabunniLogo from '../../assets/gabunniLogo.jpg'; 
 
 const TerminalCaja: React.FC = () => {
     const navigate = useNavigate();
     const [pedidos, setPedidos] = useState<any[]>([]);
     const [pedidoSeleccionado, setPedidoSeleccionado] = useState<any | null>(null);
-    
-    // Estados para el cobro
     const [modalAbierto, setModalAbierto] = useState(false);
     const { getAuthHeaders } = useAuth();
 
-    //  Cargar Pedidos
+    // 1. Cargar Pedidos
     const fetchPedidos = async () => {
         try {
             const url = '/api/v1/pedidos/caja/pendientes/';
             const response = await pedidosApi.get(url, { headers: getAuthHeaders() });
-            // Filtramos solo los NO pagados
             const pendientes = response.data.filter((p: any) => !p.metodo_pago);
             setPedidos(pendientes);
             
-            // Si el pedido seleccionado ya no existe, limpiamos la selección
+            // Mantener selección si existe
             if (pedidoSeleccionado) {
-                const sigueVivo = pendientes.find((p: any) => p.order_number === pedidoSeleccionado.order_number);
-                if (!sigueVivo) setPedidoSeleccionado(null);
+                const actualizado = pendientes.find((p: any) => p.order_number === pedidoSeleccionado.order_number);
+                if (actualizado) setPedidoSeleccionado(actualizado);
+                else setPedidoSeleccionado(null);
             }
         } catch (error) {
             console.error("Error cargando terminal", error);
         }
     };
 
-
-     const getPersonalizacionDetalle = (personalizacion: any): string => {
-        if (!personalizacion) return "Estandar";
-
-        const nombres = Object.values(personalizacion).flatMap((ingredientes: any) => ingredientes.map((ing: any) => ing.name));
-
-        return nombres.join(', ');
-
-    };
-
-    /* Verificar si hay caja abierta al cargar la página */
-
-        useEffect(() => {
-        const verificarCajaAbierta = async () => {
-            try {
-                await pedidosApi.get('/api/v1/pedidos/sesion-caja/resumen_actual/', { headers: getAuthHeaders() });
-            } catch (error: any) {
-                if (error.response && error.response.status === 404) {
-                    alert("No tienes caja abierta. Serás redirigido a la gestión de caja.");
-                    navigate('/caja/gestion');
-                } else {
-                    console.error("Error al verificar caja abierta:", error);
-                }
-            }
-        };
-        verificarCajaAbierta();
-    }, [navigate, getAuthHeaders]);
-
-
-
-    // Polling: Actualizar cada 5 segundos automáticamente
+    // Polling
     useEffect(() => {
         fetchPedidos();
         const intervalo = setInterval(fetchPedidos, 5000);
         return () => clearInterval(intervalo);
     }, []);
 
-    // Helper para "Hace X minutos"
+    // Helper de Tiempo
     const calcularTiempo = (fechaIso: string) => {
-        const fecha = new Date(fechaIso);
-        const ahora = new Date();
-        const diffMinutos = Math.floor((ahora.getTime() - fecha.getTime()) / 60000);
-        if (diffMinutos < 1) return 'hace un momento';
-        if (diffMinutos < 60) return `hace ${diffMinutos} minutos`;
-        return `hace ${Math.floor(diffMinutos / 60)} horas`;
+        const diff = Math.floor((new Date().getTime() - new Date(fechaIso).getTime()) / 60000);
+        return diff < 1 ? 'ahora' : `hace ${diff} min`;
+    };
+
+    // 2. Helper de Personalización (MEJORADO)
+    const renderPersonalizacion = (personalizacion: any) => {
+        if (!personalizacion || Object.keys(personalizacion).length === 0) return null;
+
+        // Paquetes
+        if (personalizacion["Contenido"]) {
+            return (
+                <div className="text-xs text-gray-500 mt-1 ml-4 border-l-2 border-blue-200 pl-2">
+                    {personalizacion["Contenido"].map((item: any, i: number) => (
+                         <div key={i}>• {item.product_name || item.name}</div>
+                    ))}
+                </div>
+            );
+        }
+
+        // Ingredientes
+        const ingredientes = Object.values(personalizacion).flat() as any[];
+        return (
+            <div className="mt-1 ml-4 text-sm">
+                {ingredientes.map((ing: any, idx: number) => {
+                    const esExtra = parseFloat(ing.additional_price) > 0;
+                    return (
+                        <div key={idx} className={`${esExtra ? 'text-green-600 font-bold' : 'text-gray-500'}`}>
+                            {esExtra ? '+ ' : '• '} {ing.name}
+                        </div>
+                    );
+                })}
+            </div>
+        );
     };
 
     return (
-        <div className="flex h-full">
+        <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
             
-            {/* --- COLUMNA IZQUIERDA: LISTA DE PEDIDOS --- */}
-            <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col h-full">
-                <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-orange-500 border-b-2 border-orange-200 pb-2 inline-block">
-                        Pendientes de Pago ({pedidos.length})
-                    </h2>
+            {/* --- COLUMNA IZQUIERDA --- */}
+            <div className="w-[350px] bg-white border-r border-gray-200 flex flex-col z-10 shadow-lg">
+                
+
+                {/* Título Lista */}
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                    <h2 className="text-orange-600 font-bold text-lg">Pendientes de Pago</h2>
+                    <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-xs font-bold">{pedidos.length}</span>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                {/* Lista Scrolleable */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {pedidos.length === 0 && (
-                        <p className="text-center text-gray-400 mt-10">No hay pedidos pendientes.</p>
+                        <div className="text-center py-10 text-gray-400">
+                            <p>No hay pedidos pendientes</p>
+                        </div>
                     )}
 
-                    {pedidos.map((pedido) => (
-                        <div 
-                            key={pedido.order_number}
-                            onClick={() => setPedidoSeleccionado(pedido)}
-                            className={`p-4 rounded-xl cursor-pointer transition-all border-l-5 border-b-2 shadow-sm group
-                                ${pedidoSeleccionado?.order_number === pedido.order_number 
-                                    ? 'bg-orange-50 border-orange-500 shadow-md-3 ring-1 ring-orange-100' 
-                                    : 'bg-white hover:bg-gray-50 border-gray-300 border-b-2'
-                                }`}
-                        >
-                            <div className="flex justify-between items-center mb-2">
-                                <span className={`text-xl font-bold ${pedidoSeleccionado?.order_number === pedido.order_number ? 'text-orange-600' : 'text-gray-400 group-hover:text-orange-400'}`}>
-                                    #{pedido.order_number.substring(0, 4)}
-                                </span>
-                                <span className="text-xl font-extrabold text-green-600">
-                                    ${parseFloat(pedido.amount).toFixed(0)}
-                                </span>
+                    {pedidos.map((pedido) => {
+                        const isSelected = pedidoSeleccionado?.order_number === pedido.order_number;
+                        return (
+                            <div 
+                                key={pedido.order_number}
+                                onClick={() => setPedidoSeleccionado(pedido)}
+                                className={`p-4 rounded-xl cursor-pointer transition-all border-l-4 shadow-sm relative overflow-hidden group
+                                    ${isSelected 
+                                        ? 'bg-orange-50 border-orange-500 ring-1 ring-orange-200 shadow-md' 
+                                        : 'bg-white hover:border-gray-300 hover:bg-gray-50 border border-gray-100'
+                                    }`}
+                            >
+                                <div className="flex items-center gap-4">
+                                    {/* Número Grande */}
+                                    <div className={`text-3xl font-extrabold ${isSelected ? 'text-orange-500' : 'text-gray-300 group-hover:text-gray-400'}`}>
+                                        #{pedido.daily_sequence?.toString().padStart(2, '0') || '??'}
+                                    </div>
+                                    
+                                    {/* Info */}
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold text-gray-700"></span>
+                                            <span className="font-bold text-green-600 text-lg">${parseFloat(pedido.amount).toFixed(0)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center mt-1">
+                                            <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                                                 <FaClock size={10}/> {calcularTiempo(pedido.created_at)}
+                                            </span>
+                                            {/* Tag de Tipo */}
+                                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase
+                                                ${pedido.type_delivery === 'LLEVAR' ? 'bg-blue-100 text-blue-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                                                {pedido.type_delivery === 'LLEVAR' ? 'Para Llevar' : 'Aquí'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex justify-between items-end">
-                                <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                                    <FaClock /> {calcularTiempo(pedido.created_at || new Date().toISOString())}
-                                </span>
-                                {pedidoSeleccionado?.order_number === pedido.order_number && 
-                                    <FaArrowRight className="text-orange-400" />
-                                }
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* --- COLUMNA DERECHA: DETALLE DEL PEDIDO --- */}
-            <div className="w-2/3 bg-gray-50 p-8 flex flex-col justify-center items-center h-full">
+            {/* --- COLUMNA DERECHA (DETALLE) --- */}
+            <div className="flex-1 bg-gray-50 p-10 flex flex-col h-full relative">
                 
+               
+
                 {pedidoSeleccionado ? (
-                    <div className="bg-white w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden flex flex-col max-h-[90%]">
-                        {/* Header Ticket */}
-                        <div className="bg-gray-800 text-white p-6 text-center relative">
-                            <p className="text-sm text-gray-400 uppercase tracking-widest mb-1">Orden Actual</p>
-                            <h2 className="text-3xl font-bold">Pedido #{pedidoSeleccionado.order_number.substring(0, 8)}</h2>
-                            <div className="absolute top-6 right-6 px-3 py-1 bg-gray-700 rounded-full text-xs font-bold text-orange-400">
-                                {pedidoSeleccionado.type_delivery}
-                            </div>
+                    <div className="flex flex-col h-full max-w-4xl mx-auto w-full pt-10">
+                        
+                        {/* Título Detalle */}
+                        <div className="text-center mb-8 border-b-2 border-orange-500 pb-4">
+                            <h1 className="text-4xl font-extrabold text-gray-800">
+                                Detalle de Orden <span className="text-orange-500">#{pedidoSeleccionado.daily_sequence?.toString().padStart(2, '0')}</span>
+                            </h1>
+                            <p className="text-gray-400 mt-2">{pedidoSeleccionado.client_name || 'Cliente Kiosco'} • {new Date(pedidoSeleccionado.created_at).toLocaleString()}</p>
                         </div>
 
-                        {/* Cuerpo Lista */}
-                        <div className="p-8 overflow-y-auto flex-1">
-                            <h3 className="text-gray-500 font-bold mb-4 text-sm uppercase border-b pb-2">Detalle de Consumo</h3>
-                            <div className="space-y-4">
-                                {pedidoSeleccionado.details?.map((detalle: any, idx: any) => (
-                                    <div key={idx} className="flex justify-between items-center">
-                                        <div className="flex items-center gap-4">
-                                            <span className="bg-orange-100 text-orange-700 font-bold w-8 h-8 flex items-center justify-center rounded-lg">
-                                                {detalle.quantity}
-                                            </span>
-                                            <div>
-                                                <p className="font-bold text-gray-800 text-lg">{detalle.product_name}</p>
-                                                {/* {detalle.personalizacion_json && (
-                                                    <p className="text-xs text-gray-400">{detalle.personalizacion_detalle}</p>
-                                                )} */}
-                                                Ingredientes: {getPersonalizacionDetalle(detalle.personalizacion_json) ? detalle.personalizacion_detalle : "Estandar"}
-                                            </div>
+                        {/* Lista de Productos (Estilo Ticket Ancho) */}
+                        <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                            {pedidoSeleccionado.details?.map((detalle: any, idx: number) => (
+                                <div key={idx} className="bg-white p-6 rounded-xl border border-orange-200 shadow-md flex justify-between items-start">
+                                    
+                                    {/* Izquierda: Cantidad y Nombre */}
+                                    <div className="flex-1">
+                                        <div className="flex items-baseline gap-3">
+                                            <span className="font-bold text-lg text-gray-500">{detalle.quantity}x</span>
+                                            <h3 className="font-bold text-xl text-gray-800">{detalle.product_name}</h3>
                                         </div>
-                                        <p className="font-bold text-gray-700 text-lg">
-                                            ${(detalle.unit_price * detalle.quantity).toFixed(2)}
-                                        </p>
+                                        {/* Renderizamos personalización con la nueva función */}
+                                        {renderPersonalizacion(detalle.personalizacion_json)}
                                     </div>
-                                ))}
-                            </div>
+
+                                    {/* Derecha: Precio */}
+                                    <div className="text-right">
+                                        <span className="font-bold text-xl text-green-600">
+                                            ${(detalle.unit_price * detalle.quantity).toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
-                        {/* Footer Totales */}
-                        <div className="bg-gray-50 p-8 border-t border-gray-100">
-                            <div className="flex justify-between items-center mb-6">
-                                <span className="text-gray-500 font-medium">Total a Pagar</span>
-                                <span className="text-5xl font-extrabold text-gray-800">
-                                    ${parseFloat(pedidoSeleccionado.amount).toFixed(2)}
+                        {/* Footer Totales y Botones */}
+                        <div className="mt-8 bg-white p-6 rounded-2xl shadow-lg border-4 border-orange-500">
+                            
+                            {/* Total Gigante */}
+                            <div className="text-center mb-8">
+                                <span className="text-gray-400 text-sm font-bold uppercase tracking-widest block mb-1">Total a Pagar</span>
+                                <span className="text-6xl font-extrabold text-orange-600">
+                                    ${parseFloat(pedidoSeleccionado.amount).toFixed(0)}
                                 </span>
                             </div>
-                            
-                            <button 
-                                onClick={() => setModalAbierto(true)}
-                                className="w-full bg-green-600 hover:bg-green-700 text-white text-xl font-bold py-5 rounded-xl shadow-lg transform hover:scale-[1.01] transition-all flex justify-center items-center gap-3"
-                            >
-                                <FaCashRegister /> COBRAR AHORA
-                            </button>
+
+                            {/* Botonera de Acción */}
+                            <div className="grid grid-cols-3 gap-6">
+                                <button 
+                                    onClick={() => alert("Funcionalidad Cancelar pendiente")} // Conectar a tu lógica de cancelar
+                                    className="py-4 rounded-xl border-2 border-red-500 text-red-500 font-bold text-lg hover:bg-red-50 transition flex items-center justify-center gap-2"
+                                >
+                                    <FaTimes /> Cancelar Orden
+                                </button>
+                                
+                                <button 
+                                    className="py-4 rounded-xl border-2 border-gray-500 text-gray-600 font-bold text-lg hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                                >
+                                    <FaEdit /> Editar Orden
+                                </button>
+                                
+                                <button 
+                                    onClick={() => setModalAbierto(true)}
+                                    className="py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition flex items-center justify-center gap-2"
+                                >
+                                    <FaCheckCircle /> CONFIRMAR PAGO
+                                </button>
+                            </div>
                         </div>
+
                     </div>
                 ) : (
-                    // ESTADO VACÍO (Placeholder)
-                    <div className="text-center opacity-40">
-                        <FaCashRegister className="text-9xl text-gray-400 mx-auto mb-4" />
-                        <h2 className="text-3xl font-bold text-gray-600">Terminal Lista</h2>
-                        <p className="text-xl">Selecciona un pedido de la izquierda para cobrar</p>
+                    // Estado Vacío (Placeholder)
+                    <div className="flex flex-col items-center justify-center h-full text-gray-300">
+                        <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                            <FaCashRegister className="text-9xl text-gray-400" />
+                        </div>
+                        <h2 className="text-3xl font-bold text-gray-400">Selecciona un pedido</h2>
+                        <p className="mt-2">Elige una orden de la lista para ver el detalle y cobrar.</p>
                     </div>
                 )}
             </div>
 
-            {/* MODAL (Invisible hasta que se invoca) */}
+            {/* MODAL COBRO */}
             {pedidoSeleccionado && (
                 <ModalCobro
                     isOpen={modalAbierto}
                     onClose={() => setModalAbierto(false)}
-                    orderNumber={pedidoSeleccionado.order_number}
+                    orderNumber={pedidoSeleccionado.order_number}   
                     total={pedidoSeleccionado.amount}
                     onPaymentSuccess={() => {
-                        fetchPedidos(); // Recargar lista
-                        setPedidoSeleccionado(null); // Limpiar selección
+                        fetchPedidos();
+                        setPedidoSeleccionado(null);
                     }}
                 />
             )}

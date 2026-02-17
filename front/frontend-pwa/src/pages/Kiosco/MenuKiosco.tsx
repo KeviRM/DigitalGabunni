@@ -9,6 +9,7 @@ import useAuth from '../../hooks/useAuth';
 // --- IMPORT DEL CONTEXTO KIOSCO (EL MOTOR REAL) ---
 import { useKiosco } from '../../context/KioscoContext';
 import ModalPersonalizadorKiosco from './ModalPersonalizadorKiosco';
+import ModalDetalleProducto from './ModalDetalleProducto';
 
 // --- IMPORTS DE ICONOS Y ASSETS ---
 import { FaShoppingCart, FaChevronLeft, FaTrash, FaUtensils, FaBoxOpen } from 'react-icons/fa';
@@ -28,7 +29,7 @@ const MenuKiosco: React.FC = () => {
         eliminarDelCarrito: eliminarItem,
         modificarCantidad,
         total,
-        cantidadItems, // Asegúrate de que tu context exponga esto, si no usa items.length
+
         limpiarCarrito
     } = useKiosco();
 
@@ -45,6 +46,7 @@ const MenuKiosco: React.FC = () => {
     const [tipoEntrega, setTipoEntrega] = useState<'COMER_AQUI' | 'LLEVAR'>('COMER_AQUI');
     const [enviandoOrden, setEnviandoOrden] = useState(false);
     const [showModalPersonalizar, setShowModalPersonalizar] = useState(false);
+    const [productoSeleccionado, setProductoSeleccionado] = useState<any | null>(null);
 
     // --- NUEVOS ESTADOS PARA PANTALLA DE ÉXITO (#01) ---
     const [ordenExitosa, setOrdenExitosa] = useState<number | null>(null);
@@ -109,12 +111,25 @@ const MenuKiosco: React.FC = () => {
     }, [paquetes, filtroActivo]);
 
     // --- 4. MANEJADORES DE CARRITO ---
-    const handleAddProducto = (producto: any) => {
+
+
+    const handleAddProductoDirecto = (producto: any, e: React.MouseEvent) => {
+        e.stopPropagation();
         agregarItem(producto, false);
     };
 
     const handleAddPaqueteToCart = (paquete: any) => {
         agregarItem(paquete, true);
+    };
+
+    const handleAddProductoDesdeModal = (producto: any, cantidad: number) => {
+        agregarItem(producto, false, cantidad);
+        setProductoSeleccionado(null);
+    };
+
+    const handlePersonalizarDesdeModal = (_producto: any) => {
+        setProductoSeleccionado(null);
+        setShowModalPersonalizar(true);
     };
 
     // --- 5. ENVIAR PEDIDO A LA BD (CORREGIDO Y BLINDADO) ---
@@ -124,10 +139,10 @@ const MenuKiosco: React.FC = () => {
             // 1. Mapeo correcto de items para el Serializer del Backend
             const itemsParaBackend = items.map(item => {
                 let personalizacion = {};
-                
+
                 // Si es paquete, intentamos mandar su contenido como info extra
                 if (item.esPaquete && item.producto.items) {
-                     personalizacion = { "Contenido": item.producto.items };
+                    personalizacion = { "Contenido": item.producto.items };
                 }
 
                 return {
@@ -152,13 +167,13 @@ const MenuKiosco: React.FC = () => {
             console.log(" Enviando Payload:", payload);
 
             const res = await pedidosApi.post('/api/v1/pedidos/crear/', payload, { headers: getAuthHeaders() });
-            
+
             // ÉXITO: Obtenemos el número corto (daily_sequence)
-            const numeroTurno = res.data.daily_sequence; 
+            const numeroTurno = res.data.daily_sequence;
 
             limpiarCarrito();
             setModalCheckout(false);
-            
+
             // Activamos la pantalla de éxito
             setOrdenExitosa(numeroTurno);
 
@@ -187,7 +202,7 @@ const MenuKiosco: React.FC = () => {
                         <button
                             key={cat.id}
                             onClick={() => setFiltroActivo(cat.id)}
-                            className={`w-full py-6 px-4 rounded-2xl text-xl font-bold transition-all transform duration-200 border-2 shadow-sm text-left flex items-center justify-between
+                            className={`w-full py-16 px-4 rounded-2xl text-xl font-bold transition-all transform duration-200 border-2 shadow-sm text-left flex items-center justify-between
                                 ${filtroActivo === cat.id
                                     ? 'bg-orange-500 text-white border-orange-500 scale-105 shadow-orange-200'
                                     : 'bg-white text-gray-500 border-gray-200 hover:border-orange-300 hover:text-orange-400'
@@ -202,7 +217,7 @@ const MenuKiosco: React.FC = () => {
                 <div className="p-4 bg-white">
                     <button
                         onClick={() => navigate('/kiosco')}
-                        className="w-full py-4 rounded-xl border-2 border-red-100 text-red-400 font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:text-red-500 transition-colors"
+                        className="w-full py-4 rounded-xl border-2 border-red-300 text-red-500 font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:text-red-500 transition-colors"
                     >
                         <FaChevronLeft /> Cancelar Orden
                     </button>
@@ -265,7 +280,9 @@ const MenuKiosco: React.FC = () => {
 
                     {/* PRODUCTOS REGULARES */}
                     {productosFiltrados.map(prod => (
-                        <div key={prod.id} className="bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-[380px] group border border-gray-100">
+                        <div key={prod.id}
+                            onClick={() => setProductoSeleccionado(prod)}
+                            className="bg-white rounded-3xl shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-[380px] group border border-orange-200 cursor-pointer">
                             <div className="h-48 bg-gray-100 relative overflow-hidden shrink-0">
                                 <img
                                     src={prod.image || 'https://1.bp.blogspot.com/-JUmaXrEYbPs/XnPhc3k7V0I/AAAAAAAAN0A/reZohppseB4uFlD3L6JS5Xv6yngGprCZgCLcBGAsYHQ/s1600/chapata.jpg'}
@@ -285,13 +302,13 @@ const MenuKiosco: React.FC = () => {
 
                                 <div className="flex gap-2 mt-2">
                                     <button
-                                        onClick={() => navigate(`/producto/${prod.id}`)}
+                                        onClick={(e) => { e.stopPropagation(); setProductoSeleccionado(prod); }}
                                         className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-xl transition-colors text-sm"
                                     >
                                         Detalles
                                     </button>
                                     <button
-                                        onClick={() => handleAddProducto(prod)}
+                                        onClick={(e) => handleAddProductoDirecto(prod, e)}
                                         className="flex-2 bg-orange-100 hover:bg-orange-500 text-orange-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95"
                                     >
                                         Agregar
@@ -444,6 +461,15 @@ const MenuKiosco: React.FC = () => {
 
             {showModalPersonalizar && (
                 <ModalPersonalizadorKiosco onClose={() => setShowModalPersonalizar(false)} />
+            )}
+
+            {productoSeleccionado && (
+                <ModalDetalleProducto
+                    producto={productoSeleccionado}
+                    onClose={() => setProductoSeleccionado(null)}
+                    onAddToCart={handleAddProductoDesdeModal}
+                    onPersonalizar={handlePersonalizarDesdeModal}
+                />
             )}
 
         </div>

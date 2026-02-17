@@ -62,7 +62,7 @@ class PedidoEstadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pedido
             
-        fields = ['order_number', 'status', 'type_delivery', 'created_at', 'amount', 'details']
+        fields = ['order_number', 'status', 'type_delivery', 'created_at', 'amount', 'details', 'daily_sequence']
             
         
 

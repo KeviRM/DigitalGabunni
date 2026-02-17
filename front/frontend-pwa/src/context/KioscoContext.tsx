@@ -11,7 +11,7 @@ interface ItemKiosco {
 
 interface KioscoContextType {
     items: ItemKiosco[];
-    agregarAlCarrito: (producto: any, esPaquete?: boolean) => void;
+    agregarAlCarrito: (producto: any, esPaquete?: boolean, cantidad?: number) => void;
     eliminarDelCarrito: (idUnico: number) => void;
     modificarCantidad: (idUnico: number, nuevaCantidad: number) => void;
     limpiarCarrito: () => void;
@@ -19,6 +19,7 @@ interface KioscoContextType {
     cantidadItems: number;
 }
 
+// ... (rest of context creation)
 const KioscoContext = createContext<KioscoContextType | undefined>(undefined);
 
 export const KioscoProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -32,14 +33,14 @@ export const KioscoProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         return 0;
     };
 
-    const agregarAlCarrito = (producto: any, esPaquete: boolean = false) => {
+    const agregarAlCarrito = (producto: any, esPaquete: boolean = false, cantidad: number = 1) => {
         const precioRaw = producto.price !== undefined ? producto.price : (producto.precio !== undefined ? producto.precio : 0);
         const precioFinal = parsePrecio(precioRaw);
 
         const nuevoItem: ItemKiosco = {
             idUnico: Date.now() + Math.random(),
             producto: producto,
-            cantidad: 1,
+            cantidad: cantidad,
             precio: precioFinal,
             esPaquete
         };

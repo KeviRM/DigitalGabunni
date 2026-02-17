@@ -3,7 +3,6 @@ import axios from 'axios';
 
 import { pedidosApi } from '../api/axiosConfig';
 import useAuth from '../hooks/useAuth';
-import type { get } from 'http';
 const PEDIDOS_API_URL = '/api/v1/pedidos/caja/';
   
 

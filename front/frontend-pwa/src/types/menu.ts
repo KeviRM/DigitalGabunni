@@ -10,12 +10,12 @@ export interface Producto {
     name: string;
     description: string;
     price: string; //string para el DecimalField de Django
-    image: string|null;
+    image: string | null;
     category: number; // numerico por que es el id de la categoria
     category_name: string;
     is_active: boolean;
     receta: RecetaItem[];
-     
+
 }
 
 
@@ -45,14 +45,13 @@ export interface ClaseIngrediente {
 
 //item de carrito 
 
-export interface ItemCarrito
-{
+export interface ItemCarrito {
 
-   
+
     idUnico: string;
     productoBase: Producto;
     cantidad: number;
-    precioUnitario:number;
+    precioUnitario: number;
 
     //Detalle de personalizacion 
 
@@ -81,7 +80,7 @@ export interface CarritoContextType {
 
     eliminarItem: (idUnico: string) => void;
 
-    actualizarCantidad:(idUnico: string, nuevaCantidad: number) => void;
+    actualizarCantidad: (idUnico: string, nuevaCantidad: number) => void;
 
     limpiarCarrito: () => void;
 
@@ -94,11 +93,12 @@ export interface RecetaItem {
     product: number; // ID del producto
     ingredient: number; // ID del ingrediente
     quantity: string;
-    
+
     // Campos de solo lectura para la vista:
-    producto_nombre?: string;
+    produto_nombre?: string;
     ingrediente_nombre?: string;
-    
+    ingrediente_name?: string; // Agregado para compatibilidad
+
 }
 
 
