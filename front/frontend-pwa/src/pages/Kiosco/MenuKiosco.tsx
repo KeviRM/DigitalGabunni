@@ -15,6 +15,10 @@ import ModalDetalleProducto from './ModalDetalleProducto';
 import { FaShoppingCart, FaChevronLeft, FaTrash, FaUtensils, FaBoxOpen } from 'react-icons/fa';
 import gabunniLogo from '../../assets/gabunniLogo.jpg';
 
+
+import ModalDetallePaquete
+ from './ModalDetallePaquete';
+
 const ID_CATEGORIA_PAQUETES = -999;
 const ID_CATEGORIA_CHAPATAS = 1;
 
@@ -40,6 +44,8 @@ const MenuKiosco: React.FC = () => {
 
     const [filtroActivo, setFiltroActivo] = useState<number | null>(null);
     const [cargando, setCargando] = useState(true);
+
+    const[paqueteSeleccionado, setPaqueteSeleccionado] = useState<any | null>(null);
 
     // --- ESTADOS DE FLUJO ---
     const [modalCheckout, setModalCheckout] = useState(false);
@@ -96,7 +102,9 @@ const MenuKiosco: React.FC = () => {
         navigate('/kiosco'); // Volver a bienvenida/inicio
     };
 
-    // --- 3. FILTROS ---
+
+    
+    // -- FILTROS ---
     const productosFiltrados = useMemo(() => {
         if (filtroActivo === ID_CATEGORIA_PAQUETES) return [];
         if (filtroActivo === null) return productos;
@@ -109,7 +117,7 @@ const MenuKiosco: React.FC = () => {
         }
         return [];
     }, [paquetes, filtroActivo]);
-
+    
     // --- 4. MANEJADORES DE CARRITO ---
 
 
@@ -122,8 +130,37 @@ const MenuKiosco: React.FC = () => {
         agregarItem(paquete, true);
     };
 
-    const handleAddProductoDesdeModal = (producto: any, cantidad: number) => {
-        agregarItem(producto, false, cantidad);
+    // -- AGREGAR AL CARRITO DESDE EL MODAL DE PAQUETE ---
+
+    const handleAddPaqueteDesdeModal = (paq: any) => {
+        agregarItem(paq, true);
+        setPaqueteSeleccionado(null);
+    };
+    // Esta función recibe los datos del ModalDetalleProducto
+    const handleAddProductoDesdeModal = (producto: any, cantidad: number, personalizacion?: any) => {
+        
+        //  Calcular el precio unitario real (Base + Extras)
+        let precioFinal = parseFloat(producto.price);
+        
+        if (personalizacion?.modificaciones?.extras) {
+            // Sumamos el precio de cada extra seleccionado
+            const totalExtras = personalizacion.modificaciones.extras.reduce((sum: number, ext: any) => sum + parseFloat(ext.price), 0);
+            precioFinal += totalExtras;
+        }
+
+        //. Crear un objeto producto "clonado" con la info nueva
+        // Inyectamos la personalización DENTRO del producto para que viaje con él en el carrito
+        const productoParaCarrito = {
+            ...producto,
+            price: precioFinal, 
+            personalizacion_interna: personalizacion // Guardamos el JSON para enviarlo al backend luego
+        };
+
+        //  Agregar al carrito
+        // (producto, esPaquete, cantidad)
+        agregarItem(productoParaCarrito, false, cantidad);
+        
+        //  Cerrar el modal
         setProductoSeleccionado(null);
     };
 
@@ -132,36 +169,45 @@ const MenuKiosco: React.FC = () => {
         setShowModalPersonalizar(true);
     };
 
-    // --- 5. ENVIAR PEDIDO A LA BD (CORREGIDO Y BLINDADO) ---
+    // ENVIAR PEDIDO A LA BD  ---
     const handleConfirmarOrden = async () => {
         setEnviandoOrden(true);
         try {
-            // 1. Mapeo correcto de items para el Serializer del Backend
+            //  Mapeo correcto de items para el Serializer del Backend
             const itemsParaBackend = items.map(item => {
                 let personalizacion = {};
+                const prod = item.producto as any; 
 
-                // Si es paquete, intentamos mandar su contenido como info extra
-                if (item.esPaquete && item.producto.items) {
-                    personalizacion = { "Contenido": item.producto.items };
+                if (prod.personalizacion_interna) {
+                    personalizacion = prod.personalizacion_interna;
+                }
+                else if (prod.personalizacion_chapata) {
+                    personalizacion = prod.personalizacion_chapata;
                 }
 
+                // Si es paquete, intentamos mandar su contenido como info extra
+                else if (item.esPaquete && prod.items) {
+                    personalizacion = { "Contenido": prod.items };
+                }
+
+                
                 return {
-                    product_name: item.producto.name,
+                    product_name: prod.name,
                     quantity: item.cantidad,
                     unit_price: item.precio, // El precio ya viene limpio del KioscoContext
                     personalizacion_json: personalizacion
                 };
             });
 
-            // 2. Construcción del Payload con TODOS los campos requeridos
+            // Construcción del Payload con los campos requeridos
             const payload = {
                 client_name: "Cliente Kiosco",
                 phone_number: "0000000000",
                 email: "kiosco@gabunni.com",
-                amount: total, // Usamos 'total' del contexto
+                amount: total, 
                 type_delivery: tipoEntrega,
-                origen: "KIOSCO", // Esto dispara el status ESPERANDO_PAGO en el backend
-                items_carrito: itemsParaBackend // La llave correcta para la lista de productos
+                origen: "KIOSCO", 
+                items_carrito: itemsParaBackend 
             };
 
             console.log(" Enviando Payload:", payload);
@@ -186,12 +232,82 @@ const MenuKiosco: React.FC = () => {
         }
     };
 
+
+
+
+    // --- HELPER PARA MOSTRAR DETALLES EN EL CARRITO ---
+    const renderDetallesItem = (item: any) => {
+        const prod = item.producto;
+
+        //  Paquetes
+        if (item.esPaquete) {
+            return (
+                <div className="mt-1">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Productos:</p>
+                    {/* Lista de productos del paquete */}
+                    <div className="flex flex-col space-y-0.5 ml-1 border-l-2 border-blue-100 pl-1">
+                        {prod.items?.map((pItem: any, idx: number) => (
+                            <span key={idx} className="text-[10px] text-gray-500 leading-tight">
+                                {pItem.quantity}x {pItem.product_name}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Modificaciones(Nuevo sistema)
+        if (prod.personalizacion_interna) {
+            const { extras, sin } = prod.personalizacion_interna.modificaciones || {};
+            return (
+                <div className="flex flex-col mt-1 space-y-0.5">
+
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Modificaciones:</p>
+
+                    {sin?.map((ing: any, i: number) => (
+                        <span key={`sin-${i}`} className="text-[10px] text-red-400 line-through leading-tight">Sin {ing.name}</span>
+                    ))}
+                    {extras?.map((ing: any, i: number) => (
+                        <span key={`extra-${i}`} className="text-[10px] text-green-600 font-bold leading-tight">+ {ing.name}</span>
+                    ))}
+                </div>
+            );
+        }
+
+        //  Chapata Personalizada 
+        if (prod.personalizacion_chapata) {
+            const todos = Object.values(prod.personalizacion_chapata).flat() as any[];
+            
+            if (todos.length > 0) {
+                return (
+                    <div className="mt-1">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Ingredientes:</p>
+                        <div className="flex flex-wrap gap-1">
+                            {todos.slice(0, 5).map((ing: any, i: number) => (
+                                <span key={i} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 rounded border border-gray-200">
+                                    {ing.name}
+                                </span>
+                            ))}
+                            {todos.length > 5 && <span className="text-[10px] text-gray-400">...</span>}
+                        </div>
+                    </div>
+                );
+            }
+        }
+
+        return null;
+    };
+
+
+
+
+
     if (cargando) return <div className="flex h-screen items-center justify-center text-3xl font-bold text-gray-400 animate-pulse">Cargando Menú... </div>;
 
     return (
         <div className="flex h-screen bg-gray-50 overflow-hidden font-sans select-none">
 
-            {/* --- COLUMNA 1: CATEGORÍAS --- */}
+            {/* ---  CATEGORÍAS --- */}
             <aside className="w-1/5 bg-white shadow-xl z-20 flex flex-col">
                 <div className="p-6 border-b border-gray-100 flex justify-center bg-white">
                     <img src={gabunniLogo} alt="Logo" className="w-32 object-contain" />
@@ -224,7 +340,7 @@ const MenuKiosco: React.FC = () => {
                 </div>
             </aside>
 
-            {/* --- COLUMNA 2: GRID DE PRODUCTOS --- */}
+            {/* --- GRID DE PRODUCTOS --- */}
             <main className="w-3/5 p-6 overflow-y-auto bg-gray-50 relative custom-scrollbar">
 
                 <h2 className="text-4xl font-extrabold text-gray-800 mb-8 capitalize sticky top-0 bg-gray-50/95 z-10 py-4 backdrop-blur-sm border-b border-gray-200">
@@ -252,25 +368,44 @@ const MenuKiosco: React.FC = () => {
 
                     {/* PAQUETES */}
                     {paquetesFiltrados.map(paq => (
-                        <div key={paq.id} className="bg-white rounded-3xl shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-[380px] group border border-gray-100">
+                        <div 
+                            key={paq.id} 
+                            onClick={() => setPaqueteSeleccionado(paq)} // <--- AHORA ABRE MODAL
+                            className="bg-white rounded-3xl shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-[380px] group border-3 border-orange-400 cursor-pointer"
+                        >
                             <div className="h-48 bg-gray-100 relative overflow-hidden shrink-0">
                                 <img
                                     src={paq.image || 'https://via.placeholder.com/300'}
                                     alt={paq.name}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
-                                <div className="absolute top-4 right-4 bg-green-500 text-white px-4 py-1 rounded-full font-extrabold shadow-lg text-lg">
+                                <div className="absolute top-4 right-4 bg-orange-600 text-white px-4 py-1 rounded-full font-extrabold shadow-lg text-lg">
                                     ${parseFloat(paq.price).toFixed(0)}
                                 </div>
                             </div>
+                            
                             <div className="p-5 flex-1 flex flex-col justify-between">
                                 <div>
                                     <h3 className="text-xl font-bold text-gray-800 leading-tight mb-2">{paq.name}</h3>
-                                    <p className="text-xs text-gray-400 line-clamp-3 leading-relaxed">{paq.description}</p>
+                                    
+                                    {/* MUESTRA PREVIA DE ITEMS (Máximo 3) */}
+                                    <div className="text-xs text-gray-500 space-y-1">
+                                        {paq.items.slice(0, 3).map((item: any, i: number) => (
+                                            <div key={i} className="flex gap-1 items-center">
+                                                <span className="font-bold text-gray-500">{item.quantity}x</span> 
+                                                <span className="truncate">{item.product_name}</span>
+                                            </div>
+                                        ))}
+                                        {paq.items.length > 3 && <span className="text-gray-400 italic">+ más...</span>}
+                                    </div>
                                 </div>
+                                
                                 <button
-                                    onClick={() => handleAddPaqueteToCart(paq)}
-                                    className="w-full mt-2 bg-orange-50 hover:bg-orange-500 text-orange-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Para que no abra el modal si dan click directo al botón
+                                        handleAddPaqueteToCart(paq);
+                                    }}
+                                    className="w-full mt-2 bg-orange-50 hover:bg-orange-600 text-orange-600 hover:text-white font-bold py-3 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
                                     Agregar Paquete
                                 </button>
@@ -327,7 +462,7 @@ const MenuKiosco: React.FC = () => {
                 </div>
             </main>
 
-            {/* --- COLUMNA 3: CARRITO --- */}
+            {/* ---  CARRITO --- */}
             <aside className="w-1/5 bg-white border-l border-gray-200 flex flex-col shadow-2xl z-30">
                 <div className="p-6 bg-orange-500 text-white shadow-md">
                     <h3 className="text-xl font-bold flex items-center gap-2">
@@ -345,11 +480,15 @@ const MenuKiosco: React.FC = () => {
                         </div>
                     ) : (
                         items.map((item) => (
-                            <div key={item.idUnico} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 animate-fade-in-up">
+                            <div key={item.idUnico} className="bg-white p-4 rounded-xl shadow-sm border border-gray-300 animate-fade-in-up">
                                 <div className="flex justify-between items-start mb-2">
+                                    <div className="flex-1 pr-2">
                                     <p className="font-bold text-sm text-gray-800 line-clamp-2 leading-tight flex-1 pr-2">
                                         {item.producto.name}
                                     </p>
+                                    {renderDetallesItem(item)}
+
+                                    </div>
                                     <button
                                         onClick={() => eliminarItem(item.idUnico)}
                                         className="text-gray-300 hover:text-red-500 p-1 hover:bg-red-50 rounded-lg transition-colors -mt-1 -mr-1"
@@ -357,6 +496,8 @@ const MenuKiosco: React.FC = () => {
                                         <FaTrash size={14} />
                                     </button>
                                 </div>
+
+                                
 
                                 <div className="flex justify-between items-end">
                                     <div>
@@ -388,12 +529,15 @@ const MenuKiosco: React.FC = () => {
                     )}
                 </div>
 
-                <div className="p-6 bg-white border-t border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+                <div className="p-5 bg-white border-t-4 border-orange-500 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
                     <div className="flex justify-between items-end mb-4">
                         <span className="text-gray-400 font-bold uppercase text-xs tracking-wider">Total a Pagar</span>
+                    </div>
+                    <div className="flex mb-4">
                         <span className="text-gray-900 text-4xl font-extrabold">
                             ${total.toFixed(2)}
                         </span>
+
                     </div>
 
                     <button
@@ -410,7 +554,7 @@ const MenuKiosco: React.FC = () => {
                 </div>
             </aside>
 
-            {/* --- MODAL 1: CHECKOUT (SELECCIÓN DE ENTREGA) --- */}
+            {/* --- MODAL: CHECKOUT (SELECCIÓN DE ENTREGA) --- */}
             {modalCheckout && (
                 <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm animate-fade-in">
                     <div className="bg-white rounded-3xl p-8 max-w-lg w-full">
@@ -433,7 +577,7 @@ const MenuKiosco: React.FC = () => {
                 </div>
             )}
 
-            {/* --- MODAL 2: PANTALLA DE ÉXITO (#01) --- */}
+            {/* --- MODAL : PANTALLA DE ÉXITO  --- */}
             {ordenExitosa !== null && (
                 <div className="fixed inset-0 bg-white z-60 flex flex-col items-center justify-center animate-fade-in">
                     <div className="absolute top-0 bg-orange-500 w-fit px-12 pb-4 pt-2 rounded-b-3xl shadow-lg">
@@ -469,6 +613,14 @@ const MenuKiosco: React.FC = () => {
                     onClose={() => setProductoSeleccionado(null)}
                     onAddToCart={handleAddProductoDesdeModal}
                     onPersonalizar={handlePersonalizarDesdeModal}
+                />
+            )}
+
+            {paqueteSeleccionado && (
+                <ModalDetallePaquete 
+                    paquete={paqueteSeleccionado}
+                    onClose={() => setPaqueteSeleccionado(null)}
+                    onAddToCart={handleAddPaqueteDesdeModal}
                 />
             )}
 

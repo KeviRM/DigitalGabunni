@@ -98,7 +98,7 @@ const ModalPersonalizadorKiosco: React.FC<ModalPersonalizadorKioscoProps> = ({ o
             const productoParaCarrito = {
                 ...productoBase,
                 price: precioTotal.toString(),
-                personalizacion: selecciones, // Guardamos la personalizacion por si se necesita mostrar
+                personalizacion_chapata: selecciones, // Guardamos la personalizacion por si se necesita mostrar
                 name: "Chapata a tu Gusto"
             };
 
