@@ -1,18 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 
 // --- IMPORTS DE API ---
 import { fetchCategorias, fetchProductos, fetchPaquetes } from '../../api/menuApi';
 import { pedidosApi } from '../../api/axiosConfig';
 import useAuth from '../../hooks/useAuth';
 
-// --- IMPORT DEL CONTEXTO KIOSCO (EL MOTOR REAL) ---
+// --- IMPORT DEL CONTEXTO KIOSCO  ---
 import { useKiosco } from '../../context/KioscoContext';
 import ModalPersonalizadorKiosco from './ModalPersonalizadorKiosco';
 import ModalDetalleProducto from './ModalDetalleProducto';
 
 // --- IMPORTS DE ICONOS Y ASSETS ---
-import { FaShoppingCart, FaChevronLeft, FaTrash, FaUtensils, FaBoxOpen } from 'react-icons/fa';
+import { FaShoppingCart, FaChevronLeft, FaTrash, FaUtensils, FaBoxOpen, FaQrcode, FaCashRegister, FaStore, FaWalking } from 'react-icons/fa';
 import gabunniLogo from '../../assets/gabunniLogo.jpg';
 
 
@@ -49,16 +50,81 @@ const MenuKiosco: React.FC = () => {
 
     // --- ESTADOS DE FLUJO ---
     const [modalCheckout, setModalCheckout] = useState(false);
+    const [pasoCheckout, setPasoCheckout] = useState<1 | 2 | 3>(1);
     const [tipoEntrega, setTipoEntrega] = useState<'COMER_AQUI' | 'LLEVAR'>('COMER_AQUI');
+    const [metodoPago, setMetodoPago] = useState<'CAJA' | 'QR'>('CAJA');
+
+
     const [enviandoOrden, setEnviandoOrden] = useState(false);
     const [showModalPersonalizar, setShowModalPersonalizar] = useState(false);
     const [productoSeleccionado, setProductoSeleccionado] = useState<any | null>(null);
 
-    // --- NUEVOS ESTADOS PARA PANTALLA DE ÉXITO (#01) ---
-    const [ordenExitosa, setOrdenExitosa] = useState<number | null>(null);
+    // --- NUEVOS ESTADOS PARA PANTALLA DE ÉXITO ---
+    const [ordenExitosa, setOrdenExitosa] = useState<{ turno: number, metodo: string} | null>(null);
     const [segundosRestantes, setSegundosRestantes] = useState(45);
+    
 
-    // --- 1. CARGA DE DATOS ---
+    // -- ESTADOS PARA PAGO QR ---
+    const [linkQR, setLinkQR] = useState<string | null>(null);
+    const [pedidoPendienteQR, setPedidoPendienteQR] = useState<{order_number: string, daily_sequence: number} | null>(null);
+
+
+
+
+    // --- TIMEOUT DE INACTIVIDAD (2 MINUTOS) ---
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const TIEMPO_INACTIVIDAD = 120000; // 120,000 ms = 2 minutos
+
+    useEffect(() => {
+        const resetTimer = () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            
+            // Si ya está en la pantalla final de éxito, no aplicamos este timeout
+            // (La pantalla de éxito ya tiene su propio contador de 45s para cerrarse)
+            if (ordenExitosa !== null) return;
+
+            timeoutRef.current = setTimeout(() => {
+                console.log(" Tiempo de inactividad alcanzado. Reiniciando Kiosco...");
+                limpiarCarrito();
+                setModalCheckout(false);
+                setLinkQR(null);
+                setPedidoPendienteQR(null);
+                setShowModalPersonalizar(false);
+                setProductoSeleccionado(null);
+                navigate('/kiosco'); // Ajusta esta ruta a tu pantalla de Bienvenida
+            }, TIEMPO_INACTIVIDAD);
+        };
+
+        // Iniciar el timer al montar el componente
+        resetTimer();
+
+        // Lista de eventos que el Kiosco considerará como "actividad"
+        const eventosActividad = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+        
+        // Agregar los "escuchadores" a toda la pantalla
+        eventosActividad.forEach(evento => {
+            document.addEventListener(evento, resetTimer);
+        });
+
+        // Limpiar todo cuando el componente se desmonte
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            eventosActividad.forEach(evento => {
+                document.removeEventListener(evento, resetTimer);
+            });
+        };
+    }, [ordenExitosa, navigate, limpiarCarrito]);
+
+
+
+
+
+
+
+
+
+
+    // --- CARGA DE DATOS ---
     useEffect(() => {
         const cargarDatos = async () => {
             try {
@@ -101,6 +167,47 @@ const MenuKiosco: React.FC = () => {
         setSegundosRestantes(45);
         navigate('/kiosco'); // Volver a bienvenida/inicio
     };
+
+
+
+    /// --- efect websocket para pago QR ---
+    useEffect(() => {
+        let ws: WebSocket | null = null;
+
+        if (pedidoPendienteQR && linkQR) {
+            // Conectar al grupo específico de esta orden
+            // Cambia esto por la URL base de tus websockets (ej. ws://localhost:8000)
+            const wsUrl = `ws://localhost/ws/pedidos/${pedidoPendienteQR.order_number}/`; 
+            ws = new WebSocket(wsUrl);
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log("Mensaje WS recibido:", data);
+                
+                // Si el backend avisa que ya se confirmó
+                if (data.type === 'actualizacion_pedido' && data.pedido.order_number === pedidoPendienteQR.order_number) {
+                    
+                    if (data.pedido.status === 'CONFIRMADO') {
+                        // ¡PAGO EXITOSO!
+                        setLinkQR(null);
+                        setModalCheckout(false);
+                        limpiarCarrito();
+                        
+                        // Guardamos el objeto para la pantalla de éxito
+                        setOrdenExitosa({ turno: pedidoPendienteQR.daily_sequence, metodo: 'QR' });
+                        setPedidoPendienteQR(null);
+                    }
+                }
+            };
+
+            ws.onerror = (error) => console.error("Error WebSocket:", error);
+        }
+
+        // Limpiar conexión si el componente se desmonta o el QR se cierra
+        return () => {
+            if (ws) ws.close();
+        };
+    }, [pedidoPendienteQR, linkQR]);
 
 
     
@@ -148,12 +255,10 @@ const MenuKiosco: React.FC = () => {
             precioFinal += totalExtras;
         }
 
-        //. Crear un objeto producto "clonado" con la info nueva
-        // Inyectamos la personalización DENTRO del producto para que viaje con él en el carrito
         const productoParaCarrito = {
             ...producto,
             price: precioFinal, 
-            personalizacion_interna: personalizacion // Guardamos el JSON para enviarlo al backend luego
+            personalizacion_interna: personalizacion 
         };
 
         //  Agregar al carrito
@@ -194,12 +299,11 @@ const MenuKiosco: React.FC = () => {
                 return {
                     product_name: prod.name,
                     quantity: item.cantidad,
-                    unit_price: item.precio, // El precio ya viene limpio del KioscoContext
+                    unit_price: item.precio, 
                     personalizacion_json: personalizacion
                 };
             });
 
-            // Construcción del Payload con los campos requeridos
             const payload = {
                 client_name: "Cliente Kiosco",
                 phone_number: "0000000000",
@@ -212,16 +316,29 @@ const MenuKiosco: React.FC = () => {
 
             console.log(" Enviando Payload:", payload);
 
+            //crear orden en el backend
             const res = await pedidosApi.post('/api/v1/pedidos/crear/', payload, { headers: getAuthHeaders() });
+            const ordenCreada = res.data;
 
-            // ÉXITO: Obtenemos el número corto (daily_sequence)
-            const numeroTurno = res.data.daily_sequence;
-
-            limpiarCarrito();
-            setModalCheckout(false);
-
-            // Activamos la pantalla de éxito
-            setOrdenExitosa(numeroTurno);
+            if (metodoPago === 'CAJA') {
+                // Flujo Normal: Ir a caja a pagar
+                limpiarCarrito();
+                setModalCheckout(false);
+                setOrdenExitosa({ turno: ordenCreada.daily_sequence, metodo: 'CAJA' });
+            } 
+            else if (metodoPago === 'QR') {
+                // Flujo QR: Pedir link a Mercado Pago
+                const mpRes = await pedidosApi.post('/api/v1/pedidos/crear-pago/', { 
+                    order_id: ordenCreada.order_number 
+                }, { headers: getAuthHeaders() });
+                
+                // Guardar datos para mostrar el QR y activar el WebSocket
+                setLinkQR(mpRes.data.init_point);
+                setPedidoPendienteQR({
+                    order_number: ordenCreada.order_number, 
+                    daily_sequence: ordenCreada.daily_sequence
+                });
+            }
 
         } catch (error: any) {
             console.error("Error creating order:", error);
@@ -247,7 +364,7 @@ const MenuKiosco: React.FC = () => {
                     {/* Lista de productos del paquete */}
                     <div className="flex flex-col space-y-0.5 ml-1 border-l-2 border-blue-100 pl-1">
                         {prod.items?.map((pItem: any, idx: number) => (
-                            <span key={idx} className="text-[10px] text-gray-500 leading-tight">
+                            <span key={idx} className="text-[12px] text-gray-500 leading-tight">
                                 {pItem.quantity}x {pItem.product_name}
                             </span>
                         ))}
@@ -265,10 +382,10 @@ const MenuKiosco: React.FC = () => {
                     <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Modificaciones:</p>
 
                     {sin?.map((ing: any, i: number) => (
-                        <span key={`sin-${i}`} className="text-[10px] text-red-400 line-through leading-tight">Sin {ing.name}</span>
+                        <span key={`sin-${i}`} className="text-[12px] text-red-400 line-through leading-tight">Sin {ing.name}</span>
                     ))}
                     {extras?.map((ing: any, i: number) => (
-                        <span key={`extra-${i}`} className="text-[10px] text-green-600 font-bold leading-tight">+ {ing.name}</span>
+                        <span key={`extra-${i}`} className="text-[12px] text-green-600 font-bold leading-tight">+ {ing.name}</span>
                     ))}
                 </div>
             );
@@ -284,11 +401,11 @@ const MenuKiosco: React.FC = () => {
                         <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Ingredientes:</p>
                         <div className="flex flex-wrap gap-1">
                             {todos.slice(0, 5).map((ing: any, i: number) => (
-                                <span key={i} className="text-[10px] text-gray-500 bg-gray-100 px-1.5 rounded border border-gray-200">
+                                <span key={i} className="text-[12px] text-gray-500 bg-gray-100 px-1.5 rounded border border-gray-200">
                                     {ing.name}
                                 </span>
                             ))}
-                            {todos.length > 5 && <span className="text-[10px] text-gray-400">...</span>}
+                            {todos.length > 5 && <span className="text-[12px] text-gray-400">...</span>}
                         </div>
                     </div>
                 );
@@ -554,44 +671,155 @@ const MenuKiosco: React.FC = () => {
                 </div>
             </aside>
 
-            {/* --- MODAL: CHECKOUT (SELECCIÓN DE ENTREGA) --- */}
+            
+            {/* --- MODAL MULTI-PASO (CHECKOUT / PAGO / QR) --- */}
             {modalCheckout && (
                 <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white rounded-3xl p-8 max-w-lg w-full">
-                        <h3 className="text-3xl font-bold text-center mb-6 text-gray-800">¿Para dónde es?</h3>
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <button onClick={() => setTipoEntrega('COMER_AQUI')} className={`p-6 rounded-2xl border-4 font-bold transition-all ${tipoEntrega === 'COMER_AQUI' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-100 text-gray-400'}`}>
-                                <span className="text-3xl block mb-2"></span> Para Comer Aquí
-                            </button>
-                            <button onClick={() => setTipoEntrega('LLEVAR')} className={`p-6 rounded-2xl border-4 font-bold transition-all ${tipoEntrega === 'LLEVAR' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-100 text-gray-400'}`}>
-                                <span className="text-3xl block mb-2"></span> Para Llevar
-                            </button>
-                        </div>
-                        <div className="flex gap-4">
-                            <button onClick={() => setModalCheckout(false)} className="flex-1 py-4 font-bold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Volver</button>
-                            <button onClick={handleConfirmarOrden} disabled={enviandoOrden} className="flex-2 py-4 font-bold text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors shadow-lg">
-                                {enviandoOrden ? 'Enviando...' : 'Finalizar'}
-                            </button>
-                        </div>
+                    <div className="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl relative">
+                        
+                        {/* PASO 1: RESUMEN DE LA ORDEN (NUEVO) */}
+                        {pasoCheckout === 1 && !linkQR && (
+                            <div className="animate-fade-in">
+                                <h3 className="text-3xl font-bold text-center mb-6 text-gray-800">Verifica tu Orden</h3>
+                                
+                                <div className="max-h-64 overflow-y-auto mb-6 pr-2 custom-scrollbar space-y-3 bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                                    {items.map(item => (
+                                        <div key={item.idUnico} className="flex justify-between items-center bg-white p-4 border-b-orange-300 border-b-2 rounded-xl shadow-sm">
+                                            <div className="flex-1 pr-4">
+                                                <p className="font-bold text-lg text-gray-800">{item.cantidad}x {item.producto.name}</p>
+                                                {/* Reutilizamos el helper que hicimos antes para mostrar los extras/sin */}
+                                                {renderDetallesItem(item)}
+                                            </div>
+                                            <div className="text-xl font-bold text-green-600">
+                                                ${(item.precio * item.cantidad).toFixed(2)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex justify-between items-center mb-8 px-4">
+                                    <span className="text-gray-500 font-bold uppercase tracking-wider">Total a Pagar:</span>
+                                    <span className="text-4xl font-extrabold text-orange-500">${total.toFixed(2)}</span>
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <button onClick={() => setModalCheckout(false)} className="flex-1 py-4 font-bold text-gray-500 bg-gray-300 rounded-xl hover:bg-gray-200">Seguir editando</button>
+                                    <button onClick={() => setPasoCheckout(2)} className="flex-2 py-4 font-bold text-white bg-orange-500 rounded-xl shadow-lg hover:bg-orange-600">Todo Correcto</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PASO 2: TIPO DE ENTREGA */}
+                        {pasoCheckout === 2 && !linkQR && (
+                            <div className="animate-fade-in">
+                                <h3 className="text-3xl font-bold text-center mb-6 text-gray-800">¿Para dónde es?</h3>
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <button onClick={() => setTipoEntrega('COMER_AQUI')} className={`p-6 rounded-2xl border-4 font-bold transition-all ${tipoEntrega === 'COMER_AQUI' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-300 text-gray-400 hover:border-orange-200'}`}>
+                                        <span className="text-4xl flex justify-center items-center  mb-2"><FaUtensils/></span> Para Comer Aquí
+                                    </button>
+                                    <button onClick={() => setTipoEntrega('LLEVAR')} className={`p-6 rounded-2xl border-4 font-bold transition-all ${tipoEntrega === 'LLEVAR' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-300 text-gray-400 hover:border-orange-200'}`}>
+                                        <span className="text-4xl flex justify-center items-center  mb-2"><FaWalking/></span> Para Llevar
+                                    </button>
+                                </div>
+                                <div className="flex gap-4">
+                                    <button onClick={() => setPasoCheckout(1)} className="flex-1 py-4 font-bold text-gray-500 bg-gray-300 rounded-xl hover:bg-gray-200">Atrás</button>
+                                    <button onClick={() => setPasoCheckout(3)} className="flex-2 py-4 font-bold text-white bg-orange-500 rounded-xl shadow-lg hover:bg-orange-600">Siguiente</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PASO 3: MÉTODO DE PAGO */}
+                        {pasoCheckout === 3 && !linkQR && (
+                            <div className="animate-fade-in">
+                                <h3 className="text-3xl font-bold text-center mb-3 text-gray-800">¿Cómo deseas pagar?</h3>
+                                <p className="text-center text-gray-500 text-2xl mb-8">Total a pagar: <span className="font-bold text-2xl text-green-600">${total.toFixed(2)}</span></p>
+                                
+                                <div className="grid grid-cols-2 gap-4 mb-8">
+                                    <button onClick={() => setMetodoPago('QR')} className={`p-6 rounded-2xl border-4 font-bold transition-all flex flex-col items-center justify-center gap-2 ${metodoPago === 'QR' ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-300 text-gray-400 hover:border-blue-200'}`}>
+                                        <span className="text-4xl"><FaQrcode/></span> 
+                                        <span> QR</span>
+                                        <span className="text-[13px] font-normal text-gray-400 mt-1">Mercado Pago / App Bancaria</span>
+                                    </button>
+                                    <button onClick={() => setMetodoPago('CAJA')} className={`p-6 rounded-2xl border-4 font-bold transition-all flex flex-col items-center justify-center gap-2 ${metodoPago === 'CAJA' ? 'border-green-500 bg-green-50 text-green-600' : 'border-gray-300 text-gray-400 hover:border-green-200'}`}>
+                                        <span className="text-4xl"> <FaCashRegister/>  </span> 
+                                        <span>En Caja</span>
+                                        <span className="text-[13px] font-normal text-gray-400 mt-1">Efectivo o Tarjeta Física</span>
+                                    </button>
+                                </div>
+
+                                <div className="flex gap-4">
+                                    <button onClick={() => setPasoCheckout(2)} className="flex-1 py-4 font-bold text-gray-500 bg-gray-300 rounded-xl hover:bg-gray-200">Atrás</button>
+                                    <button onClick={handleConfirmarOrden} disabled={enviandoOrden} className="flex-2 py-4 font-bold text-white bg-green-600 rounded-xl shadow-lg hover:bg-green-700">
+                                        {enviandoOrden ? 'Procesando...' : (metodoPago === 'QR' ? 'Generar QR' : 'Confirmar Orden')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PASO 4: MOSTRAR EL QR */}
+                        {linkQR && (
+                            <div className="animate-fade-in flex flex-col items-center text-center">
+                                <h3 className="text-2xl font-bold text-gray-800 mb-2">Escanea para pagar</h3>
+                                <p className="text-gray-500 mb-6">Abre la app de Mercado Pago o la cámara de tu celular.</p>
+                                
+                                <div className="bg-white p-4 rounded-2xl shadow-lg border-4 border-blue-500 mb-6">
+                                    <QRCodeSVG value={linkQR} size={250} level="H" includeMargin={true} />
+                                </div>
+                                
+                                <div className="flex items-center gap-3 text-blue-600 font-bold mb-6 animate-pulse">
+                                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                                    Esperando confirmación de pago...
+                                </div>
+
+                                <button 
+                                    onClick={() => {
+                                        setLinkQR(null);
+                                        setModalCheckout(false);
+                                        limpiarCarrito();
+                                        // SI SE RINDE CON EL QR, LO MANDAMOS A CAJA
+                                        setOrdenExitosa({ turno: pedidoPendienteQR?.daily_sequence || 0, metodo: 'CAJA' });
+                                        setPedidoPendienteQR(null);
+                                    }} 
+                                    className="text-gray-400 text-sm font-bold hover:text-gray-600 underline"
+                                >
+                                    Prefiero pagar en la caja
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
 
-            {/* --- MODAL : PANTALLA DE ÉXITO  --- */}
+            {/* --- MODAL 2: PANTALLA DE ÉXITO (#01) --- */}
             {ordenExitosa !== null && (
-                <div className="fixed inset-0 bg-white z-60 flex flex-col items-center justify-center animate-fade-in">
+                <div className="fixed inset-0 bg-white z-[60] flex flex-col items-center justify-center animate-fade-in">
                     <div className="absolute top-0 bg-orange-500 w-fit px-12 pb-4 pt-2 rounded-b-3xl shadow-lg">
                         <img src={gabunniLogo} className="h-20 object-contain brightness-0 invert" alt="Gabunni" />
                     </div>
 
                     <div className="border-4 border-orange-500 rounded-[3rem] p-12 max-w-4xl w-full text-center mt-10 shadow-2xl bg-white">
                         <div className="text-[150px] font-extrabold text-orange-500 leading-none mb-4 drop-shadow-sm">
-                            #{ordenExitosa.toString().padStart(2, '0')}
+                            #{ordenExitosa.turno.toString().padStart(2, '0')}
                         </div>
-                        <h2 className="text-4xl text-orange-800 font-bold mb-6">Tu pedido está creado!</h2>
+                        
+                        {/* Título Dinámico */}
+                        <h2 className="text-4xl text-orange-800 font-bold mb-6">
+                            {ordenExitosa.metodo === 'QR' ? '¡Pago Confirmado!' : '¡Tu pedido está registrado!'}
+                        </h2>
+                        
+                        {/* Texto Dinámico */}
                         <p className="text-2xl text-gray-600 mb-12 font-medium">
-                            Pasa a caja y menciona el número <strong className="text-orange-600 text-3xl">#{ordenExitosa.toString().padStart(2, '0')}</strong> para pagar.
+                            {ordenExitosa.metodo === 'CAJA' ? (
+                                <>
+                                    Pasa a caja y menciona el número <strong className="text-orange-600 text-3xl">#{ordenExitosa.turno.toString().padStart(2, '0')}</strong> para pagar.
+                                </>
+                            ) : (
+                                <>
+                                    Tu orden ya está en la cocina. Por favor, espera a que llamen tu número <strong className="text-orange-600 text-3xl">#{ordenExitosa.turno.toString().padStart(2, '0')}</strong> en la zona de entrega.
+                                </>
+                            )}
                         </p>
+
                         <button onClick={handleFinalizar} className="bg-white border-2 border-orange-500 text-orange-500 text-2xl font-bold py-4 px-20 rounded-full hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-md">
                             Finalizar
                         </button>

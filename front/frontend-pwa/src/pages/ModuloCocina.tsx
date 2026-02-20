@@ -153,6 +153,8 @@ const ModuloCocina: React.FC = () => {
                 Módulo de Cocina
             </h1>
 
+            
+
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
                 {pedidos.length === 0 ? (
@@ -167,7 +169,7 @@ const ModuloCocina: React.FC = () => {
                         >
                             <h2 className="text-2xl font-bold mb-2 flex justify-between items-center">
                                 <span>Pedido #{pedido.order_number.substring(0, 8)}</span>
-                                <span className='text-sm font-semibold text-gray-500'>{pedido.type_delivery === 'RECOGER' ? 'Recoger' : 'Domicilio'}</span>
+                                <span className='text-sm font-semibold text-gray-500'>{pedido.type_delivery === 'RECOGER' ? 'Recoger' : pedido.type_delivery === 'DOMICILIO' ? 'Domicilio' : pedido.type_delivery === 'LLEVAR' ? 'Para llevar' : 'Comer en el local'}</span>
                             </h2>
                             <p className="text-sm text-gray-600 mb-3">Cliente: {pedido.client_name} | Tel: {pedido.phone_number}</p>
 

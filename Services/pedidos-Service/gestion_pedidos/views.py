@@ -288,7 +288,9 @@ class CreatePaymentPreference(APIView):
                 }
                     
             },
-            "notification_url": "https://gabunny.agenciakeops.com/api/v1/pedidos/webhook/",
+            
+            ##notification_url": "https://gabunny.agenciakeops.com/api/v1/pedidos/webhook/",
+            "notification_url": "https://alaine-nongrounding-subconically.ngrok-free.dev/api/v1/pedidos/webhook/",
             "payment_methods": {
                 "excluded_payment_types": [
                     {"id": "ticket"}, # Excluye OXXO/Pago en efectivo diferido
@@ -390,36 +392,43 @@ class MercadoPagoWebhook(APIView):
         try:
             pedido = Pedido.objects.get(order_number=order_number)
 
-            # 3. IDEMPOTENCIA: Si ya está confirmado, no hacer nada (evita duplicados)
-            if pedido.status != 'PENDIENTE':
-                print(" El pedido ya estaba procesado. Saltando...")
+            # 3. IDEMPOTENCIA: Si el pedido YA está confirmado, evitamos procesarlo doble
+            # Aceptamos pedidos que vengan como 'PENDIENTE' (App) o 'ESPERANDO_PAGO' (Kiosco)
+            if pedido.status == 'CONFIRMADO':
+                print(" El pedido ya estaba procesado y confirmado. Saltando...")
                 return
 
-            # 4. Actualizar estado
-            pedido.status = 'CONFIRMADO' # O el estado inicial para cocina (ej: CONFIRMADO)
+            # 4. Actualizar estado a confirmado
+            pedido.status = 'CONFIRMADO' 
             pedido.save()
 
-            # 5. Notificar a Cocina vía WebSocket (¡Magia!) 
+            # 5. Notificar vía WebSocket
             channel_layer = get_channel_layer()
             data_pedido = {
                 'order_number': str(pedido.order_number),
                 'status': pedido.status,
                 'client_name': pedido.client_name,
             }
-            
-            # Avisar a Cocina
+
             async_to_sync(channel_layer.group_send)(
                 'grupo_cocina', 
                 {'type': 'pedido_update', 'pedido': data_pedido}
             )
             
-            # Avisar al Cliente (Su pantalla de "Esperando pago" cambiará sola)
+             # A) Avisar al canal GENERAL (El que configuramos en React para la Caja y Kiosco)
+             
+            async_to_sync(channel_layer.group_send)(
+                'pedidos', # Asegúrate de que 'pedidos' es el nombre de tu grupo general en routing/consumers
+                {'type': 'pedido_update', 'pedido': data_pedido}
+            )
+            
+            # B) Avisar al canal ESPECÍFICO (Por si tienes a alguien escuchando la ruta privada)
             async_to_sync(channel_layer.group_send)(
                 f'grupo_{str(pedido.order_number)}', 
                 {'type': 'pedido_update', 'pedido': data_pedido}
             )
             
-            print(" Notificaciones WebSocket enviadas")
+            print(f" Notificaciones WebSocket enviadas con éxito para {order_number}")
 
         except Pedido.DoesNotExist:
             print(f" Pedido {order_number} no encontrado en DB")
