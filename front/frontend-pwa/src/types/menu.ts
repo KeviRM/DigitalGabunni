@@ -15,6 +15,7 @@ export interface Producto {
     category_name: string;
     is_active: boolean;
     receta: RecetaItem[];
+    extras_disponibles?: Ingrediente[];
 
 }
 
@@ -35,6 +36,7 @@ export interface ClaseIngrediente {
     required: boolean;
     ingredientes: Ingrediente[];
     single_selection: boolean;
+    
 
 }
 
@@ -98,6 +100,7 @@ export interface RecetaItem {
     produto_nombre?: string;
     ingrediente_nombre?: string;
     ingrediente_name?: string; // Agregado para compatibilidad
+    is_removable?: boolean;
 
 }
 

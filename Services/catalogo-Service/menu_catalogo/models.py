@@ -35,6 +35,7 @@ class ClaseIngrediente(models.Model):
     required = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     single_selection = models.BooleanField(default=False)
+    is_extra = models.BooleanField(default=False, verbose_name="¿Es un extra?") 
     
     def __str__(self):
         return f"{self.name} ({'Único' if self.single_selection else 'Múltiple'})"
@@ -75,6 +76,7 @@ class ProductoIngrediente(models.Model):
     product = models.ForeignKey(Producto, on_delete=models.CASCADE, related_name='receta')
     ingredient = models.ForeignKey(Ingrediente, on_delete= models.CASCADE)
     quantity = models.DecimalField(max_digits=6, decimal_places=2, default=1)
+    is_removable = models.BooleanField(default=True, verbose_name="¿Se puede eliminar?") # Si el cliente puede eliminar este ingrediente
     
     
     class Meta:

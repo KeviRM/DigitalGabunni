@@ -63,8 +63,9 @@ class RecetaSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ProductoIngrediente
-        fields = ['ingrediente_name', 'quantity', 'unidad']
-        
+        fields = ['ingrediente_name', 'quantity', 'unidad', 'is_removable']
+
+
         
         
     
@@ -95,6 +96,12 @@ class ProductoSerializer(serializers.ModelSerializer):
         ]
         
         
+    extras_disponibles = serializers.SerializerMethodField()
+    def get_extras_disponibles(self, obj):
+        extras = Ingrediente.objects.filter(_class__is_extra=True, available=True)
+        return IngredienteSerializer(extras, many=True).data
+    
+        
         
         
         
@@ -124,7 +131,7 @@ class ProductoIngredienteAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductoIngrediente
     
-        fields = ['id', 'product', 'ingredient', 'quantity', 'producto_nombre', 'ingrediente_nombre']
+        fields = ['id', 'product', 'ingredient', 'quantity', 'producto_nombre', 'ingrediente_nombre', 'is_removable']
         read_only_fields = ['id', 'producto_nombre', 'ingrediente_nombre']
         
         
