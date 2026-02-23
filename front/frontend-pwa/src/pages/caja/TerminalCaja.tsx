@@ -13,6 +13,38 @@ const TerminalCaja: React.FC = () => {
     const [modalAbierto, setModalAbierto] = useState(false);
     const { getAuthHeaders } = useAuth();
 
+
+      // --- FUNCIÓN PARA CANCELAR MANUALMENTE DESDE CAJA ---
+    const handleCancelarOrden = async (orderNumber: string) => {
+        // Confirmación de seguridad
+        const confirmar = window.confirm("¿Estás seguro de que deseas cancelar esta orden? Esta acción no se puede deshacer.");
+        if (!confirmar) return;
+
+        try {
+            // Petición al backend (Ajusta la ruta base según tu urls.py)
+            // Usamos PATCH porque así lo definiste en tu CajaViewSet
+            await pedidosApi.patch(`/api/v1/pedidos/caja/${orderNumber}/cancelar/`, {}, {
+                headers: getAuthHeaders()
+            });
+            
+            // Feedback visual
+            alert("Orden cancelada exitosamente.");
+            
+            //  Actualizar la interfaz
+            // Llama a tu función que descarga los pedidos de nuevo para que desaparezca de la lista
+            fetchPedidos(); // <-- Cambia esto por el nombre real de tu función
+            
+            // Si el pedido que acabamos de cancelar era el que estábamos viendo, cerramos los detalles
+            if (pedidoSeleccionado?.order_number === orderNumber) {
+                setPedidoSeleccionado(null);
+            }
+            
+        } catch (error) {
+            console.error("Error al cancelar la orden:", error);
+            alert("Hubo un error al cancelar la orden. Por favor, intenta de nuevo.");
+        }
+    };
+
     // 1. Cargar Pedidos
     const fetchPedidos = async () => {
         try {
@@ -59,6 +91,9 @@ const TerminalCaja: React.FC = () => {
                 </div>
             );
         }
+
+
+
 
         // Ingredientes
         const ingredientes = Object.values(personalizacion).flat() as any[];
@@ -194,21 +229,23 @@ const TerminalCaja: React.FC = () => {
                             {/* Botonera de Acción */}
                             <div className="grid grid-cols-3 gap-6">
                                 <button 
-                                    onClick={() => alert("Funcionalidad Cancelar pendiente")} // Conectar a tu lógica de cancelar
-                                    className="py-4 rounded-xl border-2 border-red-500 text-red-500 font-bold text-lg hover:bg-red-50 transition flex items-center justify-center gap-2"
+                                
+                                    onClick={() => handleCancelarOrden(pedidoSeleccionado.order_number)}
+                                    className="py-4 rounded-xl border-2 border-red-500 text-red-500 font-bold text-lg hover:bg-red-200 transition flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <FaTimes /> Cancelar Orden
                                 </button>
                                 
+                                
                                 <button 
-                                    className="py-4 rounded-xl border-2 border-gray-500 text-gray-600 font-bold text-lg hover:bg-gray-50 transition flex items-center justify-center gap-2"
+                                    className="py-4 rounded-xl border-2 border-gray-500 text-gray-600 font-bold text-lg hover:bg-gray-300 transition flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <FaEdit /> Editar Orden
                                 </button>
                                 
                                 <button 
                                     onClick={() => setModalAbierto(true)}
-                                    className="py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition flex items-center justify-center gap-2"
+                                    className="py-4 rounded-xl bg-green-600 text-white font-bold text-lg hover:bg-green-700 shadow-lg shadow-green-200 transition flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <FaCheckCircle /> CONFIRMAR PAGO
                                 </button>

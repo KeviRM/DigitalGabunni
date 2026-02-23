@@ -62,6 +62,7 @@ import { AuthProvider } from "./context/AuthContext";
 import GestionCaja from "./pages/caja/GestionCaja";
 import CajaLayout from "./layouts/CajaLayout";
 import TerminalCaja from "./pages/caja/TerminalCaja";
+import PuntoDeVenta from "./pages/caja/PuntoDeVenta";
 
 //KIOSCO
 import KioscoLayout from "./layouts/KioscoLayout";
@@ -123,6 +124,8 @@ function App() {
                 <Route index element={<Navigate to="/caja/terminal" replace />} />
                 <Route path="terminal" element={<TerminalCaja />} />
                 <Route path="gestion" element={<GestionCaja />} />
+                <Route path="nueva-orden" element={<PuntoDeVenta />} />
+                
 
                 
               </Route>
