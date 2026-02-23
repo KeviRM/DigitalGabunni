@@ -24,6 +24,7 @@ const GestionRecetas: React.FC = () => {
     // Estado para el formulario de adición
     const [nuevoIngredienteId, setNuevoIngredienteId] = useState<number | ''>('');
     const [cantidad, setCantidad] = useState('1');
+    const [removible, setRemovible] = useState(true);
     
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -97,6 +98,7 @@ const GestionRecetas: React.FC = () => {
                 product: Number(productoSeleccionadoId),
                 ingredient: Number(nuevoIngredienteId),
                 quantity: cantidad,
+                is_removable: removible
             };
             
             const response = await catalogoApi.post(`${CATALOGO_API_URL}recetas/`, newReceta, AUTH_HEADERS);
@@ -184,6 +186,19 @@ const GestionRecetas: React.FC = () => {
                                 required
                             />
                         </div>
+                        
+                        <div className="col-span-1 md:col-span-1">
+                             <label className="flex items-center space-x-2 text-sm text-gray-700">
+                                <input 
+                                    type="checkbox"
+                                    checked={removible}
+                                    onChange={e => setRemovible(e.target.checked)}
+                                    className="text-red-500 focus:ring-red-500"
+                                    
+                                />
+                                <span className="font-bold text-red-600">Es un extra? </span>
+                            </label>
+                        </div>
 
                          <div className="col-span-1 md:col-span-1">
                             <label className="block text-sm font-medium mb-1">Unidad:</label>
@@ -213,6 +228,15 @@ const GestionRecetas: React.FC = () => {
                                 <span className="font-semibold">{r.ingrediente_nombre}</span>
                                 <span className="text-sm text-gray-600">
                                     {r.quantity} {ingredientesBase.find(i => i.name === r.ingrediente_nombre)?.unidad_abreviatura || 'unidades'}
+                                </span>
+                                <span className="flex items-center space-x-2 text-sm text-gray-700">
+                                <input 
+                                    type="checkbox"
+                                    checked={r.is_removable}
+                                    disabled
+                                
+                                />
+                                    <span className="font-bold text-gray-400">Es un extra? </span>
                                 </span>
                                 <button
                                     onClick={() => handleDeleteReceta(r.id!)}

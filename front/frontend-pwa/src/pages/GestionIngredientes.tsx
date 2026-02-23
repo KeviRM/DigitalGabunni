@@ -19,6 +19,7 @@ interface ClaseIngrediente {
     single_selection: boolean;
     required: boolean;
     ingredientes: Ingrediente[];
+    is_extra: boolean;
 }
 
 const CATALOGO_API_URL = '/api/v1/catalogo/';
@@ -32,7 +33,7 @@ const GestionIngredientes: React.FC = () => {
     const [claseSeleccionada, setClaseSeleccionada] = useState<ClaseIngrediente | null>(null);
     
     // Formularios
-    const [formClase, setFormClase] = useState({ name: '', single_selection: false, required:false });
+    const [formClase, setFormClase] = useState({ name: '', single_selection: false, required:false, is_extra:false });
     const [formIngrediente, setFormIngrediente] = useState({ name: '', additional_price: '0', available: true });
     
     const [editandoClase, setEditandoClase] = useState<number | null>(null);
@@ -77,7 +78,7 @@ const GestionIngredientes: React.FC = () => {
             } else {
                 await catalogoApi.post(`${CATALOGO_API_URL}personalizacion/`, formClase, AUTH_HEADERS);
             }
-            setFormClase({ name: '', single_selection: false, required:false });
+            setFormClase({ name: '', single_selection: false, required:false, is_extra:false });
             setEditandoClase(null);
             fetchClases();
         } catch (err) { alert("Error al guardar clase"); }
@@ -94,7 +95,7 @@ const GestionIngredientes: React.FC = () => {
 
     const startEditClase = (c: ClaseIngrediente) => {
         setEditandoClase(c.id!);
-        setFormClase({ name: c.name, single_selection: c.single_selection , required: c.required});
+        setFormClase({ name: c.name, single_selection: c.single_selection , required: c.required, is_extra: c.is_extra});
     };
 
     // --- LÓGICA DE INGREDIENTES ---
@@ -158,7 +159,7 @@ const GestionIngredientes: React.FC = () => {
                                 <span>Selección Única </span>
                             </label>
 
-                            {/* NUEVO CHECKBOX REQUERIDO */}
+                            {/*  CHECKBOX REQUERIDO */}
                             <label className="flex items-center space-x-2 text-sm text-gray-700">
                                 <input 
                                     type="checkbox"
@@ -167,6 +168,17 @@ const GestionIngredientes: React.FC = () => {
                                     className="text-red-500 focus:ring-red-500"
                                 />
                                 <span className="font-bold text-red-600">Requerido </span>
+                            </label>
+
+                            {/* CHECKBOX EXTRA */}
+                            <label className="flex items-center space-x-2 text-sm text-gray-700">
+                                <input 
+                                    type="checkbox"
+                                    checked={formClase.is_extra}
+                                    onChange={e => setFormClase({...formClase, is_extra: e.target.checked})}
+                                    className="text-red-500 focus:ring-red-500"
+                                />
+                                <span className="font-bold text-red-600">Es un extra? </span>
                             </label>
                         </div>
 

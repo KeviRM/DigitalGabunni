@@ -31,7 +31,7 @@ class ClaseIngredienteSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = ClaseIngrediente
-        fields = ['id', 'name', 'required', 'single_selection', 'created_at', 'ingredientes']
+        fields = ['id', 'name', 'required', 'single_selection', 'created_at', 'ingredientes', 'is_extra']
         
         
 ######Serializer de categorias
@@ -79,6 +79,7 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     receta = RecetaSerializer(many=True, read_only=True)
     
+    extras_disponibles = serializers.SerializerMethodField()
     class Meta:
         model = Producto
         
@@ -92,11 +93,11 @@ class ProductoSerializer(serializers.ModelSerializer):
             'category_name',
             'is_active',
             'created_at',
-            'receta'
+            'receta',
+            'extras_disponibles'
         ]
         
         
-    extras_disponibles = serializers.SerializerMethodField()
     def get_extras_disponibles(self, obj):
         extras = Ingrediente.objects.filter(_class__is_extra=True, available=True)
         return IngredienteSerializer(extras, many=True).data
