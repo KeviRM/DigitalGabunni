@@ -586,9 +586,43 @@ class CajaViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def pendientes(self, request):
+
+
+        tiempo_limite = timezone.now() - timedelta(minutes=15)
+
+        pedidos_caducados = Pedido.objects.filter(
+            status='ESPERANDO_PAGO',
+            created_at__lte=tiempo_limite
+        )
+
+        if pedidos_caducados.exists():
+            pedidos_caducados.update(status='CANCELADO')
+
+
         pedidos = Pedido.objects.filter(status='ESPERANDO_PAGO').order_by('created_at')
         serializer = PedidoEstadoSerializer(pedidos, many=True)
         return Response(serializer.data)
+    
+
+
+
+# ---  ENDPOINT PARA CANCELACIÓN MANUAL ---
+    @action(detail=False, methods=['patch'], url_path='(?P<order_number>[^/.]+)/cancelar')
+    def cancelar_pedido(self, request, order_number=None):
+        try:
+            pedido = Pedido.objects.get(order_number=order_number)
+            pedido.status = 'CANCELADO'
+            pedido.save()
+            
+            # Opcional: Podrías emitir un WebSocket aquí para que la cocina o el kiosco se enteren
+            
+            return Response({"status": "Pedido cancelado correctamente"}, status=200)
+        except Pedido.DoesNotExist:
+            return Response({'error': 'Pedido no encontrado'}, status=404)
+
+
+
+
 
     @action(detail=False, methods=['post'], url_path='(?P<order_number>[^/.]+)/confirmar_pago')
     def confirmar_pago(self, request, order_number=None):

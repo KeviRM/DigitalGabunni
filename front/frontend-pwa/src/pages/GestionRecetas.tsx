@@ -196,7 +196,7 @@ const GestionRecetas: React.FC = () => {
                                     className="text-red-500 focus:ring-red-500"
                                     
                                 />
-                                <span className="font-bold text-red-600">Es un extra? </span>
+                                <span className="font-bold text-red-600">Es removible? </span>
                             </label>
                         </div>
 
@@ -236,7 +236,7 @@ const GestionRecetas: React.FC = () => {
                                     disabled
                                 
                                 />
-                                    <span className="font-bold text-gray-400">Es un extra? </span>
+                                    <span className="font-bold text-gray-400">Es removible? </span>
                                 </span>
                                 <button
                                     onClick={() => handleDeleteReceta(r.id!)}
