@@ -77,38 +77,68 @@ const TerminalCaja: React.FC = () => {
         return diff < 1 ? 'ahora' : `hace ${diff} min`;
     };
 
-    // 2. Helper de Personalización (MEJORADO)
-    const renderPersonalizacion = (personalizacion: any) => {
-        if (!personalizacion || Object.keys(personalizacion).length === 0) return null;
+   // --- HELPER DE PERSONALIZACIÓN PRO (CAJA / POS) ---
+    const renderPersonalizacionPro = (personalizacion: any) => {
+        if (!personalizacion || typeof personalizacion !== 'object' || Object.keys(personalizacion).length === 0) return null;
 
-        // Paquetes
-        if (personalizacion["Contenido"]) {
+        // 1. Paquetes (Contenido)
+        if (personalizacion.Contenido || personalizacion.contenido) {
+            const items = personalizacion.Contenido || personalizacion.contenido;
             return (
-                <div className="text-xs text-gray-500 mt-1 ml-4 border-l-2 border-blue-200 pl-2">
-                    {personalizacion["Contenido"].map((item: any, i: number) => (
-                         <div key={i}>• {item.product_name || item.name}</div>
+                <div className="mt-2 ml-2">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Contenido del Paquete:</p>
+                    <div className="flex flex-col space-y-1 border-l-2 border-blue-200 pl-3">
+                        {items.map((item: any, i: number) => (
+                            <span key={i} className="text-xs text-gray-600 font-medium">
+                                {item.quantity || 1}x {item.product_name || item.name}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // 2. Modificaciones (Sin / Extras)
+        if (personalizacion.modificaciones) {
+            const { extras, sin } = personalizacion.modificaciones;
+            return (
+                <div className="flex flex-col mt-2 ml-2 space-y-1">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Modificaciones:</p>
+                    {sin && sin.map((ing: any, i: number) => (
+                        <span key={`sin-${i}`} className="text-xs text-red-400 line-through font-medium">
+                            - Sin {ing.name}
+                        </span>
+                    ))}
+                    {extras && extras.map((ing: any, i: number) => (
+                        <span key={`extra-${i}`} className="text-xs text-green-600 font-bold">
+                            + {ing.name}
+                        </span>
                     ))}
                 </div>
             );
         }
 
-
-
-
-        // Ingredientes
-        const ingredientes = Object.values(personalizacion).flat() as any[];
-        return (
-            <div className="mt-1 ml-4 text-sm">
-                {ingredientes.map((ing: any, idx: number) => {
-                    const esExtra = parseFloat(ing.additional_price) > 0;
-                    return (
-                        <div key={idx} className={`${esExtra ? 'text-green-600 font-bold' : 'text-gray-500'}`}>
-                            {esExtra ? '+ ' : '• '} {ing.name}
+        // 3. Chapata Personalizada (Cualquier otra llave que contenga ingredientes)
+        const categorias = Object.keys(personalizacion).filter(k => k !== 'modificaciones' && k !== 'Contenido' && k !== 'contenido');
+        if (categorias.length > 0) {
+            const todos = categorias.flatMap(k => personalizacion[k]);
+            if (todos.length > 0) {
+                return (
+                    <div className="mt-2 ml-2">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Ingredientes:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                            {todos.map((ing: any, i: number) => (
+                                <span key={i} className="text-[11px] font-bold text-gray-600 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                                    {ing.name}
+                                </span>
+                            ))}
                         </div>
-                    );
-                })}
-            </div>
-        );
+                    </div>
+                );
+            }
+        }
+
+        return null;
     };
 
     return (
@@ -202,7 +232,7 @@ const TerminalCaja: React.FC = () => {
                                             <h3 className="font-bold text-xl text-gray-800">{detalle.product_name}</h3>
                                         </div>
                                         {/* Renderizamos personalización con la nueva función */}
-                                        {renderPersonalizacion(detalle.personalizacion_json)}
+                                        { renderPersonalizacionPro(detalle.personalizacion_json)}
                                     </div>
 
                                     {/* Derecha: Precio */}

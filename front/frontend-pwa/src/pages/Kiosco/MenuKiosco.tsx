@@ -251,7 +251,7 @@ const MenuKiosco: React.FC = () => {
         
         if (personalizacion?.modificaciones?.extras) {
             // Sumamos el precio de cada extra seleccionado
-            const totalExtras = personalizacion.modificaciones.extras.reduce((sum: number, ext: any) => sum + parseFloat(ext.price), 0);
+            const totalExtras = personalizacion.modificaciones.extras.reduce((sum: number, ext: any) => sum + parseFloat(ext.additional_price || ext.price || 0), 0);
             precioFinal += totalExtras;
         }
 
