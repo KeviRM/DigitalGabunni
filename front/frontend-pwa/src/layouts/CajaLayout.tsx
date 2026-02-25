@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
-import { FaPowerOff, FaCashRegister } from 'react-icons/fa';
+import { FaPowerOff, FaCashRegister, FaRegPlusSquare } from 'react-icons/fa';
 import gabunniLogo from '../assets/gabunniLogo.jpg'; // Asegúrate de que la ruta sea correcta
 
 const CajaLayout: React.FC = () => {
@@ -21,21 +21,40 @@ const CajaLayout: React.FC = () => {
     return (
         <div className="flex flex-col h-screen bg-white">
             {/* --- HEADER SUPERIOR --- */}
-            <header className="flex justify-between items-center px-8 py-4 bg-white shadow-sm border-b-2 border-orange-300   h-20 shrink-0">
+            <header className="flex justify-between items-center px-8 py-4 bg-white shadow-sm border-b border-orange-400   h-20 shrink-0">
                 {/* 1. Logo */}
                 <div className="flex items-center cursor-pointer" onClick={() => navigate('/caja/terminal')}>
                     <img src={gabunniLogo} alt="Gabunni" className="h-12 w-auto object-contain" />
                 </div>
 
                 {/* 2. Zona Derecha: Nombre y Botones */}
-                <div className="flex items-center gap-6">
+                <div className="flex items-center justify-between align-middle gap-6">
+
                     <p className="text-gray-500 font-medium">
                         Cajero: <span className="text-gray-800 font-bold">{user?.username || 'Cajero x'}</span>
                     </p>
 
                     <button 
+                        onClick={() => navigate('/caja/nueva-orden')}
+                        className="bg-orange-500 text-2xl hover:bg-orange-600 text-white px-6 py-7 rounded-b-4xl font-medium transition-colors flex items-center gap-2"
+                    >
+                         <FaRegPlusSquare />
+                        <p className="font-bold ">
+
+                            Crear Orden
+                        </p>
+                    
+                    </button>
+                </div>
+
+
+                <div className="flex items-center justify-between gap-6">
+
+
+
+                    <button 
                         onClick={() => navigate('/caja/gestion')}
-                        className="bg-gray-700 hover:bg-gray-800 text-white px-6 py-2 rounded-full font-medium transition-colors flex items-center gap-2"
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-full font-medium transition-colors flex items-center gap-2"
                     >
                         <FaCashRegister /> Corte de Caja
                     </button>
@@ -46,7 +65,9 @@ const CajaLayout: React.FC = () => {
                     >
                         <FaPowerOff /> Salir
                     </button>
+                    
                 </div>
+
             </header>
 
             {/* --- CONTENIDO PRINCIPAL --- */}

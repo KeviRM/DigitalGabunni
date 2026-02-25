@@ -21,7 +21,7 @@ const CocinaLayout: React.FC = () => {
     return (
         <div className="flex flex-col h-screen bg-white">
             {/* --- HEADER SUPERIOR --- */}
-            <header className="flex justify-between items-center px-8 py-4 bg-white shadow-sm border-b border-gray-100 h-20 shrink-0">
+            <header className="flex justify-between items-center px-8 py-4 bg-white shadow-sm border-b-3 border-orange-300 h-20 shrink-0">
                 {/* Logo */}
                 <div className="flex items-center cursor-pointer" onClick={() => navigate('/caja/terminal')}>
                     <img src={gabunniLogo} alt="Gabunni" className="h-12 w-auto object-contain" />

@@ -314,12 +314,12 @@ const PuntoDeVenta: React.FC = () => {
     return (
         <div className="flex h-screen bg-gray-50 p-4 gap-6">
             
-            {/* === COLUMNA IZQUIERDA: CARRITO / TICKET === */}
-            <div className="w-1/3 bg-white rounded-3xl shadow-lg flex flex-col border-t-4 border-orange-500 overflow-hidden relative">
+            {/* === COLUMNA  CARRITO / TICKET === */}
+            <div className="w-1/4 bg-white rounded-3xl shadow-lg flex flex-col border-t-4 border-x-4 border-orange-500 overflow-hidden relative">
                 
-                {/* Botón para regresar a la Terminal */}
+                
                 <button 
-                    onClick={() => navigate(-1)} // O pon la ruta fija ej: navigate('/caja')
+                    onClick={() => navigate('/caja/terminal')}
                     className="absolute top-4 left-4 text-gray-400 hover:text-orange-500 transition-colors"
                 >
                     <FaArrowLeft size={20} />
@@ -346,7 +346,7 @@ const PuntoDeVenta: React.FC = () => {
                                 {/* Botones de acción del item (Editar/Eliminar) */}
                                 <div className="flex justify-end gap-3 mt-2">
                                     <button 
-                                    onClick={() => abrirEdicion(item)} // <--- EL CAMBIO ESTÁ AQUÍ
+                                    onClick={() => abrirEdicion(item)} 
                                     className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition shadow-sm"
                                     title="Personalizar (Extras/Sin)"
                                 >
@@ -366,13 +366,13 @@ const PuntoDeVenta: React.FC = () => {
                 </div>
 
                 {/* Footer de Cobro */}
-                <div className="bg-white border-t-2 border-dashed border-orange-500 p-6 mb-14 z-10">
+                <div className="bg-white border-t-3 border-dashed border-orange-500 p-6 mb-14 z-10">
                     <div className="flex justify-between items-center mb-6">
                         <span className="text-gray-500 font-bold uppercase tracking-wider text-sm">Total a Pagar</span>
                         <span className="text-4xl font-extrabold text-orange-500">${totalCarrito.toFixed(2)}</span>
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={() => setCarrito([])} className="flex-1 py-3 text-red-500 border-2 border-red-500 font-bold rounded-xl hover:bg-red-50 transition">
+                        <button onClick={() => setCarrito([])} className="flex-1 py-3 text-red-500 border-2 border-red-500 font-bold rounded-xl hover:bg-red-100 transition">
                             Limpiar
                         </button>
                         <button onClick={handleCobrar} className="flex-2 w-2/3 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition shadow-lg text-lg">
@@ -387,7 +387,7 @@ const PuntoDeVenta: React.FC = () => {
 
 
 
-            <div className="w-2/3 flex flex-col gap-6">
+            <div className="w-3/4 flex flex-col gap-6">
                 
                 {/* Cabecera: Categorías y Buscador */}
                 <div className="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm">
@@ -536,10 +536,11 @@ const PuntoDeVenta: React.FC = () => {
                 <ModalCobro
                     isOpen={modalAbierto}
                     onClose={() => setModalAbierto(false)}
-                    orderNumber={ordenACobrar.order_number}   
+                    orderNumber={ordenACobrar.order_number}
+                    daily_sequence={ordenACobrar.daily_sequence?.toString().padStart(2, '0') }
                     total={ordenACobrar.amount}
                     onPaymentSuccess={() => {
-                        // ¡Pago exitoso! Limpiamos el POS para el siguiente cliente
+                        // Se limpia el POS para el siguiente cliente
                         setCarrito([]);
                         setModalAbierto(false);
                         setOrdenACobrar(null);

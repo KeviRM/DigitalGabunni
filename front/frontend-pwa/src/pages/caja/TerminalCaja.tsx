@@ -145,7 +145,7 @@ const TerminalCaja: React.FC = () => {
         <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
             
             {/* --- COLUMNA IZQUIERDA --- */}
-            <div className="w-[350px] bg-white border-r border-gray-200 flex flex-col z-10 shadow-lg">
+            <div className="w-1/4 bg-white border-r-4 border-orange-400 flex flex-col z-10 shadow-lg">
                 
 
                 {/* Título Lista */}
@@ -176,7 +176,7 @@ const TerminalCaja: React.FC = () => {
                             >
                                 <div className="flex items-center gap-4">
                                     {/* Número Grande */}
-                                    <div className={`text-3xl font-extrabold ${isSelected ? 'text-orange-500' : 'text-gray-300 group-hover:text-gray-400'}`}>
+                                    <div className={`text-5xl font-extrabold ${isSelected ? 'text-orange-500' : 'text-gray-300 group-hover:text-gray-400'}`}>
                                         #{pedido.daily_sequence?.toString().padStart(2, '0') || '??'}
                                     </div>
                                     
@@ -204,8 +204,8 @@ const TerminalCaja: React.FC = () => {
                 </div>
             </div>
 
-            {/* --- COLUMNA DERECHA (DETALLE) --- */}
-            <div className="flex-1 bg-gray-50 p-10 flex flex-col h-full relative">
+            {/* --- DETALLE --- */}
+            <div className="flex-1 w-3/4 bg-gray-50 p-10 flex flex-col h-full relative">
                 
                
 
@@ -220,22 +220,24 @@ const TerminalCaja: React.FC = () => {
                             <p className="text-gray-400 mt-2">{pedidoSeleccionado.client_name || 'Cliente Kiosco'} • {new Date(pedidoSeleccionado.created_at).toLocaleString()}</p>
                         </div>
 
-                        {/* Lista de Productos (Estilo Ticket Ancho) */}
+                        {/* Lista de Productos  */}
                         <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
                             {pedidoSeleccionado.details?.map((detalle: any, idx: number) => (
                                 <div key={idx} className="bg-white p-6 rounded-xl border border-orange-200 shadow-md flex justify-between items-start">
                                     
-                                    {/* Izquierda: Cantidad y Nombre */}
+                                    {/* Cantidad y Nombre */}
                                     <div className="flex-1">
                                         <div className="flex items-baseline gap-3">
                                             <span className="font-bold text-lg text-gray-500">{detalle.quantity}x</span>
                                             <h3 className="font-bold text-xl text-gray-800">{detalle.product_name}</h3>
                                         </div>
-                                        {/* Renderizamos personalización con la nueva función */}
+
+                                        {/* Renderizar Personalizacion */}
+
                                         { renderPersonalizacionPro(detalle.personalizacion_json)}
                                     </div>
 
-                                    {/* Derecha: Precio */}
+                                    {/*  Precio */}
                                     <div className="text-right">
                                         <span className="font-bold text-xl text-green-600">
                                             ${(detalle.unit_price * detalle.quantity).toFixed(2)}
@@ -300,7 +302,8 @@ const TerminalCaja: React.FC = () => {
                 <ModalCobro
                     isOpen={modalAbierto}
                     onClose={() => setModalAbierto(false)}
-                    orderNumber={pedidoSeleccionado.order_number}   
+                    orderNumber={pedidoSeleccionado.order_number}
+                    daily_sequence={pedidoSeleccionado.daily_sequence?.toString().padStart(2, '0') }
                     total={pedidoSeleccionado.amount}
                     onPaymentSuccess={() => {
                         fetchPedidos();

@@ -7,7 +7,7 @@ const PEDIDOS_API_URL = '/api/v1/pedidos/caja/';
   
 
 
-const ModalCobro = ({ isOpen, onClose, orderNumber, total, onPaymentSuccess }) => {
+const ModalCobro = ({ isOpen, onClose, orderNumber, daily_sequence, total, onPaymentSuccess }) => {
   const [metodoPago, setMetodoPago] = useState('EFECTIVO');
   const [recibido, setRecibido] = useState('');
   const [cambio, setCambio] = useState(0);
@@ -63,7 +63,7 @@ const ModalCobro = ({ isOpen, onClose, orderNumber, total, onPaymentSuccess }) =
       <div className="bg-white rounded-xl shadow-2xl shadow-gray-600  p-8 w-[600px]">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-gray-700">Cobrar Orden #{orderNumber}</h2>
+          <h2 className="text-2xl font-bold text-gray-700">Cobrar Orden #{ daily_sequence}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-red-500 font-bold text-xl">✕</button>
         </div>
 
