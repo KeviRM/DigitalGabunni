@@ -104,6 +104,7 @@ class PedidoAdminSerializer(serializers.ModelSerializer):
         fields = [
             'order_number',
             'client_name',
+            'daily_sequence',
             'phone_number',
             'type_delivery',
             'delivery_address',

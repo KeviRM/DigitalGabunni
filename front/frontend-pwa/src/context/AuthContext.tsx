@@ -56,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const isAuthenticated = !!tokens;
+
     
 
     // Función auxiliar para procesar el token y guardar estado

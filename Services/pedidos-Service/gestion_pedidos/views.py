@@ -14,10 +14,12 @@ from django.utils import timezone
 from datetime import timedelta
 from datetime import datetime
 
+from django.db import transaction
+
 import csv
 from django.http import HttpResponse
 
-from .models import Pedido, PushSubscription, SesionCaja
+from .models import DetallePedido, Pedido, PushSubscription, SesionCaja
 from .serializers import (
     PedidoCreationSerializer, 
     PedidoEstadoSerializer,
@@ -691,6 +693,69 @@ class CajaViewSet(viewsets.ViewSet):
 
         except Pedido.DoesNotExist:
             return Response({'error': 'Pedido no encontrado'}, status=404)
+        
+
+   
+
+
+    @action(detail=False, methods=['put'], url_path='(?P<order_number>[^/.]+)/editar')
+    def editar_orden(self, request, order_number=None):
+        try:
+            with transaction.atomic():
+                pedido = Pedido.objects.select_for_update().get(order_number=order_number)
+                
+                nuevo_total = request.data.get('amount')
+                if nuevo_total is not None:
+                    pedido.amount = nuevo_total
+                
+                cliente = request.data.get('client_name')
+                if cliente:
+                    pedido.client_name = cliente
+
+                pedido.save()
+
+                #  Borra los detalles anteriores 
+                pedido.details.all().delete()
+
+                ##crea nuevos detalles
+                items_carrito = request.data.get('items_carrito', [])
+                
+                for item in items_carrito:
+                    DetallePedido.objects.create(
+                        order=pedido,  
+                        product_name=item.get('product_name'),
+                        quantity=item.get('quantity'),
+                        unit_price=item.get('unit_price'),
+                        personalizacion_json=item.get('personalizacion_json') 
+                    )
+
+                channel_layer = get_channel_layer()
+                data_pedido = {
+                    'order_number': str(pedido.order_number),
+                    'status': pedido.status,
+                    'client_name': pedido.client_name,
+                    'daily_sequence': pedido.daily_sequence
+                }
+
+                async_to_sync(channel_layer.group_send)(
+                    'grupo_cocina', 
+                    {
+                        'type': 'pedido_update', 
+                        'pedido': data_pedido
+                    }
+                )
+
+                return Response({
+                    "status": "Orden editada correctamente",
+                    "order_number": str(pedido.order_number),
+                    "amount": pedido.amount
+                }, status=200)
+
+        except Pedido.DoesNotExist:
+            return Response({'error': 'El pedido que intentas editar no existe.'}, status=404)
+        except Exception as e:
+            print(f"Error al editar orden: {str(e)}")
+            return Response({'error': f'Error interno al editar: {str(e)}'}, status=400)
 
 
 

@@ -5,7 +5,7 @@ import { FaPowerOff } from 'react-icons/fa';
 import gabunniLogo from '../assets/gabunniLogo.jpg'; // Asegúrate de que la ruta sea correcta
 
 const CocinaLayout: React.FC = () => {
-    const { isAuthenticated, logout, getUserRole, user } = useAuth(); // Asumo que 'user' trae datos como username
+    const { isAuthenticated, logout, getUserRole } = useAuth();
     const navigate = useNavigate();
     const userRole = getUserRole();
 
@@ -29,11 +29,6 @@ const CocinaLayout: React.FC = () => {
 
                 {/*  Nombre y Botones */}
                 <div className="flex items-center gap-6">
-                    <p className="text-gray-500 font-medium">
-                        Cocinero: <span className="text-gray-800 font-bold">{user?.username || 'Cocinero x'}</span>
-                    </p>
-
-                    
                     <button 
                         onClick={logout}
                         className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-3xl font-medium transition-colors flex items-center gap-2"

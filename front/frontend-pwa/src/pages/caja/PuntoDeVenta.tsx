@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaSearch, FaPencilAlt, FaTrash, FaArrowLeft, FaBoxOpen, FaUtensils } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 // Asegúrate de que las rutas a tu API y Auth sean correctas
 import { pedidosApi } from '../../api/axiosConfig'; 
 import useAuth from '../../hooks/useAuth';
@@ -26,6 +26,9 @@ const PuntoDeVenta: React.FC = () => {
 
     const navigate = useNavigate();
     const { getAuthHeaders } = useAuth();
+
+    const location = useLocation();
+    const pedidoAEditar = location.state?.PedidoEditar || null;
 
     // --- ESTADOS DEL CATÁLOGO ---
     const [productos, setProductos] = useState<any[]>([]); 
@@ -81,6 +84,34 @@ const PuntoDeVenta: React.FC = () => {
        }, []);
 
 
+
+       // --- EFECTO: PRECARGAR CARRITO EN MODO EDICIÓN ---
+    useEffect(() => {
+        
+        if (pedidoAEditar && productos.length > 0 && carrito.length === 0) {
+
+            const carritoPrecargado = pedidoAEditar.details.map((detalle: any) => {
+                let prodOriginal = productos.find(p => p.name === detalle.product_name);
+
+                
+                if (!prodOriginal) {
+                    prodOriginal = { id: detalle.product_id, name: detalle.product_name, price: detalle.unit_price };
+                }
+
+                return {
+                    idUnico: `edit-${Date.now()}-${Math.random()}`,
+                    producto: prodOriginal,
+                    cantidad: detalle.quantity,
+                    precio: parseFloat(detalle.unit_price),
+                    personalizacion: detalle.personalizacion_json
+                };
+            });
+
+            setCarrito(carritoPrecargado);
+        }
+    }, [pedidoAEditar, productos]); 
+
+
         // -- FILTROS ---
 
        const productosFiltrados = useMemo(() => {
@@ -121,24 +152,25 @@ const PuntoDeVenta: React.FC = () => {
         if (carrito.length === 0) return alert("El carrito está vacío");
 
         try {
-            // 1. Mapeo correcto de items para el Serializer del Backend
             const itemsParaBackend = carrito.map(item => {
                 const prod = item.producto;
                 let personalizacion = item.personalizacion || {};
 
-                // Si es paquete y no se modificó nada, aseguramos mandar su contenido base
-                // (Valida si en tu BD de POS el paquete trae 'items' o 'products')
                 if (!item.personalizacion && (prod.items || prod.products || prod.category === -999)) {
                     personalizacion = { "Contenido": prod.items || prod.products || [] };
                 }
 
                 return {
-                    product_name: prod.name, // El backend espera product_name, no id
+                    product_name: prod.name, 
                     quantity: item.cantidad,
                     unit_price: item.precio, 
                     personalizacion_json: personalizacion
                 };
             });
+
+
+            // --- ENVIAR PEDIDO A LA BD (COBRAR O EDITAR) ---
+   
 
             // 2. Construir el Payload con todos los campos obligatorios
             const payload = {
@@ -151,18 +183,20 @@ const PuntoDeVenta: React.FC = () => {
                 items_carrito: itemsParaBackend 
             };
 
-            console.log("Enviando Payload desde POS:", payload);
-
-            // 3. Crear orden en el backend
-            // Usamos la misma ruta de creación que el kiosco
-            const res = await pedidosApi.post('/api/v1/pedidos/crear/', payload, { 
-                headers: getAuthHeaders() 
-            });
-            const ordenCreada = res.data;
-
-            // 4. Abrir la ventana de cobro de la Caja
-            setOrdenACobrar(ordenCreada);
-            setModalAbierto(true);
+          
+            if (pedidoAEditar) {
+                
+                await pedidosApi.put(`/api/v1/pedidos/caja/${pedidoAEditar.order_number}/editar/`, payload, { 
+                    headers: getAuthHeaders() 
+                });
+                alert("¡Orden actualizada con éxito!");
+                navigate(-1); // Regresamos a la Terminal de Caja
+            } else {
+                
+                const res = await pedidosApi.post('/api/v1/pedidos/crear/', payload, { headers: getAuthHeaders() });
+                setOrdenACobrar(res.data);
+                setModalAbierto(true);
+            }
 
         } catch (error: any) {
             console.error("Error al crear la orden desde POS:", error);
@@ -172,6 +206,9 @@ const PuntoDeVenta: React.FC = () => {
     };
 
 
+
+
+    
     
 
     const agregarChapataPersonalizada = (producto: any, cantidad: number, personalizacion: any) => {
@@ -304,6 +341,11 @@ const PuntoDeVenta: React.FC = () => {
         return null;
     };
 
+
+
+
+
+    
 
 
 

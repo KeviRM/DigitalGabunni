@@ -270,10 +270,12 @@ const TerminalCaja: React.FC = () => {
                                 
                                 
                                 <button 
+                                    onClick={() => navigate(`/caja/nueva-orden`, {state: {PedidoEditar: pedidoSeleccionado}})}
                                     className="py-4 rounded-xl border-2 border-gray-500 text-gray-600 font-bold text-lg hover:bg-gray-300 transition flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <FaEdit /> Editar Orden
                                 </button>
+
                                 
                                 <button 
                                     onClick={() => setModalAbierto(true)}
