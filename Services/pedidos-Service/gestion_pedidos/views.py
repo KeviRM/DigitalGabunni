@@ -14,6 +14,10 @@ from django.utils import timezone
 from datetime import timedelta
 from datetime import datetime
 
+  
+from collections import Counter
+
+
 from django.db import transaction
 
 import csv
@@ -444,74 +448,110 @@ class MercadoPagoWebhook(APIView):
     
     
     
-    
+  
+
 class AnalyticsView(views.APIView):
     """
-    API para proporcionar métricas de ganancias y ventas al Panel de Administración.
+    API de Analíticas Avanzadas para el Dashboard.
     """
     permission_classes = [AllowAny] 
 
     def get(self, request, format=None):
-        # Definir el rango de fechas (ej: últimos 30 días, o según filtros futuros)
         dias_pasados = 30
         fecha_inicio = timezone.now() - timedelta(days=dias_pasados)
         
-        # Consultas y Agregaciones Básicas
-        
-        # Ganancia Total histórica
-        ganancia_total = Pedido.objects.filter(status__in=['ENTREGADO', 'LISTO']).aggregate(
-            total=Sum('amount')
-        )['total'] or 0.00
-        
-        # Total de Órdenes (Histórico)
+        # 1. MÉTRICAS GLOBALES (Históricas y Recientes)
+        ganancia_total = Pedido.objects.filter(status__in=['ENTREGADO', 'LISTO']).aggregate(total=Sum('amount'))['total'] or 0.00
         ordenes_totales = Pedido.objects.all().count()
         
-        # Ganancia y Órdenes en el último periodo (últimos 30 días)
-        pedidos_recientes = Pedido.objects.filter(
-            created_at__gte=fecha_inicio,
-            status__in=['ENTREGADO', 'LISTO']
-        )
+        pedidos_recientes_completados = Pedido.objects.filter(created_at__gte=fecha_inicio, status__in=['ENTREGADO', 'LISTO'])
+        ganancia_reciente = pedidos_recientes_completados.aggregate(total=Sum('amount'))['total'] or 0.00
+        ordenes_recientes = pedidos_recientes_completados.count()
         
-        ganancia_reciente = pedidos_recientes.aggregate(total=Sum('amount'))['total'] or 0.00
-        ordenes_recientes = pedidos_recientes.count()
+        # 2. ANÁLISIS POR ESTADO (Todos los pedidos recientes, no solo los completados)
+        pedidos_todos_recientes = Pedido.objects.filter(created_at__gte=fecha_inicio)
+        resumen_estados = pedidos_todos_recientes.values('status').annotate(total=Count('id'))
         
-        # Datos para Gráfica Diaria (Ganancias Diarias)
-        # Agrupa los pedidos por día y suma los montos
-        ganancias_por_dia = Pedido.objects.filter(
-            created_at__gte=fecha_inicio,
-            status__in=['ENTREGADO', 'LISTO']
-        ).annotate(
+        # Extraer métricas específicas de estado
+        cancelados = next((item['total'] for item in resumen_estados if item['status'] == 'CANCELADO'), 0)
+        pendientes = sum(item['total'] for item in resumen_estados if item['status'] in ['PENDIENTE', 'CONFIRMADO', 'PREPARACION'])
+
+        # 3. ANÁLISIS DE ORIGEN Y TIPO DE ENTREGA
+        ventas_origen = list(pedidos_recientes_completados.values('origen').annotate(ganancia=Sum('amount'), cantidad=Count('id')))
+        ventas_delivery = list(pedidos_recientes_completados.values('type_delivery').annotate(ganancia=Sum('amount')))
+
+        # 4. GRÁFICA DIARIA
+        ganancias_por_dia = pedidos_recientes_completados.annotate(
             dia=TruncDate('created_at')
-        ).values('dia').annotate(
-            ganancia=Sum('amount')
-        ).order_by('dia')
+        ).values('dia').annotate(ganancia=Sum('amount')).order_by('dia')
+
+        # 5. EL MOTOR DE INGREDIENTES Y TIPOS DE PRODUCTO (Análisis Profundo)
+        # Traemos los detalles de los pedidos completados en los últimos 30 días
+        detalles = DetallePedido.objects.filter(order__in=pedidos_recientes_completados)
         
-        # Cálculo de Clientes
-        # NOTA: Si usáramos un campo 'cliente' que no sea NULL en Pedido, usaríamos Count(Distinct('cliente'))
-        # Por ahora, usamos el número de pedidos confirmados como proxy de actividad:
+        top_extras = Counter()
+        top_sin = Counter()
+        tipos_producto = {'Estandar': 0, 'Paquetes': 0, 'Personalizadas': 0}
+
+        for d in detalles:
+            pj = d.personalizacion_json or {}
+            
+            # Clasificación del producto
+            es_paquete = 'Contenido' in pj or 'contenido' in pj
+            es_modificada = 'modificaciones' in pj
+            es_armada = len([k for k in pj.keys() if k not in ['modificaciones', 'Contenido', 'contenido']]) > 0
+
+            if es_paquete:
+                tipos_producto['Paquetes'] += d.quantity
+            elif es_modificada or es_armada:
+                tipos_producto['Personalizadas'] += d.quantity
+                
+                # Conteo de Modificaciones (Extras vs Sin)
+                if es_modificada:
+                    for extra in pj['modificaciones'].get('extras', []):
+                        top_extras[extra.get('name', 'Extra')] += d.quantity
+                    for sin in pj['modificaciones'].get('sin', []):
+                        top_sin[sin.get('name', 'Ingrediente')] += d.quantity
+                
+                # Si la armaron desde cero, todos los ingredientes cuentan como 'Extras/Elegidos'
+                if es_armada:
+                    for categoria, ingredientes in pj.items():
+                        if isinstance(ingredientes, list) and categoria not in ['modificaciones', 'Contenido', 'contenido']:
+                            for ing in ingredientes:
+                                top_extras[ing.get('name', 'Ingrediente')] += d.quantity
+            else:
+                tipos_producto['Estandar'] += d.quantity
+
         clientes_activos = Pedido.objects.all().values('client_name').distinct().count()
 
-        #  Formato de la Respuesta JSON
+        # 6. CONSTRUIR LA RESPUESTA JSON
         data = {
-            # Indicadores de Ventas (Métricas)
             'metricas': {
                 'ganancia_total_historica': float(ganancia_total),
                 'ordenes_totales': ordenes_totales,
                 'ganancia_ultimos_dias': float(ganancia_reciente),
                 'ordenes_ultimos_dias': ordenes_recientes,
                 'clientes_activos': clientes_activos,
+                'cancelados_recientes': cancelados,
+                'pendientes_actuales': pendientes,
             },
-            # Datos para Gráfica
             'grafica_diaria': [
-                {'dia': item['dia'].strftime('%Y-%m-%d'), 'ganancia': float(item['ganancia'])}
-                for item in ganancias_por_dia
+                {'dia': item['dia'].strftime('%m-%d'), 'ganancia': float(item['ganancia'])} for item in ganancias_por_dia
             ],
-            # PENDIENTE: Gráficas Semanales/Mensuales más complejas
+            'grafica_origen': [
+                {'name': item['origen'] or 'Desconocido', 'value': float(item['ganancia'])} for item in ventas_origen
+            ],
+            'grafica_delivery': [
+                {'name': item['type_delivery'] or 'Local', 'value': float(item['ganancia'])} for item in ventas_delivery
+            ],
+            'grafica_tipos': [
+                {'name': k, 'value': v} for k, v in tipos_producto.items() if v > 0
+            ],
+            'top_extras': [{'name': k, 'count': v} for k, v in top_extras.most_common(5)],
+            'top_sin': [{'name': k, 'count': v} for k, v in top_sin.most_common(5)],
         }
 
         return response.Response(data, status=status.HTTP_200_OK)
-    
-    
     
     
     

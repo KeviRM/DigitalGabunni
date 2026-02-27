@@ -23,7 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/pedidos/', include('gestion_pedidos.urls')),
     path('api/v1/push/subscribe/', SavePushSubscriptionView.as_view(), name='push_subscribe'),
-    path('api/v1/analytics/', AnalyticsView.as_view(), name='analytics-data'),
+    path('api/v1/pedidos/analytics/', AnalyticsView.as_view(), name='analytics-data'),
     path('api/v1/reportes/ventas/', ReporteVentasCSV.as_view(), name='reporte-ventas'),
     path('api/v1/pedidos/webhook/', MercadoPagoWebhook.as_view(), name='mp-webhook'),
 ]
