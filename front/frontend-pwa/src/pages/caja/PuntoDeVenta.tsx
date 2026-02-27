@@ -85,15 +85,16 @@ const PuntoDeVenta: React.FC = () => {
 
 
 
-       // --- EFECTO: PRECARGAR CARRITO EN MODO EDICIÓN ---
+    // --- EFECTO: PRECARGAR CARRITO EN MODO EDICIÓN ---
     useEffect(() => {
-        
-        if (pedidoAEditar && productos.length > 0 && carrito.length === 0) {
-
+        // Aseguramos que ya haya cargado el menú (ya sean productos o paquetes)
+        if (pedidoAEditar && (productos.length > 0 || paquetes.length > 0) && carrito.length === 0) {
+            
             const carritoPrecargado = pedidoAEditar.details.map((detalle: any) => {
-                let prodOriginal = productos.find(p => p.name === detalle.product_name);
-
+                let prodOriginal = productos.find(p => p.name === detalle.product_name) || 
+                                   paquetes.find(p => p.name === detalle.product_name);
                 
+                // Si por alguna razón no lo encuentra, armamos un "mock" seguro
                 if (!prodOriginal) {
                     prodOriginal = { id: detalle.product_id, name: detalle.product_name, price: detalle.unit_price };
                 }
@@ -109,7 +110,7 @@ const PuntoDeVenta: React.FC = () => {
 
             setCarrito(carritoPrecargado);
         }
-    }, [pedidoAEditar, productos]); 
+    }, [pedidoAEditar, productos, paquetes]); 
 
 
         // -- FILTROS ---
@@ -206,7 +207,25 @@ const PuntoDeVenta: React.FC = () => {
     };
 
 
+    /* Controles de cantidad de carrito */
 
+    const handleIncrementarCantidad = (idUnico: string) => {
+        setCarrito(prev => prev.map(item =>
+            item.idUnico === idUnico 
+            ? { ...item, cantidad: item.cantidad + 1 } 
+            : item
+        ));
+
+
+    };
+
+    const handleDecrementarCantidad = (idUnico: string) => {
+        setCarrito(prev => prev.map(item =>
+            item.idUnico === idUnico && item.cantidad > 1
+            ? { ...item, cantidad: item.cantidad - 1 } 
+            : item
+        ));
+    };
 
     
     
@@ -368,7 +387,7 @@ const PuntoDeVenta: React.FC = () => {
                 </button>
 
                 <div className="p-4 border-b border-gray-100 mt-4">
-                    <h2 className="text-2xl font-bold text-orange-500 text-center">Nueva Orden</h2>
+                    <h2 className="text-2xl font-bold text-orange-500 text-center"> {pedidoAEditar ? 'Editar Pedido' : 'Nueva Orden'}</h2>
                 </div>
 
                 {/* Lista de Items */}
@@ -376,34 +395,66 @@ const PuntoDeVenta: React.FC = () => {
                     {carrito.length === 0 ? (
                         <p className="text-center text-gray-400 mt-10">Agrega productos tocando el menú derecho</p>
                     ) : (
-                        carrito.map(item => (
-                            <div key={item.idUnico} className="border border-orange-200 bg-orange-50/30 rounded-xl p-4 flex flex-col gap-2 relative group transition-all hover:shadow-md">
-                                <div className="flex justify-between items-start font-bold text-gray-800 text-lg">
-                                    <span>{item.cantidad}x {item.producto.name}</span>
-                                    <span className="text-green-600">${(item.precio * item.cantidad).toFixed(2)}</span>
-                                </div>
+                       carrito.map(item => {
+                            // Detectamos si es un paquete para bloquear su edición
+                            const esPaquete = 
+                                item.producto.category === ID_CATEGORIA_PAQUETES || 
+                                item.producto.items !== undefined ||
+                                item.personalizacion?.Contenido !== undefined ||
+                                item.personalizacion?.contenido !== undefined;
 
+                            return (
+                                <div key={item.idUnico} className="border border-orange-200 bg-orange-50/30 rounded-xl p-4 flex flex-col gap-2 relative group transition-all hover:shadow-md">
+                                    <div className="flex justify-between items-start font-bold text-gray-800 text-lg">
+                                        
+                                        {/* NUEVO CONTROL DE CANTIDAD Y NOMBRE */}
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                                                <button 
+                                                    onClick={() => handleDecrementarCantidad(item.idUnico)}
+                                                    className="px-3 py-1 text-gray-500 hover:bg-gray-100 hover:text-orange-500 transition-colors font-black"
+                                                >-</button>
+                                                <span className="px-2 font-bold text-orange-600 text-base min-w-6 text-center">
+                                                    {item.cantidad}
+                                                </span>
+                                                <button 
+                                                    onClick={() => handleIncrementarCantidad(item.idUnico)}
+                                                    className="px-3 py-1 text-gray-500 hover:bg-gray-100 hover:text-orange-500 transition-colors font-black"
+                                                >+</button>
+                                            </div>
+                                            <span className="leading-tight pr-2">{item.producto.name}</span>
+                                        </div>
+
+                                        {/* PRECIO TOTAL DEL ITEM */}
+                                        <span className="text-green-600 shrink-0">${(item.precio * item.cantidad).toFixed(2)}</span>
+                                    </div>
+
+                                    {/* PERSONALIZACIÓN (El Súper Helper) */}
                                     {item.personalizacion && renderPersonalizacionPro(item.personalizacion)}
-
-                                {/* Botones de acción del item (Editar/Eliminar) */}
-                                <div className="flex justify-end gap-3 mt-2">
-                                    <button 
-                                    onClick={() => abrirEdicion(item)} 
-                                    className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition shadow-sm"
-                                    title="Personalizar (Extras/Sin)"
-                                >
-                                    <FaPencilAlt />
-                                </button>
-                                    <button 
-                                        onClick={() => eliminarDelCarrito(item.idUnico)} 
-                                        className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition shadow-sm"
-                                        title="Eliminar del ticket"
-                                    >
-                                        <FaTrash />
-                                    </button>
+                                    
+                                    {/* BOTONES DE ACCIÓN FLOTANTES */}
+                                    <div className="flex justify-end gap-3 mt-2">
+                                        {/* SOLO MOSTRAMOS EL LÁPIZ SI NO ES UN PAQUETE */}
+                                        {!esPaquete && (
+                                            <button 
+                                                onClick={() => abrirEdicion(item)} 
+                                                className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition shadow-sm"
+                                                title="Personalizar (Extras/Sin)"
+                                            >
+                                                <FaPencilAlt size={14} />
+                                            </button>
+                                        )}
+                                        <button 
+                                            onClick={() => eliminarDelCarrito(item.idUnico)} 
+                                            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition shadow-sm"
+                                            title="Eliminar del ticket"
+                                        >
+                                            <FaTrash size={14} />
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 
@@ -418,7 +469,7 @@ const PuntoDeVenta: React.FC = () => {
                             Limpiar
                         </button>
                         <button onClick={handleCobrar} className="flex-2 w-2/3 py-3 bg-green-500 text-white font-bold rounded-xl hover:bg-green-600 transition shadow-lg text-lg">
-                            Cobrar Orden
+                             {pedidoAEditar ? 'Guardar Cambios' : 'Cobrar Orden'}
                         </button>
                     </div>
                 </div>
