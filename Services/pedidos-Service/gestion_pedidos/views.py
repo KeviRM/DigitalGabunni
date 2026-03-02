@@ -567,59 +567,171 @@ class AnalyticsView(views.APIView):
     
     #########################Reportesss
     
-    
 class ReporteVentasCSV(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        fecha_inicio_str = request.query_params.get('fecha_inicio')
+        fecha_fin_str = request.query_params.get('fecha_fin')
+
+        # Traemos los pedidos y sus detalles para no saturar la base de datos
+        pedidos = Pedido.objects.filter(status__in=['ENTREGADO', 'LISTO', 'CONFIRMADO']).prefetch_related('details')
+
+        if fecha_inicio_str:
+            pedidos = pedidos.filter(created_at__date__gte=fecha_inicio_str)
+        if fecha_fin_str:
+            pedidos = pedidos.filter(created_at__date__lte=fecha_fin_str)
+
+        pedidos = pedidos.order_by('-created_at')
+
+        #  Configurar la respuesta HTTP para CSV
+        response = HttpResponse(content_type='text/csv')
+        filename = f"reporte_ventas_detallado_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
-        permission_classes = [IsAuthenticated]
+        response.write('\ufeff'.encode('utf8'))
 
-        def get(self, request, format=None):
-            fecha_inicio_str = request.query_params.get('fecha_inicio')
-            fecha_fin_str = request.query_params.get('fecha_fin')
-
-           
-            pedidos = Pedido.objects.filter(status__in=['ENTREGADO', 'LISTO', 'CONFIRMADO']).prefetch_related('details')
-
-            if fecha_inicio_str:
-                pedidos = pedidos.filter(created_at__date__gte=fecha_inicio_str)
-            if fecha_fin_str:
-                pedidos = pedidos.filter(created_at__date__lte=fecha_fin_str)
-
-            pedidos = pedidos.order_by('-created_at')
-
-            # 3. Crear la respuesta HTTP con tipo de contenido CSV
-            response = HttpResponse(content_type='text/csv')
-            filename = f"reporte_ventas_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-            # 4. Escribir el CSV
-            writer = csv.writer(response)
-            
-            # Encabezados
-            writer.writerow(['ID Pedido', 'Fecha', 'Cliente', 'Teléfono', 'Tipo Entrega', 'Estado', 'Total ($)', 'Items'])
-
-            # Filas de datos
-            for pedido in pedidos:
-                # Resumen de items en una celda
-                items_str = ", ".join([f"{d.quantity}x {d.product_name}" for d in pedido.details.all()])
-                
-                fecha_str = pedido.created_at.strftime('%Y-%m-%d %H:%M') if pedido.created_at else "N/A"
-                
-                writer.writerow([
-                    str(pedido.order_number),
-                    fecha_str,
-                    pedido.client_name,
-                    pedido.phone_number,
-                    pedido.type_delivery,
-                    pedido.status,
-                    pedido.amount,
-                    items_str
-                ])
-
-            return response
+        writer = csv.writer(response)
         
+        #  Encabezados mucho más detallados
+        writer.writerow([
+            'Turno / Orden', 'Fecha', 'Cliente', 'Origen', 'Tipo Entrega', 
+            'Estado','Metodo de Pago', 'Total ($)', 'Productos Base', 'Paquetes (Contenido)', 
+            'Extras / Agregados', 'Rechazados (Sin)'
+        ])
+
+        #  Procesar cada fila
+        for pedido in pedidos:
+
+            fecha_str = pedido.created_at.strftime('%Y-%m-%d') if pedido.created_at else "N/A"
+            hora_str = pedido.created_at.strftime('%H:%M') if pedido.created_at else "N/A"
+
+            metodo = getattr(pedido, 'metodo_pago', 'No registrado')
+            
+            # Listas para clasificar lo que compró
+            list_base = []
+            list_paquetes = []
+            list_extras = []
+            list_sin = []
+
+
+            for d in pedido.details.all():
+                pj = d.personalizacion_json or {}
+                
+                es_paquete = 'Contenido' in pj or 'contenido' in pj
+                es_modificada = 'modificaciones' in pj
+                es_armada = len([k for k in pj.keys() if k not in ['modificaciones', 'Contenido', 'contenido']]) > 0
+
+                #  ES UN PAQUETE
+                if es_paquete:
+                    contenido = pj.get('Contenido', pj.get('contenido', []))
+                    nombres_contenido = [f"{c.get('quantity', 1)}x {c.get('product_name', c.get('name', ''))}" for c in contenido]
+                    list_paquetes.append(f"{d.quantity}x {d.product_name} ({', '.join(nombres_contenido)})")
+                
+                #       ES UN PRODUCTO NORMAL O PERSONALIZADO
+                else:
+                    list_base.append(f"{d.quantity}x {d.product_name}")
+
+                    # Si le quitaron o pusieron cosas (Chapatas de línea)
+                    if es_modificada:
+                        extras = pj['modificaciones'].get('extras', [])
+                        sin = pj['modificaciones'].get('sin', [])
+                        if extras:
+                            list_extras.append(f"[{d.product_name}]: " + ", ".join([e.get('name', '') for e in extras]))
+                        if sin:
+                            list_sin.append(f"[{d.product_name}]: " + ", ".join([s.get('name', '') for s in sin]))
+                    
+                    # Si armaron la chapata desde cero
+                    if es_armada:
+                        ingredientes_armados = []
+                        for categoria, items in pj.items():
+                            if isinstance(items, list) and categoria not in ['modificaciones', 'Contenido', 'contenido']:
+                                ingredientes_armados.extend([i.get('name', '') for i in items])
+                        if ingredientes_armados:
+                            list_extras.append(f"[Armada]: " + ", ".join(ingredientes_armados))
+
+            # Unimos las listas con un separador claro
+            str_base = " | ".join(list_base)
+            str_paquetes = " | ".join(list_paquetes)
+            str_extras = " | ".join(list_extras)
+            str_sin = " | ".join(list_sin)
+            
+            # Usamos getattr por si 'origen' aún no está en todos los registros viejos
+            origen = getattr(pedido, 'origen', 'CAJA')
+
+            # Escribir la fila en el CSV
+            writer.writerow([
+                str(pedido.daily_sequence or pedido.order_number),
+                fecha_str,
+                pedido.client_name,
+                origen,
+                pedido.type_delivery,
+                pedido.status,
+                metodo,
+                pedido.amount,
+                str_base,
+                str_paquetes,
+                str_extras,
+                str_sin
+            ])
+
+        return response
+    
 
 
 
+
+class ReporteCortesCSV(views.APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        fecha_inicio_str = request.query_params.get('fecha_inicio')
+        fecha_fin_str = request.query_params.get('fecha_cierre')
+
+        cortes = SesionCaja.objects.all().order_by('-fecha_inicio')
+
+        # Aplicamos filtros de fecha si existen
+        if fecha_inicio_str:
+            cortes = cortes.filter(fecha_inicio__date__gte=fecha_inicio_str)
+        if fecha_fin_str:
+            cortes = cortes.filter(fecha_inicio__date__lte=fecha_fin_str)
+
+        response = HttpResponse(content_type='text/csv')
+        filename = f"auditoria_cajas_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response.write('\ufeff'.encode('utf8')) # BOM para acentos
+
+        writer = csv.writer(response)
+        
+        # Encabezados de auditoría
+        writer.writerow([
+            'ID Sesión', 'ID Usuario', 'Estado', 'Fecha Apertura', 'Fecha Cierre', 
+            'Fondo Inicial ($)', 'Ventas Sistema Efectivo ($)', 'Ventas Sistema Tarjeta ($)', 
+            'Ingreso Real Efectivo ($)', 'Ingreso Real Tarjeta ($)', 
+            'Diferencia Efectivo ($)', 'Diferencia Tarjeta ($)', 'Observaciones'
+        ])
+
+        for corte in cortes:
+            fecha_apertura_str = timezone.localtime(corte.fecha_inicio).strftime('%Y-%m-%d %H:%M') if corte.fecha_inicio else 'N/A'
+            fecha_cierre_str = timezone.localtime(corte.fecha_cierre).strftime('%Y-%m-%d %H:%M') if corte.fecha_cierre else 'Pendiente'
+
+            writer.writerow([
+                corte.id,
+                corte.usuario_id,
+                corte.estado,
+                fecha_apertura_str,
+                fecha_cierre_str,
+                corte.fondo_inicial,
+                corte.total_sistema_efectivo,
+                corte.total_sistema_tarjeta,
+                corte.total_real_efectivo,
+                corte.total_real_tarjeta,
+                corte.diferencia_efectivo, # Negativo es faltante
+                corte.diferencia_tarjeta,
+                corte.observaciones or ''
+            ])
+
+        return response
 
 
 
@@ -868,7 +980,7 @@ class SesionCajaViewSet(viewsets.ModelViewSet):
         
         sesion.diferencia_tarjeta = float(total_real_tarjeta) - float(tarjeta_sistema)
         
-        sesion.fecha_fin = timezone.now()
+        sesion.fecha_cierre = timezone.now()
         sesion.estado = 'CERRADA'
         sesion.save()
         
