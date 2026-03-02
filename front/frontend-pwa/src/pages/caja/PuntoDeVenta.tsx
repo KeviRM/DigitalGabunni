@@ -1,12 +1,23 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, use } from 'react';
 import { FaSearch, FaPencilAlt, FaTrash, FaArrowLeft, FaBoxOpen, FaUtensils } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
-// Asegúrate de que las rutas a tu API y Auth sean correctas
+import { useReactToPrint } from 'react-to-print';
+import { useRef } from 'react';
+
+
 import { pedidosApi } from '../../api/axiosConfig'; 
 import useAuth from '../../hooks/useAuth';
 
+
+
+
 import { fetchCategorias, fetchProductos, fetchPaquetes } from '../../api/menuApi';
 
+
+
+
+/* TIcket */
+import Ticket from '../../components/Ticket';
 
 // --- IMPORTAR LOS MODALES DEL KIOSCO ---
 import ModalDetalleProducto from '../Kiosco/ModalDetalleProducto'; 
@@ -195,7 +206,7 @@ const PuntoDeVenta: React.FC = () => {
             } else {
                 
                 const res = await pedidosApi.post('/api/v1/pedidos/crear/', payload, { headers: getAuthHeaders() });
-                setOrdenACobrar(res.data);
+                setOrdenACobrar({...res.data, details_snapshot: carrito}); // Guardamos la orden recién creada para mostrarla en el modal de cobro
                 setModalAbierto(true);
             }
 
@@ -364,6 +375,17 @@ const PuntoDeVenta: React.FC = () => {
 
 
 
+
+
+
+
+
+    // --- LÓGICA DE IMPRESIÓN ---
+    const ticketRef = useRef<HTMLDivElement>(null);
+    const handlePrint = useReactToPrint({
+        contentRef: ticketRef, 
+        documentTitle: `Ticket_Gabunni`,
+    });
     
 
 
@@ -634,6 +656,7 @@ const PuntoDeVenta: React.FC = () => {
                     total={ordenACobrar.amount}
                     onPaymentSuccess={() => {
                         // Se limpia el POS para el siguiente cliente
+                        handlePrint(); // Imprimimos el ticket antes de limpiar
                         setCarrito([]);
                         setModalAbierto(false);
                         setOrdenACobrar(null);
@@ -641,6 +664,10 @@ const PuntoDeVenta: React.FC = () => {
                     }}
                 />
             )}
+
+            <div style={{ display: 'none' }}>
+                <Ticket ref={ticketRef} orden={ordenACobrar} />
+            </div>
 
 
         </div>
