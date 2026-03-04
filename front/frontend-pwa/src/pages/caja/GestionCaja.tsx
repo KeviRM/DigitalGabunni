@@ -1,219 +1,291 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { pedidosApi } from '../../api/axiosConfig';
 import useAuth from '../../hooks/useAuth';
+import { FaCheck, FaTimes, FaInfo } from 'react-icons/fa'; 
+import { useNavigate } from 'react-router-dom'; // <-- Agrega esta línea
+
+
 const PEDIDOS_API_URL = '/api/v1/pedidos/';
 
 const GestionCaja = () => {
-  const { getAuthHeaders, user } = useAuth();
-  
-  // Estados de la interfaz
-  const [cargando, setCargando] = useState(true);
-  const [sesionActiva, setSesionActiva] = useState<any>(null);
-  
-  // Estados para ABRIR caja
-  const [fondoInicial, setFondoInicial] = useState('');
-
-  // Estados para CERRAR caja
-  const [conteoEfectivo, setConteoEfectivo] = useState('');
-  const [conteoTarjeta, setConteoTarjeta] = useState('');
-
-  // --- 1. CARGAR ESTADO ACTUAL ---
-  const cargarEstadoCaja = useCallback(async () => {
-    setCargando(true);
-    try {
-      // Intentamos obtener el resumen actual
-      const response = await pedidosApi.get(`${PEDIDOS_API_URL}sesion-caja/resumen_actual/`, {
-        headers: getAuthHeaders()
-      });
-      // Si responde 200, hay caja abierta
-      setSesionActiva(response.data);
-    } catch (error: any) {
-      // Si responde 404, NO hay caja abierta
-      if (error.response && error.response.status === 404) {
-        setSesionActiva(null);
-      } else {
-        console.error("Error al verificar caja:", error);
-      }
-    } finally {
-      setCargando(false);
-    }
-  }, [getAuthHeaders]);
-
-  useEffect(() => {
-    cargarEstadoCaja();
-  }, [cargarEstadoCaja]);
-
-  // ---  FUNCIÓN PARA ABRIR CAJA ---
-  const handleAbrirCaja = async () => {
-    if (!fondoInicial) return alert("Ingresa el fondo inicial");
+    const { getAuthHeaders, user } = useAuth();
     
-    try {
-      
-      await pedidosApi.post(`${PEDIDOS_API_URL}sesion-caja/`, {
-        usuario: user?.user_id, 
-        fondo_inicial: parseFloat(fondoInicial),
-        estado: 'ABIERTA'
-      }, { headers: getAuthHeaders() });
+    // Estados de la interfaz
+    const [cargando, setCargando] = useState(true);
+    const [sesionActiva, setSesionActiva] = useState<any>(null);
 
-      alert(" Caja Abierta Correctamente");
-      cargarEstadoCaja(); 
-    } catch (error) {
-      console.error("Error al abrir:", error);
-      alert("Error al abrir caja. Revisa la consola.");
-    }
-  };
-
-  // -- FUNCIÓN PARA CERRAR CAJA (CORTE) ---
-  const handleCerrarCaja = async () => {
-    if (!sesionActiva) return;
+    const navigate = useNavigate(); 
     
-    const confirmar = window.confirm("¿Estás seguro de realizar el corte de caja? Esto cerrará el turno.");
-    if (!confirmar) return;
+    // Estados para ABRIR caja
+    const [fondoInicial, setFondoInicial] = useState('');
 
-    try {
-      const response = await pedidosApi.post(`${PEDIDOS_API_URL}sesion-caja/${sesionActiva.sesion_id}/cerrar/`, {
-        total_real_efectivo: parseFloat(conteoEfectivo) || 0,
-        total_real_tarjeta: parseFloat(conteoTarjeta) || 0
-      }, { headers: getAuthHeaders() });
+    // Estados para CERRAR caja
+    const [conteoEfectivo, setConteoEfectivo] = useState('');
+    const [conteoTarjeta, setConteoTarjeta] = useState('');
 
-      alert(`✅ Turno Cerrado.\nDiferencia: $${response.data.diferencia_total}`);
-      setSesionActiva(null); // Volvemos a la pantalla de apertura
-      setFondoInicial('');
-      setConteoEfectivo('');
-      setConteoTarjeta('');
-    } catch (error) {
-      console.error("Error al cerrar:", error);
-      alert("Error al realizar el corte.");
+    // --- 1. CARGAR ESTADO ACTUAL ---
+    const cargarEstadoCaja = useCallback(async () => {
+        setCargando(true);
+        try {
+            const response = await pedidosApi.get(`${PEDIDOS_API_URL}sesion-caja/resumen_actual/`, {
+                headers: getAuthHeaders()
+            });
+            setSesionActiva(response.data);
+        } catch (error: any) {
+            if (error.response && error.response.status === 404) {
+                setSesionActiva(null);
+            } else {
+                console.error("Error al verificar caja:", error);
+            }
+        } finally {
+            setCargando(false);
+        }
+    }, [getAuthHeaders]);
+
+    useEffect(() => {
+        cargarEstadoCaja();
+    }, [cargarEstadoCaja]);
+
+    // --- FUNCIÓN PARA ABRIR CAJA ---
+    const handleAbrirCaja = async () => {
+        if (!fondoInicial) return alert("Ingresa el fondo inicial");
+        try {
+            await pedidosApi.post(`${PEDIDOS_API_URL}sesion-caja/`, {
+                usuario: user?.user_id, 
+                fondo_inicial: parseFloat(fondoInicial),
+                estado: 'ABIERTA'
+            }, { headers: getAuthHeaders() });
+            
+            alert(" Caja Abierta Correctamente");
+            cargarEstadoCaja(); 
+            
+            navigate('/caja'); 
+            
+        } catch (error) {
+            console.error("Error al abrir:", error);
+            alert("Error al abrir caja. Revisa la consola.");
+        }
+    };
+    // -- FUNCIÓN PARA CERRAR CAJA (CORTE) ---
+    const handleCerrarCaja = async () => {
+        if (!sesionActiva) return;
+        const confirmar = window.confirm("¿Estás seguro de realizar el corte de caja? Esto cerrará el turno.");
+        if (!confirmar) return;
+
+        try {
+            const response = await pedidosApi.post(`${PEDIDOS_API_URL}sesion-caja/${sesionActiva.sesion_id}/cerrar/`, {
+                total_real_efectivo: parseFloat(conteoEfectivo) || 0,
+                total_real_tarjeta: parseFloat(conteoTarjeta) || 0
+            }, { headers: getAuthHeaders() });
+
+            alert(` Turno Cerrado.\nDiferencia: $${response.data.diferencia_total}`);
+            setSesionActiva(null); 
+            setFondoInicial('');
+            setConteoEfectivo('');
+            setConteoTarjeta('');
+        } catch (error) {
+            console.error("Error al cerrar:", error);
+            alert("Error al realizar el corte.");
+        }
+    };
+
+    /* const handleImprimirPreCorte = () => {
+        alert("Funcionalidad de impresión de pre-corte en desarrollo...");
+        // Aquí conectaremos el react-to-print más adelante
+    }; */
+
+    if (cargando) return <div className="p-10 text-center font-bold text-gray-500 text-xl">Cargando Caja...</div>;
+
+    // --- CÁLCULOS EN TIEMPO REAL ---
+    let diffEfectivo = 0;
+    let diffTarjeta = 0;
+    let diffTotal = 0;
+
+    if (sesionActiva) {
+        const fEfectivo = parseFloat(conteoEfectivo) || 0;
+        const fTarjeta = parseFloat(conteoTarjeta) || 0;
+
+        const esperadoEfectivo = parseFloat(sesionActiva.fondo_inicial) + parseFloat(sesionActiva.ventas_efectivo);
+        const esperadoTarjeta = parseFloat(sesionActiva.ventas_tarjeta);
+
+        diffEfectivo = fEfectivo - esperadoEfectivo;
+        diffTarjeta = fTarjeta - esperadoTarjeta;
+        diffTotal = diffEfectivo + diffTarjeta;
     }
-  };
 
-  if (cargando) return <div className="p-10 text-center">Cargando Caja...</div>;
+    return (
+        <div className="min-h-screen bg-gray-50 p-6 flex flex-col items-center font-sans">
+            
+            {!sesionActiva ? (
+                /* ========================================================
+                   VISTA 1: APERTURA DE CAJA
+                   ======================================================== */
+                <div className="bg-white p-10 rounded-xl shadow-2xl w-full max-w-md text-center border border-gray-200 mt-10">
+                    <h2 className="text-3xl font-black text-gray-800 mb-2">Apertura de Caja</h2>
+                    <p className="text-gray-500 mb-8">Ingresa el fondo inicial para comenzar tu turno.</p>
+                    
+                    <div className="text-left mb-8">
+                        <label className="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">Fondo Inicial:</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-3 text-gray-400 font-bold text-xl">$</span>
+                            <input 
+                                type="number" 
+                                value={fondoInicial}
+                                onChange={(e) => setFondoInicial(e.target.value)}
+                                className="w-full pl-10 p-3 border-2 border-gray-400 rounded-full focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none text-2xl font-black text-gray-700 transition-all"
+                                placeholder="0.00"
+                            />
+                        </div>
+                    </div>
 
-  return (
-    <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-      <h1 className="text-3xl font-extrabold text-gray-800 mb-8 border-b-4 border-orange-600 pb-2">
-        Gestión de Caja 
-      </h1>
+                    <button 
+                        onClick={handleAbrirCaja}
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 rounded-full shadow-lg transition-transform active:scale-95 text-xl"
+                    >
+                        ABRIR CAJA 
+                    </button>
+                </div>
+            ) : (
+                /* ========================================================
+                   VISTA 2: CIERRE DE CAJA (DISEÑO MAQUETA)
+                   ======================================================== */
+                <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-5xl border border-gray-300 mt-6">
+                    
+                    <h2 className="text-3xl font-black text-gray-800 text-center mb-10 tracking-wide">CIERRE DE CAJA</h2>
 
-      {!sesionActiva ? (
-        // --- VISTA 1: CAJA CERRADA (FORMULARIO APERTURA) ---
-        <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-md text-center">
-          <div className="text-6xl mb-4"> </div>
-          <h2 className="text-2xl font-bold text-gray-700 mb-2">Turno Cerrado</h2>
-          <p className="text-gray-500 mb-6">Ingresa el fondo inicial para comenzar a vender.</p>
-          
-          <div className="text-left mb-6">
-            <label className="block text-sm font-bold text-gray-700 mb-1">Fondo Inicial (Monedas/Billetes):</label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-500 font-bold">$</span>
-              <input 
-                type="number" 
-                value={fondoInicial}
-                onChange={(e) => setFondoInicial(e.target.value)}
-                className="w-full pl-8 p-2 border-2 border-gray-300 rounded-lg focus:border-green-500 outline-none text-xl font-bold"
-                placeholder="0.00"
-              />
-            </div>
-          </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+                        
+                        {/* COLUMNA IZQUIERDA: VALORES DEL SISTEMA */}
+                        <div className="flex flex-col justify-center">
+                            
+                            <div className="flex justify-between items-center py-4 border-b border-gray-300">
+                                <span className="text-xl font-bold text-gray-700">Fondo Inicial:</span>
+                                <span className="text-2xl font-black text-gray-600">${parseFloat(sesionActiva.fondo_inicial).toFixed(2)}</span>
+                            </div>
+                            
+                            <div className="flex justify-between items-center py-4 border-b border-gray-300">
+                                <span className="text-xl font-bold text-gray-700">Ventas en Efectivo:</span>
+                                <span className="text-2xl font-black text-gray-600">${parseFloat(sesionActiva.ventas_efectivo).toFixed(2)}</span>
+                            </div>
 
-          <button 
-            onClick={handleAbrirCaja}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg transition-transform hover:scale-105"
-          >
-            ABRIR CAJA 
-          </button>
+                            <div className="flex justify-between items-center py-4 border-b border-gray-300 mb-6">
+                                <span className="text-xl font-bold text-gray-700">Ventas con Tarjeta:</span>
+                                <span className="text-2xl font-black text-gray-600">${parseFloat(sesionActiva.ventas_tarjeta).toFixed(2)}</span>
+                            </div>
+
+                            <div className="text-center mt-2">
+                                <span className="text-xl font-bold text-gray-800 mb-2 block">Total Esperado en Caja</span>
+                                <div className="border-2 border-gray-300 py-4 px-6">
+                                    <span className="text-5xl font-black text-orange-600 tracking-tight">
+                                        ${parseFloat(sesionActiva.total_esperado).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* COLUMNA DERECHA: ENTRADA DEL CAJERO */}
+                        <div className="flex flex-col justify-center border-l-0 lg:border-l-4 border-gray-300 lg:pl-16">
+                            
+                            {/* Input Efectivo */}
+                            <div className="mb-8">
+                                <label className="block text-xl font-bold text-gray-800 mb-3">Contador de Efectivo</label>
+                                <div className="relative">
+                                    <span className="absolute left-6 top-3 text-gray-600 font-bold text-2xl">$</span>
+                                    <input 
+                                        type="number" 
+                                        value={conteoEfectivo}
+                                        onChange={(e) => setConteoEfectivo(e.target.value)}
+                                        className="w-full pl-12 pr-6 py-3 border-2 border-gray-600 rounded-full focus:border-orange-500 outline-none text-right font-bold text-2xl text-gray-800"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <p className={`mt-2 text-sm font-bold ${diffEfectivo >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    Diferencia de Efectivo: {diffEfectivo >= 0 ? '+' : ''}${diffEfectivo.toFixed(2)}
+                                </p>
+                            </div>
+
+                            {/* Input Tarjeta */}
+                            <div>
+                                <label className="block text-xl font-bold text-gray-800 mb-3">Voucher de Tarjetas</label>
+                                <div className="relative">
+                                    <span className="absolute left-6 top-3 text-gray-600 font-bold text-2xl">$</span>
+                                    <input 
+                                        type="number" 
+                                        value={conteoTarjeta}
+                                        onChange={(e) => setConteoTarjeta(e.target.value)}
+                                        className="w-full pl-12 pr-6 py-3 border-2 border-gray-600 rounded-full focus:border-orange-500 outline-none text-right font-bold text-2xl text-gray-800"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <p className={`mt-2 text-sm font-bold ${diffTarjeta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                    Diferencia de Tarjeta: {diffTarjeta >= 0 ? '+' : ''}${diffTarjeta.toFixed(2)}
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    {/* ========================================================
+                        FOOTER: ESTATUS Y BOTONES
+                        ======================================================== */}
+                    <div className="mt-12 pt-8 border-t-4 border-gray-300 flex flex-col md:flex-row justify-between items-center gap-6">
+                        
+                        {/* ESTADO DE LA CAJA */}
+                        <div className="flex items-center gap-6">
+                            {diffTotal === 0 ? (
+                                <>
+                                    <div className="bg-green-600 w-16 h-16 rounded-xl flex items-center justify-center shadow-lg">
+                                        <FaCheck className="text-white text-3xl" />
+                                    </div>
+                                    <span className="text-3xl font-black text-gray-700">Caja Cuadrada</span>
+                                </>
+                            ) : diffTotal < 0 ? (
+                                <>
+                                    <div className="bg-red-600 w-16 h-16 rounded-xl flex items-center justify-center shadow-lg">
+                                        <FaTimes className="text-white text-4xl font-light" />
+                                    </div>
+                                    <span className="text-3xl font-black text-gray-700">FALTANTE: <span className="text-red-600">-${Math.abs(diffTotal).toFixed(2)}</span></span>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="bg-orange-500 w-16 h-16 rounded-xl flex items-center justify-center shadow-lg">
+                                        <FaInfo className="text-white text-3xl" />
+                                    </div>
+                                    <span className="text-3xl font-black text-gray-700">Sobrante: <span className="text-orange-500">+${diffTotal.toFixed(2)}</span></span>
+                                </>
+                            )}
+                        </div>
+
+                        {/* BOTONES DE ACCIÓN */}
+                        <div className="flex items-center gap-4 w-full md:w-auto border-l-0 md:border-l-4 border-gray-300 md:pl-8">
+                            {/* <button 
+                                onClick={handleImprimirPreCorte}
+                                className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors text-lg flex-1 md:flex-none"
+                            >
+                                Imprimir Pre-corte
+                            </button> */}
+
+
+                            <button 
+                                onClick={() => navigate('/caja')} 
+                                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition-colors text-lg flex-1 md:flex-none shadow-sm"
+                            >
+                                Volver a la Caja
+                            </button>
+                            <button 
+                                onClick={handleCerrarCaja}
+                                className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-colors text-lg shadow-lg shadow-orange-300 flex-1 md:flex-none"
+                            >
+                                Cerrar Turno
+                            </button>
+                        </div>
+                        
+                    </div>
+
+                </div>
+            )}
         </div>
-      ) : (
-        // --- CAJA ABIERTA (CORTE DE CAJA) ---
-        <div className="bg-white p-8 rounded-xl shadow-xl w-full max-w-4xl">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-green-700">Turno Abierto </h2>
-              <p className="text-gray-500 text-sm">Sesión ID: #{sesionActiva.sesion_id}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-gray-600 font-bold">Fondo Inicial</p>
-              <p className="text-xl">${parseFloat(sesionActiva.fondo_inicial).toFixed(2)}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            {/* COLUMNA IZQUIERDA: LO QUE DICE EL SISTEMA */}
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-bold text-gray-700 mb-4 border-b pb-2"> Sistema (Esperado)</h3>
-              
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Ventas Efectivo:</span>
-                <span className="font-bold text-gray-800">${sesionActiva.ventas_efectivo.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-gray-600">Ventas Tarjeta:</span>
-                <span className="font-bold text-gray-800">${sesionActiva.ventas_tarjeta.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between mt-4 pt-2 border-t border-gray-300">
-                <span className="text-lg font-bold text-gray-700">Total en Caja:</span>
-                <span className="text-2xl font-bold text-blue-600">${sesionActiva.total_esperado.toFixed(2)}</span>
-              </div>
-              <p className="text-xs text-gray-400 mt-1">* Incluye Fondo Inicial + Ventas Efectivo</p>
-            </div>
-
-            {/* COLUMNA DERECHA: LO QUE CUENTA EL CAJERO */}
-            <div className="bg-orange-50 p-6 rounded-lg border border-orange-200">
-              <h3 className="text-lg font-bold text-orange-800 mb-4 border-b border-orange-200 pb-2"> Tu Conteo (Real)</h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Efectivo en Cajón:</label>
-                <input 
-                  type="number" 
-                  value={conteoEfectivo}
-                  onChange={(e) => setConteoEfectivo(e.target.value)}
-                  className="w-full p-2 border border-orange-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-right font-bold text-lg"
-                  placeholder="$0.00"
-                />
-              </div>
-
-              <div className="mb-4">
-                <label className="block text-sm font-bold text-gray-700 mb-1">Vouchers / Tarjeta:</label>
-                <input 
-                  type="number" 
-                  value={conteoTarjeta}
-                  onChange={(e) => setConteoTarjeta(e.target.value)}
-                  className="w-full p-2 border border-orange-300 rounded focus:ring-2 focus:ring-orange-500 outline-none text-right font-bold text-lg"
-                  placeholder="$0.00"
-                />
-              </div>
-
-              {/* Calculadora de Diferencia en tiempo real */}
-              <div className="mt-4 pt-2 border-t border-orange-200 flex justify-between items-center">
-                <span className="font-bold text-gray-700">Diferencia:</span>
-                {(() => {
-                   const sistema = sesionActiva.total_esperado;
-                   const real = (parseFloat(conteoEfectivo) || 0) + (parseFloat(conteoTarjeta) || 0) + (sesionActiva.fondo_inicial - sesionActiva.fondo_inicial); 
-                   
-                   const dif = (parseFloat(conteoEfectivo) || 0) - (sesionActiva.total_esperado - sesionActiva.ventas_tarjeta); 
-                   
-                   const diffEfec = (parseFloat(conteoEfectivo) || 0) - (sesionActiva.fondo_inicial + sesionActiva.ventas_efectivo);
-                   
-                   return (
-                     <span className={`font-bold text-xl ${diffEfec >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                       {diffEfec > 0 ? '+' : ''}{diffEfec.toFixed(2)}
-                     </span>
-                   )
-                })()}
-              </div>
-            </div>
-          </div>
-
-          <button 
-            onClick={handleCerrarCaja}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg shadow-lg text-xl transition-colors"
-          >
-            REALIZAR CORTE Y CERRAR 
-          </button>
-        </div>
-      )}
-    </div>
-  );
+    );
 };
 
 export default GestionCaja;

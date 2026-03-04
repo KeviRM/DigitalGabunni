@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { pedidosApi } from '../../api/axiosConfig'; 
 import useAuth from "../../hooks/useAuth";
 import ModalCobro from "../../components/ModalCobro";
 import { FaClock, FaTimes, FaEdit, FaCashRegister, FaCheckCircle } from 'react-icons/fa';
-import gabunniLogo from '../../assets/gabunniLogo.jpg'; 
+import { useReactToPrint } from 'react-to-print'; // <-- NUEVO
+import Ticket from "../../components/Ticket"; // <-- NUEVO (Ajusta la ruta si es necesario)
 
 const TerminalCaja: React.FC = () => {
     const navigate = useNavigate();
@@ -13,32 +14,48 @@ const TerminalCaja: React.FC = () => {
     const [modalAbierto, setModalAbierto] = useState(false);
     const { getAuthHeaders } = useAuth();
 
+    // --- LÓGICA DE IMPRESIÓN (NUEVO) ---
+    const ticketRef = useRef<HTMLDivElement>(null);
+    
+    const handlePrint = useReactToPrint({
+        contentRef: ticketRef,
+        documentTitle: `Ticket_Gabunni`,
+        onAfterPrint: () => {
+            // Se ejecuta HASTA QUE la ventana de impresión se cierra
+            fetchPedidos();
+            setPedidoSeleccionado(null);
+            setModalAbierto(false);
+        }
+    });
 
-      // --- FUNCIÓN PARA CANCELAR MANUALMENTE DESDE CAJA ---
+    // --- ADAPTADOR PARA EL TICKET (NUEVO) ---
+    // El Ticket espera la estructura del carrito, pero aquí tenemos la estructura de la BD.
+    // Esto lo traduce automáticamente para no romper el diseño del Ticket.
+    const ordenParaTicket = pedidoSeleccionado ? {
+        ...pedidoSeleccionado,
+        details_snapshot: pedidoSeleccionado.details?.map((d: any) => ({
+            cantidad: d.quantity,
+            producto: { name: d.product_name, items: d.items }, // items por si es paquete
+            precio: d.unit_price,
+            personalizacion: d.personalizacion_json
+        }))
+    } : null;
+
+    // --- FUNCIÓN PARA CANCELAR MANUALMENTE DESDE CAJA ---
     const handleCancelarOrden = async (orderNumber: string) => {
-        // Confirmación de seguridad
         const confirmar = window.confirm("¿Estás seguro de que deseas cancelar esta orden? Esta acción no se puede deshacer.");
         if (!confirmar) return;
 
         try {
-            // Petición al backend (Ajusta la ruta base según tu urls.py)
-            // Usamos PATCH porque así lo definiste en tu CajaViewSet
             await pedidosApi.patch(`/api/v1/pedidos/caja/${orderNumber}/cancelar/`, {}, {
                 headers: getAuthHeaders()
             });
-            
-            // Feedback visual
             alert("Orden cancelada exitosamente.");
+            fetchPedidos(); 
             
-            //  Actualizar la interfaz
-            // Llama a tu función que descarga los pedidos de nuevo para que desaparezca de la lista
-            fetchPedidos(); // <-- Cambia esto por el nombre real de tu función
-            
-            // Si el pedido que acabamos de cancelar era el que estábamos viendo, cerramos los detalles
             if (pedidoSeleccionado?.order_number === orderNumber) {
                 setPedidoSeleccionado(null);
             }
-            
         } catch (error) {
             console.error("Error al cancelar la orden:", error);
             alert("Hubo un error al cancelar la orden. Por favor, intenta de nuevo.");
@@ -53,7 +70,6 @@ const TerminalCaja: React.FC = () => {
             const pendientes = response.data.filter((p: any) => !p.metodo_pago);
             setPedidos(pendientes);
             
-            // Mantener selección si existe
             if (pedidoSeleccionado) {
                 const actualizado = pendientes.find((p: any) => p.order_number === pedidoSeleccionado.order_number);
                 if (actualizado) setPedidoSeleccionado(actualizado);
@@ -118,7 +134,7 @@ const TerminalCaja: React.FC = () => {
             );
         }
 
-        // 3. Chapata Personalizada (Cualquier otra llave que contenga ingredientes)
+        // 3. Chapata Personalizada
         const categorias = Object.keys(personalizacion).filter(k => k !== 'modificaciones' && k !== 'Contenido' && k !== 'contenido');
         if (categorias.length > 0) {
             const todos = categorias.flatMap(k => personalizacion[k]);
@@ -137,7 +153,6 @@ const TerminalCaja: React.FC = () => {
                 );
             }
         }
-
         return null;
     };
 
@@ -147,14 +162,11 @@ const TerminalCaja: React.FC = () => {
             {/* --- COLUMNA IZQUIERDA --- */}
             <div className="w-1/4 bg-white border-r-4 border-orange-400 flex flex-col z-10 shadow-lg">
                 
-
-                {/* Título Lista */}
                 <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
                     <h2 className="text-orange-600 font-bold text-lg">Pendientes de Pago</h2>
                     <span className="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-xs font-bold">{pedidos.length}</span>
                 </div>
                 
-                {/* Lista Scrolleable */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {pedidos.length === 0 && (
                         <div className="text-center py-10 text-gray-400">
@@ -175,12 +187,9 @@ const TerminalCaja: React.FC = () => {
                                     }`}
                             >
                                 <div className="flex items-center gap-4">
-                                    {/* Número Grande */}
                                     <div className={`text-5xl font-extrabold ${isSelected ? 'text-orange-500' : 'text-gray-300 group-hover:text-gray-400'}`}>
                                         #{pedido.daily_sequence?.toString().padStart(2, '0') || '??'}
                                     </div>
-                                    
-                                    {/* Info */}
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-bold text-gray-700"></span>
@@ -190,7 +199,6 @@ const TerminalCaja: React.FC = () => {
                                             <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
                                                  <FaClock size={10}/> {calcularTiempo(pedido.created_at)}
                                             </span>
-                                            {/* Tag de Tipo */}
                                             <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase
                                                 ${pedido.type_delivery === 'LLEVAR' ? 'bg-blue-100 text-blue-600' : 'bg-yellow-100 text-yellow-600'}`}>
                                                 {pedido.type_delivery === 'LLEVAR' ? 'Para Llevar' : 'Aquí'}
@@ -207,12 +215,9 @@ const TerminalCaja: React.FC = () => {
             {/* --- DETALLE --- */}
             <div className="flex-1 w-3/4 bg-gray-50 p-10 flex flex-col h-full relative">
                 
-               
-
                 {pedidoSeleccionado ? (
                     <div className="flex flex-col h-full max-w-4xl mx-auto w-full pt-10">
                         
-                        {/* Título Detalle */}
                         <div className="text-center mb-8 border-b-2 border-orange-500 pb-4">
                             <h1 className="text-4xl font-extrabold text-gray-800">
                                 Detalle de Orden <span className="text-orange-500">#{pedidoSeleccionado.daily_sequence?.toString().padStart(2, '0')}</span>
@@ -220,24 +225,16 @@ const TerminalCaja: React.FC = () => {
                             <p className="text-gray-400 mt-2">{pedidoSeleccionado.client_name || 'Cliente Kiosco'} • {new Date(pedidoSeleccionado.created_at).toLocaleString()}</p>
                         </div>
 
-                        {/* Lista de Productos  */}
                         <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
                             {pedidoSeleccionado.details?.map((detalle: any, idx: number) => (
                                 <div key={idx} className="bg-white p-6 rounded-xl border border-orange-200 shadow-md flex justify-between items-start">
-                                    
-                                    {/* Cantidad y Nombre */}
                                     <div className="flex-1">
                                         <div className="flex items-baseline gap-3">
                                             <span className="font-bold text-lg text-gray-500">{detalle.quantity}x</span>
                                             <h3 className="font-bold text-xl text-gray-800">{detalle.product_name}</h3>
                                         </div>
-
-                                        {/* Renderizar Personalizacion */}
-
-                                        { renderPersonalizacionPro(detalle.personalizacion_json)}
+                                        {renderPersonalizacionPro(detalle.personalizacion_json)}
                                     </div>
-
-                                    {/*  Precio */}
                                     <div className="text-right">
                                         <span className="font-bold text-xl text-green-600">
                                             ${(detalle.unit_price * detalle.quantity).toFixed(2)}
@@ -247,10 +244,7 @@ const TerminalCaja: React.FC = () => {
                             ))}
                         </div>
 
-                        {/* Footer Totales y Botones */}
                         <div className="mt-8 bg-white p-6 rounded-2xl shadow-lg border-4 border-orange-500">
-                            
-                            {/* Total Gigante */}
                             <div className="text-center mb-8">
                                 <span className="text-gray-400 text-sm font-bold uppercase tracking-widest block mb-1">Total a Pagar</span>
                                 <span className="text-6xl font-extrabold text-orange-600">
@@ -258,16 +252,13 @@ const TerminalCaja: React.FC = () => {
                                 </span>
                             </div>
 
-                            {/* Botonera de Acción */}
                             <div className="grid grid-cols-3 gap-6">
                                 <button 
-                                
                                     onClick={() => handleCancelarOrden(pedidoSeleccionado.order_number)}
                                     className="py-4 rounded-xl border-2 border-red-500 text-red-500 font-bold text-lg hover:bg-red-200 transition flex items-center justify-center gap-2 cursor-pointer"
                                 >
                                     <FaTimes /> Cancelar Orden
                                 </button>
-                                
                                 
                                 <button 
                                     onClick={() => navigate(`/caja/nueva-orden`, {state: {PedidoEditar: pedidoSeleccionado}})}
@@ -275,7 +266,6 @@ const TerminalCaja: React.FC = () => {
                                 >
                                     <FaEdit /> Editar Orden
                                 </button>
-
                                 
                                 <button 
                                     onClick={() => setModalAbierto(true)}
@@ -288,7 +278,6 @@ const TerminalCaja: React.FC = () => {
 
                     </div>
                 ) : (
-                    // Estado Vacío (Placeholder)
                     <div className="flex flex-col items-center justify-center h-full text-gray-300">
                         <div className="w-32 h-32 bg-gray-100 rounded-full flex items-center justify-center mb-6">
                             <FaCashRegister className="text-9xl text-gray-400" />
@@ -297,6 +286,11 @@ const TerminalCaja: React.FC = () => {
                         <p className="mt-2">Elige una orden de la lista para ver el detalle y cobrar.</p>
                     </div>
                 )}
+            </div>
+
+            {/* --- COMPONENTE OCULTO DEL TICKET (NUEVO) --- */}
+            <div style={{ display: 'none' }}>
+                <Ticket ref={ticketRef} orden={ordenParaTicket} />
             </div>
 
             {/* MODAL COBRO */}
@@ -308,8 +302,10 @@ const TerminalCaja: React.FC = () => {
                     daily_sequence={pedidoSeleccionado.daily_sequence?.toString().padStart(2, '0') }
                     total={pedidoSeleccionado.amount}
                     onPaymentSuccess={() => {
-                        fetchPedidos();
-                        setPedidoSeleccionado(null);
+                        // AQUÍ YA NO LIMPIAMOS LOS DATOS.
+                        // Solo lanzamos la alerta y abrimos la ventana de impresión.
+                        alert(`¡Orden #${pedidoSeleccionado.daily_sequence} cobrada con éxito!`);
+                        handlePrint();
                     }}
                 />
             )}
