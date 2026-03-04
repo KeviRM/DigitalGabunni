@@ -7,29 +7,33 @@ interface TicketProps {
 const Ticket = forwardRef<HTMLDivElement, TicketProps>(({ orden }, ref) => {
     if (!orden) return null;
 
-    // Helper  para extraer Paquetes, Extras y Sin
-    const renderPersonalizacionTicket = (pj: any) => {
-        if (!pj) return null;
+    // Helper Súper-Mejorado para extraer Paquetes (Kiosco o POS), Extras y Sin
+    const renderPersonalizacionTicket = (itemCarrito: any) => {
+        if (!itemCarrito) return null;
         
+        const pj = itemCarrito.personalizacion;
+        const producto = itemCarrito.producto;
         const lineas: string[] = [];
 
-        //  Si es Paquete -- Muestra el contenido
-        const contenido = pj.Contenido || pj.contenido;
+        // 1. Si es Paquete (Buscamos si viene del Kiosco o directo del POS)
+        const contenido = pj?.Contenido || pj?.contenido || producto?.items;
         if (contenido) {
             contenido.forEach((c: any) => lineas.push(`> ${c.quantity || 1}x ${c.product_name || c.name}`));
         }
 
-        // Si tiene Modificaciones (Extras / Sin)
-        if (pj.modificaciones) {
+        // 2. Si tiene Modificaciones (Extras / Sin)
+        if (pj?.modificaciones) {
             pj.modificaciones.extras?.forEach((e: any) => lineas.push(`+ Extra ${e.name}`));
             pj.modificaciones.sin?.forEach((s: any) => lineas.push(`- SIN ${s.name}`));
         }
 
-        // Si es Armada desde cero
-        const categoriasArmada = Object.keys(pj).filter(k => k !== 'modificaciones' && k !== 'Contenido' && k !== 'contenido');
-        if (categoriasArmada.length > 0) {
-            const ingredientesArmados = categoriasArmada.flatMap(k => pj[k].map((i: any) => i.name));
-            if (ingredientesArmados.length > 0) lineas.push(`[${ingredientesArmados.join(', ')}]`);
+        // 3. Si es Armada desde cero
+        if (pj) {
+            const categoriasArmada = Object.keys(pj).filter(k => k !== 'modificaciones' && k !== 'Contenido' && k !== 'contenido');
+            if (categoriasArmada.length > 0) {
+                const ingredientesArmados = categoriasArmada.flatMap(k => pj[k].map((i: any) => i.name));
+                if (ingredientesArmados.length > 0) lineas.push(`[${ingredientesArmados.join(', ')}]`);
+            }
         }
 
         if (lineas.length === 0) return null;
@@ -86,8 +90,7 @@ const Ticket = forwardRef<HTMLDivElement, TicketProps>(({ orden }, ref) => {
                             <tr>
                                 <td></td>
                                 <td colSpan={2} className="pb-1">
-                                    {/* se manda la personalización al helper */}
-                                    {renderPersonalizacionTicket(item.personalizacion)}
+                                    {renderPersonalizacionTicket(item)}
                                 </td>
                             </tr>
                         </React.Fragment>

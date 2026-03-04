@@ -451,6 +451,15 @@ const PuntoDeVenta: React.FC = () => {
                                         <span className="text-green-600 shrink-0">${(item.precio * item.cantidad).toFixed(2)}</span>
                                     </div>
 
+
+                                    {!item.personalizacion && item.producto?.items && (
+                                        <div className="mt-2 text-sm pl-2 border-l-4 border-gray-300 ml-1 space-y-1 bg-gray-50 p-2 rounded">
+                                            <span className="font-bold text-blue-600 uppercase text-xs">Incluye:</span>
+                                            {item.producto.items.map((c: any, i: number) => (
+                                                <div key={i} className="text-gray-800 font-bold ml-2">• {c.quantity || 1}x {c.product_name}</div>
+                                            ))}
+                                        </div>
+                                    )}
                                     {/* PERSONALIZACIÓN (El Súper Helper) */}
                                     {item.personalizacion && renderPersonalizacionPro(item.personalizacion)}
                                     
