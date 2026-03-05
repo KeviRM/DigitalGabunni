@@ -39,19 +39,19 @@ const Ticket = forwardRef<HTMLDivElement, TicketProps>(({ orden }, ref) => {
         if (lineas.length === 0) return null;
 
         return (
-            <div className="text-[10px] text-gray-700 ml-2 italic leading-tight">
+            <div className="text-[10px] font-bold ml-2 leading-tight">
                 {lineas.map((linea, idx) => <div key={idx}>{linea}</div>)}
             </div>
         );
     };
 
     return (
-        <div ref={ref} className="bg-white text-black p-4 font-mono w-[80mm] mx-auto" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
+        <div ref={ref} className="bg-white text-black p-4 font-mono w-[58mm] mx-auto" style={{ fontFamily: "'Courier New', Courier, monospace" }}>
             
             {/* CABECERA */}
             <div className="text-center mb-4">
                 <h1 className="font-bold text-2xl uppercase tracking-widest">GABUNNI</h1>
-                <p className="text-xs mt-1">"Rico y con amor"</p>
+                <p className="text-xs font-bold mt-1">"Rico y con amor"</p>
                 <p className="text-xs">--------------------------------</p>
                 <p className="text-xs">Ticket de Venta</p>
                 <p className="text-xs">{new Date().toLocaleString('es-MX')}</p>
@@ -60,9 +60,9 @@ const Ticket = forwardRef<HTMLDivElement, TicketProps>(({ orden }, ref) => {
             {/* DATOS DE LA ORDEN */}
             <div className="mb-4 text-xs">
                 <p className="font-bold text-lg mb-1">Turno: #{orden.daily_sequence || orden.order_number?.substring(0,4) || '??'}</p>
-                <p><strong>Cliente:</strong> {orden.client_name || 'Mostrador'}</p>
-                <p><strong>Tipo:</strong> {orden.type_delivery}</p>
-                <p><strong>Pago:</strong> {orden.metodo_pago || 'Efectivo'}</p>
+                <p className="font-semibold"><strong>Cliente:</strong> {orden.client_name || 'Mostrador'}</p>
+                <p className="font-semibold"><strong>Tipo:</strong> {orden.type_delivery}</p>
+                <p className="font-semibold"><strong>Pago:</strong> {orden.metodo_pago || 'Efectivo'}</p>
             </div>
 
             <p className="text-xs text-center mb-2">--------------------------------</p>
@@ -85,11 +85,11 @@ const Ticket = forwardRef<HTMLDivElement, TicketProps>(({ orden }, ref) => {
                                 <td className="py-1 align-top font-bold">
                                     {item.producto?.name || 'Producto'}
                                 </td>
-                                <td className="py-1 text-right align-top">${(item.precio * item.cantidad).toFixed(2)}</td>
+                                <td className="py-1 font-semibold text-right align-top">${(item.precio * item.cantidad).toFixed(2)}</td>
                             </tr>
                             <tr>
                                 <td></td>
-                                <td colSpan={2} className="pb-1">
+                                <td colSpan={2} className="pb-1 font-semibold">
                                     {renderPersonalizacionTicket(item)}
                                 </td>
                             </tr>
@@ -108,8 +108,8 @@ const Ticket = forwardRef<HTMLDivElement, TicketProps>(({ orden }, ref) => {
             {/* FOOTER */}
             <div className="text-center text-xs">
                 <p className="font-bold">¡Gracias por tu preferencia!</p>
-                <p className="mt-2">Síguenos en nuestras redes</p>
-                <p>@Gabunni</p>
+                <p className="mt-2 font-semibold">Síguenos en nuestras redes</p>
+                <p className="font-semibold">@Gabunni</p>
                 <br />
                 <p>.</p>
             </div>
