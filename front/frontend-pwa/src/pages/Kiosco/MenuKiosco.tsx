@@ -4,7 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 
 // --- IMPORTS DE API ---
 import { fetchCategorias, fetchProductos, fetchPaquetes } from '../../api/menuApi';
-import { pedidosApi } from '../../api/axiosConfig';
+import { pedidosApi, WS_BASE_URL} from '../../api/axiosConfig';
 import useAuth from '../../hooks/useAuth';
 
 // --- IMPORT DEL CONTEXTO KIOSCO  ---
@@ -177,7 +177,7 @@ const MenuKiosco: React.FC = () => {
         if (pedidoPendienteQR && linkQR) {
             // Conectar al grupo específico de esta orden
             // Cambia esto por la URL base de tus websockets (ej. ws://localhost:8000)
-            const wsUrl = `ws://localhost/ws/pedidos/${pedidoPendienteQR.order_number}/`; 
+            const wsUrl = `${WS_BASE_URL}/ws/pedidos/${pedidoPendienteQR.order_number}/`; 
             ws = new WebSocket(wsUrl);
 
             ws.onmessage = (event) => {
