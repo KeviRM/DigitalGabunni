@@ -295,8 +295,7 @@ class CreatePaymentPreference(APIView):
                     
             },
             
-            ##notification_url": "https://gabunny.agenciakeops.com/api/v1/pedidos/webhook/",
-            "notification_url": "https://alaine-nongrounding-subconically.ngrok-free.dev/api/v1/pedidos/webhook/",
+            "notification_url": "https://gabunny.agenciakeops.com/api/v1/pedidos/webhook/",
             "payment_methods": {
                 "excluded_payment_types": [
                     {"id": "ticket"}, # Excluye OXXO/Pago en efectivo diferido
